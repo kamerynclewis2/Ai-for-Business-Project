@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crewly — On-Demand Home Services Marketplace (Dallas, TX)</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+</head>
+<body>
+
+  <!-- Top Academic & Demonstration Header -->
+  <div class="demo-top-banner">
+    <div>
+      <strong>Crewly Pilot</strong> — Dallas, Texas | INSY 3331: AI for Business Demonstration
+    </div>
+    <div class="banner-controls">
+      <button id="btn-admin-metrics" class="btn-banner-link">
+        📊 Marketplace Metrics (Gross Revenue)
+      </button>
+      <button id="btn-reset-demo" class="btn-banner-link">
+        🔄 Reset Demo Data
+      </button>
+    </div>
+  </div>
+
+  <!-- Primary Application Header -->
+  <header class="main-header">
+    <div class="header-container">
+      <a href="javascript:void(0)" class="brand-logo" id="brand-home-link">
+        <div class="logo-badge">⚡</div>
+        <div>
+          <span class="brand-text">Crewly</span>
+          <span class="brand-tagline">Dallas</span>
+        </div>
+      </a>
+
+      <!-- 1-Click Role Switcher -->
+      <div class="role-switcher-container">
+        <button id="role-btn-customer" class="role-pill-btn active">
+          👤 Customer View
+        </button>
+        <button id="role-btn-pro" class="role-pill-btn">
+          👷 Crewly Pro View
+        </button>
+        <button id="btn-open-dual-tab" class="btn-open-tab" title="Open complementary role in a new browser tab for dual-screen demo">
+          Open in New Tab ↗
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="app-container">
+
+    <!-- ===================================================================
+         CUSTOMER VIEW
+         =================================================================== -->
+    <div id="customer-view-section">
+      <div class="customer-hero">
+        <div class="market-indicator">
+          <span class="market-pulse"></span>
+          Live in Dallas, Texas (Neighborhood Pilot)
+        </div>
+        <h1>On-demand home services.<br>Transparent upfront pricing.</h1>
+        <p>
+          Book certified Dallas Pros for moving, TV mounting, furniture assembly, and lawn care without haggling or multiple phone calls.
+        </p>
+
+        <div class="hero-highlights">
+          <div class="hero-chip">✓ Verified Background-Checked Pros</div>
+          <div class="hero-chip">✓ Multi-Worker Moving Teams</div>
+          <div class="hero-chip">✓ Transparent Hourly & Fixed Pricing</div>
+        </div>
+      </div>
+
+      <!-- Customer Context Switcher -->
+      <div style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; background: white; padding: 12px 18px; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary);">Customer Profile:</span>
+          <select id="customer-selector" class="form-select" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
+            <!-- Rendered dynamically -->
+          </select>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-muted);">
+          📍 Neighborhood: <strong id="customer-active-neighborhood" style="color: var(--primary-navy);">Uptown Dallas</strong>
+        </div>
+      </div>
+
+      <!-- Section: Browse Service Categories -->
+      <div class="section-title-row">
+        <div>
+          <h2 class="section-title">Select a Service to Book</h2>
+          <p class="section-subtitle">Transparent rates established by Crewly — No bidding required</p>
+        </div>
+      </div>
+
+      <div class="service-grid" id="service-cards-container">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+
+      <!-- Section: Active Bookings & Live Tracking -->
+      <div class="section-title-row" style="margin-top: 40px;">
+        <div>
+          <h2 class="section-title">Your Active Bookings & Tracking</h2>
+          <p class="section-subtitle">Real-time status updates and multi-worker assignment tracking</p>
+        </div>
+      </div>
+
+      <div id="customer-active-bookings-container">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Section: Past Completed Bookings -->
+      <div class="section-title-row" style="margin-top: 40px;">
+        <div>
+          <h2 class="section-title">Completed Bookings History</h2>
+          <p class="section-subtitle">Verified task records and customer ratings</p>
+        </div>
+      </div>
+
+      <div id="customer-past-bookings-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- ===================================================================
+         CREWLY PRO (WORKER) VIEW
+         =================================================================== -->
+    <div id="pro-view-section" style="display: none;">
+      
+      <!-- Pro Profile & Verification Summary Card -->
+      <div class="pro-profile-summary">
+        <div class="pro-profile-header">
+          <div class="pro-id-block">
+            <div class="pro-avatar-large" id="pro-avatar-display">👨🏾‍🔧</div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                <h2 class="pro-name-title" id="pro-name-display">Marcus Davis</h2>
+                <span id="pro-tier-display" class="tier-badge gold">Gold Pro</span>
+              </div>
+              <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                ⭐ <strong id="pro-rating-display">4.94</strong> (<span id="pro-reviews-display">88</span> jobs) • 
+                <span id="pro-neighborhood-display">Uptown Dallas</span> • 
+                Reliability: <strong id="pro-reliability-display">98%</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pro Switcher for Demo -->
+          <div style="text-align: right;">
+            <label style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; display: block; margin-bottom: 4px;">
+              Switch Pro Profile (Demo):
+            </label>
+            <select id="pro-selector" class="form-select" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
+              <!-- Rendered dynamically -->
+            </select>
+          </div>
+        </div>
+
+        <!-- Predefined Verified Credentials (Distinct from self-reported notes) -->
+        <div>
+          <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+            Platform Verified Credentials (Required for Job Eligibility):
+          </div>
+          <div class="verified-badges-container" id="pro-verified-badges">
+            <!-- Rendered dynamically -->
+          </div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); font-style: italic;">
+            Note: Self-reported skills alone do not grant access to customer tasks. Platform credential verification is enforced.
+          </div>
+        </div>
+
+        <!-- Auto-Book & Availability Settings -->
+        <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <label style="font-size: 0.88rem; font-weight: 700; color: var(--primary-navy); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="pro-autobook-toggle" style="width: 18px; height: 18px; accent-color: var(--brand-emerald);">
+              Enable Auto-Book for Compatible Jobs
+            </label>
+            <span style="font-size: 0.78rem; color: var(--text-muted);" id="pro-autobook-status">
+              (Auto-assigns compatible scheduled jobs with no conflicts)
+            </span>
+          </div>
+
+          <div style="font-size: 0.8rem; color: var(--text-secondary);">
+            Max Radius: <strong>15 miles</strong> | Min Payout: <strong>$50</strong>
+          </div>
+        </div>
+
+        <!-- Pro Earnings Ledger -->
+        <div class="pro-earnings-grid">
+          <div class="earnings-stat-box">
+            <span class="earnings-stat-label">Available Balance</span>
+            <span class="earnings-stat-value available" id="pro-stat-available">$275.00</span>
+            <button class="btn-cashout" id="btn-cashout-trigger">Simulated Cash-Out</button>
+          </div>
+          <div class="earnings-stat-box">
+            <span class="earnings-stat-label">Pending Payouts</span>
+            <span class="earnings-stat-value" id="pro-stat-pending">$75.00</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">From jobs in-progress</span>
+          </div>
+          <div class="earnings-stat-box">
+            <span class="earnings-stat-label">Lifetime Earned</span>
+            <span class="earnings-stat-value" id="pro-stat-lifetime">$2,450.00</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted);">Dallas Marketplace</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pro Active Assignments Section -->
+      <div class="section-title-row">
+        <div>
+          <h2 class="section-title">Your Active Assignments</h2>
+          <p class="section-subtitle">Manage ongoing tasks, notify the customer, and complete jobs</p>
+        </div>
+      </div>
+
+      <div id="pro-active-assignments-container" style="margin-bottom: 32px;">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <!-- Pro Job Board Section -->
+      <div class="section-title-row">
+        <div>
+          <h2 class="section-title">Dallas Job Board</h2>
+          <p class="section-subtitle">Browse and accept available customer jobs (Worker Payouts clearly listed)</p>
+        </div>
+      </div>
+
+      <div id="pro-job-board-container">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </main>
+
+  <!-- ===================================================================
+       MODAL: SMART GUIDED INTAKE & PRICING
+       =================================================================== -->
+  <div class="modal-overlay" id="intake-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h2 id="intake-modal-title">Book Service</h2>
+          <p style="font-size: 0.82rem; color: var(--text-muted);" id="intake-modal-subtitle">
+            Answer a few quick questions for an instant guaranteed quote
+          </p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-intake">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <form id="intake-form">
+          <!-- Dynamic Category-Specific Questions -->
+          <div id="dynamic-intake-questions">
+            <!-- Inserted by JavaScript -->
+          </div>
+
+          <!-- Scheduling Options -->
+          <div class="form-group" style="margin-top: 20px;">
+            <label class="form-label">Timing Requirement:</label>
+            <div style="display: flex; gap: 12px; margin-bottom: 10px;">
+              <label style="flex: 1; padding: 10px; border: 1px solid var(--border-dark); border-radius: var(--radius-md); cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <input type="radio" name="timingType" value="asap" checked>
+                <div>
+                  <div style="font-weight: 700; font-size: 0.88rem;">Book Now (ASAP)</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Immediate Dallas dispatch</div>
+                </div>
+              </label>
+              <label style="flex: 1; padding: 10px; border: 1px solid var(--border-dark); border-radius: var(--radius-md); cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <input type="radio" name="timingType" value="scheduled">
+                <div>
+                  <div style="font-weight: 700; font-size: 0.88rem;">Schedule Later</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Choose date and time</div>
+                </div>
+              </label>
+            </div>
+
+            <div id="scheduled-datetime-fields" style="display: none; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label class="form-label" style="font-size: 0.78rem;">Date:</label>
+                <input type="date" id="input-scheduled-date" class="form-input">
+              </div>
+              <div>
+                <label class="form-label" style="font-size: 0.78rem;">Time Slot:</label>
+                <input type="time" id="input-scheduled-time" class="form-input" value="10:00">
+              </div>
+            </div>
+          </div>
+
+          <!-- Dallas Location Selector -->
+          <div class="form-group">
+            <label class="form-label">Dallas Neighborhood:</label>
+            <select id="input-neighborhood" class="form-select">
+              <!-- Rendered dynamically -->
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Service Street Address:</label>
+            <input type="text" id="input-address" class="form-input" placeholder="e.g. 2800 McKinney Ave, Apt 402">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Task Notes / Instructions (Optional):</label>
+            <textarea id="input-notes" class="form-textarea" rows="2" placeholder="Gate codes, parking instructions, or specific handling notes..."></textarea>
+          </div>
+
+          <!-- Live Dynamic Price Breakdown Card -->
+          <div class="quote-breakdown-card" id="quote-card">
+            <div style="font-weight: 700; font-size: 0.95rem; color: var(--primary-navy); margin-bottom: 12px; display: flex; justify-content: space-between;">
+              <span>Pricing Estimate</span>
+              <span style="font-size: 0.78rem; font-weight: normal; color: var(--text-muted);">Guaranteed Upfront Rate</span>
+            </div>
+
+            <div class="quote-row">
+              <span id="quote-service-desc">Service Subtotal:</span>
+              <strong id="quote-subtotal">$0.00</strong>
+            </div>
+
+            <div class="quote-row">
+              <span>Platform Booking Fee (Disclosed):</span>
+              <strong id="quote-booking-fee">$10.00</strong>
+            </div>
+
+            <div class="quote-row total">
+              <span>Total Customer Price:</span>
+              <span id="quote-customer-total" style="color: var(--brand-emerald);">$0.00</span>
+            </div>
+
+            <div class="quote-disclaimer">
+              * Demonstration assumptions — Dallas pilot market. No hidden fees or bidding.
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-intake" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Cancel
+        </button>
+        <button class="btn-book-service" id="btn-submit-booking" style="width: auto; padding: 10px 24px;">
+          Confirm & Request Booking
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: ADMINISTRATIVE / DEMO MARKETPLACE METRICS
+       =================================================================== -->
+  <div class="modal-overlay" id="admin-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2>📊 Dallas Marketplace Performance (Admin)</h2>
+        <button class="modal-close-btn" id="btn-close-admin">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">
+          Demonstration summary of financial flows across Dallas bookings. Only visible in this administrative/demo view.
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
+          <div style="background: var(--bg-card-alt); padding: 16px; border-radius: var(--radius-md);">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Total Customer Billings</div>
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--primary-navy);" id="metric-customer-billings">$0.00</div>
+          </div>
+
+          <div style="background: var(--bg-card-alt); padding: 16px; border-radius: var(--radius-md);">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Worker Payouts Disbursed</div>
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-blue);" id="metric-worker-payouts">$0.00</div>
+          </div>
+        </div>
+
+        <div style="background: #ECFDF5; border: 1px solid #A7F3D0; padding: 18px; border-radius: var(--radius-md); margin-bottom: 20px;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: #065F46; text-transform: uppercase;">
+            Gross Platform Revenue Before Operating Expenses:
+          </div>
+          <div style="font-size: 2rem; font-weight: 800; color: var(--brand-emerald);" id="metric-gross-revenue">$0.00</div>
+          <div style="font-size: 0.75rem; color: #047857; margin-top: 4px;">
+            (Customer billings minus worker payouts. Excludes platform server, customer support, and insurance expenses.)
+          </div>
+        </div>
+
+        <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px;">
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary-navy); margin-bottom: 8px;">
+            Booking Status Overview:
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px;">
+            <span>Partially Filled Moving Jobs:</span>
+            <strong id="metric-partially-filled-count">0</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 6px;">
+            <span>Fully Confirmed Active Bookings:</span>
+            <strong id="metric-confirmed-count">0</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.85rem;">
+            <span>Completed Tasks:</span>
+            <strong id="metric-completed-count">0</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-book-service" id="btn-close-admin-btn" style="width: auto;">
+          Close Summary
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: SIMULATED PRO CASHOUT
+       =================================================================== -->
+  <div class="modal-overlay" id="cashout-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2>💵 Pro Simulated Cash-Out</h2>
+        <button class="modal-close-btn" id="btn-close-cashout">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 0.85rem; color: var(--text-muted);">Available for Transfer:</div>
+          <div style="font-size: 2.2rem; font-weight: 800; color: var(--brand-emerald);" id="cashout-modal-amount">$0.00</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Transfer Method:</label>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <label style="padding: 12px; border: 1px solid var(--border-dark); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="radio" name="cashoutMethod" value="instant" checked>
+                <div>
+                  <div style="font-weight: 700; font-size: 0.9rem;">Instant Cash-Out (Dallas Debit Card ****4012)</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Funds available in minutes ($1.50 simulated fee)</div>
+                </div>
+              </div>
+            </label>
+            <label style="padding: 12px; border: 1px solid var(--border-dark); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="radio" name="cashoutMethod" value="standard">
+                <div>
+                  <div style="font-weight: 700; font-size: 0.9rem;">Standard ACH Transfer (Bank of Texas ****8921)</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">1-2 business days (Free)</div>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); padding: 12px; border-radius: var(--radius-sm); font-size: 0.78rem; color: var(--text-muted);">
+          ⚠️ <strong>Demonstration Notice:</strong> Payout ledger is simulated in-browser. No real bank accounts or debit cards are charged or credited.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-cashout" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Cancel
+        </button>
+        <button class="btn-book-service" id="btn-confirm-cashout" style="width: auto; padding: 10px 24px;">
+          Confirm Simulated Transfer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: CUSTOMER REVIEW
+       =================================================================== -->
+  <div class="modal-overlay" id="review-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h2>⭐ Review Your Crewly Pro</h2>
+        <button class="modal-close-btn" id="btn-close-review">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="text-align: center; margin-bottom: 20px;">
+          <label class="form-label" style="font-size: 1rem;">Select Star Rating:</label>
+          <div style="font-size: 2rem; cursor: pointer;" id="star-rating-selector">
+            <span data-star="1">⭐</span>
+            <span data-star="2">⭐</span>
+            <span data-star="3">⭐</span>
+            <span data-star="4">⭐</span>
+            <span data-star="5">⭐</span>
+          </div>
+          <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary-navy);" id="star-rating-text">
+            5 Stars (Excellent Service)
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Written Feedback:</label>
+          <textarea id="input-review-text" class="form-textarea" rows="3" placeholder="Share your experience with the assigned worker(s)..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-review" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Cancel
+        </button>
+        <button class="btn-book-service" id="btn-submit-review" style="width: auto; padding: 10px 24px;">
+          Submit Review
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Alerts Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Core JavaScript Module -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
