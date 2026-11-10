@@ -27,7 +27,11 @@ import {
   simulateProCashOut,
   submitWorkerReview,
   flagReviewDispute,
-  getDallasLocalNow
+  getDallasLocalNow,
+  isAsapExpired,
+  getAsapRemainingMinutes,
+  extendAsapBooking,
+  rescheduleBooking
 } from './matching.js';
 
 // Global UI State
@@ -38,6 +42,33 @@ let pendingReviewWorkerName = null;
 let pendingReviewRoleTitle = null;
 let currentRatingSelection = 5;
 let currentJobBoardFilter = 'available';
+let pendingRescheduleBookingId = null;
+
+// ---------------------------------------------------------------------------
+// Timing Formatting Utility (Separates human labels from valid ISO/time values)
+// ---------------------------------------------------------------------------
+export function formatBookingTiming(booking) {
+  if (!booking) return '';
+  if (booking.timingType === 'asap') {
+    const expired = isAsapExpired(booking);
+    const hasUnassigned = (booking.workerAssignments || []).some(s => s.status === 'unassigned');
+    const isCompleted = booking.overallStatus === 'completed';
+    const isCancelled = booking.overallStatus === 'cancelled';
+
+    if (isCompleted || isCancelled) {
+      return `ASAP Dispatch • ${booking.scheduledDate} (${booking.scheduledTime})`;
+    }
+    if (hasUnassigned && expired) {
+      return `ASAP — Window Expired (Requested: ${booking.scheduledTime})`;
+    }
+    if (hasUnassigned) {
+      const remaining = getAsapRemainingMinutes(booking);
+      return `ASAP — Seeking Pros (${remaining}m window remaining)`;
+    }
+    return `ASAP Dispatch • Requested at ${booking.scheduledTime}`;
+  }
+  return `Scheduled: ${booking.scheduledDate} at ${booking.scheduledTime}`;
+}
 
 // ---------------------------------------------------------------------------
 // Toast Notification Utility
@@ -531,9 +562,15 @@ function renderCustomerActiveBookings() {
     };
     const currentStep = statusMap[b.overallStatus] || 1;
 
+    const isAsap = b.timingType === 'asap';
+    const isExpired = isAsap && isAsapExpired(b);
+    const hasUnassigned = b.workerAssignments.some(s => s.status === 'unassigned');
+
     // Status Badge
     let statusBadgeHtml = '';
-    if (b.overallStatus === 'partially_filled') {
+    if (isExpired && hasUnassigned) {
+      statusBadgeHtml = `<span class="status-badge waiting" style="background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B;">⏱️ Window Expired</span>`;
+    } else if (b.overallStatus === 'partially_filled') {
       statusBadgeHtml = `<span class="status-badge partially_filled">⚠️ Partially Filled (${b.workerAssignments.filter(s => s.status !== 'unassigned').length}/${b.workerAssignments.length} Assigned)</span>`;
     } else if (b.overallStatus === 'waiting_for_pros') {
       statusBadgeHtml = `<span class="status-badge waiting">⏳ Waiting for Pros</span>`;
@@ -543,15 +580,43 @@ function renderCustomerActiveBookings() {
       statusBadgeHtml = `<span class="status-badge in_progress">⚡ Active (${b.overallStatus})</span>`;
     }
 
-    // Partial fulfillment alert banner (Mandatory for multi-worker jobs)
+    // Partial fulfillment alert banner (Mandatory for multi-worker jobs) & ASAP Expired recovery banner
     let alertBannerHtml = '';
-    if (b.overallStatus === 'partially_filled' || b.overallStatus === 'waiting_for_pros') {
+    if (isExpired && hasUnassigned) {
+      alertBannerHtml = `
+        <div class="asap-expired-banner" style="background: #FFFBEB; border: 1px solid #F59E0B; border-radius: var(--radius-md); padding: 14px 16px; margin: 12px 0 16px 0;">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 240px;">
+              <strong style="color: #92400E; display: flex; align-items: center; gap: 6px;">
+                <span>⏱️</span> ASAP Matching Window Expired
+              </strong>
+              <div style="font-size: 0.83rem; color: #78350F; margin-top: 4px;">
+                Pros are currently busy in your area. You can extend our search for another 30 minutes, or reschedule for a convenient future time.
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <button class="btn-extend-asap" data-booking-id="${b.id}" style="padding: 8px 14px; background: #D97706; color: white; border: none; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.82rem; cursor: pointer;">
+                + Extend Search (+30 min)
+              </button>
+              <button class="btn-open-reschedule" data-booking-id="${b.id}" style="padding: 8px 14px; background: white; border: 1px solid #D97706; color: #92400E; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.82rem; cursor: pointer;">
+                📅 Reschedule
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    } else if (b.overallStatus === 'partially_filled' || b.overallStatus === 'waiting_for_pros') {
       alertBannerHtml = `
         <div class="partial-fulfillment-alert">
           <span style="font-size: 1.2rem;">⚠️</span>
-          <div>
+          <div style="flex: 1;">
             <strong>Booking Not Fully Confirmed Yet:</strong>
             ${b.partialFulfillmentNotice}
+          </div>
+          <div>
+            <button class="btn-open-reschedule" data-booking-id="${b.id}" style="padding: 4px 10px; background: white; border: 1px solid var(--border-dark); border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; cursor: pointer; color: var(--text-secondary);">
+              📅 Reschedule
+            </button>
           </div>
         </div>
       `;
@@ -596,7 +661,7 @@ function renderCustomerActiveBookings() {
               <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--primary-navy);">${b.serviceTitle}</h3>
             </div>
             <div style="font-size: 0.84rem; color: var(--text-secondary);">
-              📍 ${b.neighborhoodName} • Scheduled: <strong>${b.scheduledDate} at ${b.scheduledTime}</strong>
+              📍 ${b.neighborhoodName} • <strong>${formatBookingTiming(b)}</strong>
             </div>
           </div>
           <div>
@@ -695,6 +760,50 @@ function renderCustomerActiveBookings() {
         saveState(state);
         input.value = '';
         renderCustomerActiveBookings();
+      }
+    });
+  });
+
+  // Attach Extend ASAP Search handlers
+  container.querySelectorAll('.btn-extend-asap').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const bookingId = e.currentTarget.getAttribute('data-booking-id');
+      const res = extendAsapBooking(bookingId, 30);
+      if (res.success) {
+        showToast(`Extended search for ${bookingId} by 30 minutes! Looking for pros.`, '⏳');
+        renderAll();
+      } else {
+        showToast(res.error || 'Failed to extend search.', '⚠️');
+      }
+    });
+  });
+
+  // Attach Reschedule modal trigger handlers
+  container.querySelectorAll('.btn-open-reschedule').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const bookingId = e.currentTarget.getAttribute('data-booking-id');
+      pendingRescheduleBookingId = bookingId;
+      const state = loadState();
+      const b = state.bookings.find(bk => bk.id === bookingId);
+      const dallasNow = getDallasLocalNow();
+
+      const modal = document.getElementById('reschedule-modal');
+      const subtitle = document.getElementById('reschedule-modal-subtitle');
+      const dateInput = document.getElementById('input-reschedule-date');
+      const timeInput = document.getElementById('input-reschedule-time');
+
+      if (subtitle && b) {
+        subtitle.textContent = `Rescheduling Booking ${b.id} (${b.serviceTitle})`;
+      }
+      if (dateInput) {
+        dateInput.min = dallasNow.dateStr;
+        dateInput.value = b && b.scheduledDate >= dallasNow.dateStr ? b.scheduledDate : dallasNow.dateStr;
+      }
+      if (timeInput) {
+        timeInput.value = '10:00';
+      }
+      if (modal) {
+        modal.classList.add('open');
       }
     });
   });
@@ -915,7 +1024,7 @@ function renderProActiveAssignments(activePro) {
         </div>
 
         <div style="margin: 14px 0; font-size: 0.85rem; color: var(--text-secondary);">
-          Scheduled: <strong>${b.scheduledDate} at ${b.scheduledTime}</strong> • Customer: <strong>${b.customerName}</strong>
+          <strong>${formatBookingTiming(b)}</strong> • Customer: <strong>${b.customerName}</strong>
         </div>
 
         ${
@@ -1066,8 +1175,10 @@ function renderProJobBoard(activePro) {
     const unassignedSlots = b.workerAssignments.filter(s => s.status === 'unassigned');
     unassignedSlots.forEach(slot => {
       const eligibility = canProAcceptSlot(activePro.id, b.id, slot.slotId);
-      const isPast = b.scheduledDate < dallasNow.dateStr || (b.scheduledDate === dallasNow.dateStr && b.scheduledTime && b.scheduledTime < dallasNow.timeStr);
-      const isFuture = b.scheduledDate > dallasNow.dateStr;
+      const isPast = b.timingType === 'asap'
+        ? isAsapExpired(b)
+        : (b.scheduledDate < dallasNow.dateStr || (b.scheduledDate === dallasNow.dateStr && b.scheduledTime && b.scheduledTime < dallasNow.timeStr));
+      const isFuture = b.timingType !== 'asap' && b.scheduledDate > dallasNow.dateStr;
 
       allJobItems.push({
         booking: b,
@@ -1168,7 +1279,7 @@ function renderProJobBoard(activePro) {
         <div class="job-meta-row">
           <div class="job-meta-item">📍 Area: <strong>${b.neighborhoodName}</strong></div>
           <div class="job-meta-item">📅 Date: <strong>${b.scheduledDate}</strong></div>
-          <div class="job-meta-item">⏰ Time: <strong>${b.scheduledTime}</strong></div>
+          <div class="job-meta-item">⏰ Schedule: <strong>${b.timingType === 'asap' ? (isAsapExpired(b) ? 'ASAP (Window Expired)' : `ASAP — Seeking Pros (${b.scheduledTime})`) : b.scheduledTime}</strong></div>
           <div class="job-meta-item">⏱️ Duration: <strong>${b.estimatedDurationHours} hrs</strong></div>
         </div>
 
@@ -1431,6 +1542,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Review modal
   setupReviewModal();
+
+  // Reschedule modal handlers (Stage 1.2 Adjustment 3)
+  const rescheduleModal = document.getElementById('reschedule-modal');
+  const btnCloseReschedule = document.getElementById('btn-close-reschedule');
+  const btnCancelReschedule = document.getElementById('btn-cancel-reschedule');
+  const btnConfirmReschedule = document.getElementById('btn-confirm-reschedule');
+
+  const closeRescheduleModal = () => {
+    if (rescheduleModal) rescheduleModal.classList.remove('open');
+    pendingRescheduleBookingId = null;
+  };
+
+  if (btnCloseReschedule) btnCloseReschedule.addEventListener('click', closeRescheduleModal);
+  if (btnCancelReschedule) btnCancelReschedule.addEventListener('click', closeRescheduleModal);
+
+  if (btnConfirmReschedule) {
+    btnConfirmReschedule.addEventListener('click', () => {
+      if (!pendingRescheduleBookingId) return;
+      const dateInput = document.getElementById('input-reschedule-date');
+      const timeInput = document.getElementById('input-reschedule-time');
+      const newDate = dateInput ? dateInput.value : '';
+      const newTime = timeInput ? timeInput.value : '';
+
+      if (!newDate || !newTime) {
+        showToast('Please select both a date and time to reschedule.', '⚠️');
+        return;
+      }
+
+      const res = rescheduleBooking(pendingRescheduleBookingId, { newDate, newTime });
+      if (res.success) {
+        let msg = `Booking rescheduled to ${newDate} at ${newTime}.`;
+        if (res.unassignedPros && res.unassignedPros.length > 0) {
+          msg += ` (${res.unassignedPros.length} Pro assignment(s) unassigned due to schedule conflict)`;
+        }
+        showToast(msg, '📅');
+        closeRescheduleModal();
+        renderAll();
+      } else {
+        showToast(res.error || 'Failed to reschedule booking.', '⚠️');
+      }
+    });
+  }
 
   // Job Board Category Filter Tab Handlers (Priority 5)
   document.getElementById('job-filter-available')?.addEventListener('click', () => {

@@ -139,3 +139,25 @@ Every build iteration must pass the following test benchmarks:
 17. **Test 17 (Pro Job Board Filters):** Pro job board offers Available to Me, Upcoming Jobs, and Conflicts / Ineligible filters, excluding expired past schedules.
 18. **Test 18 (Pro Completed-Job History):** "My Completed Jobs" displays only the active Pro's completed tasks, individual payout, and individual rating with customer street addresses omitted.
 
+**Version 2 Stage 1.2 Tests (added):**
+19. **Test 19 (ASAP Matching Window & Pro Acceptance):** When a customer submits an ASAP moving request (2 movers), Marcus can accept slot 1 at T=0. Jamar can accept slot 2 at T+5, T+15, and T+30 minutes without being rejected as expired.
+20. **Test 20 (ASAP Expiration Enforcement):** At T+65 minutes (past the 60-minute window), an unassigned slot is blocked with "ASAP matching window has expired" and categorized under Ineligible/Expired.
+21. **Test 21 (Extend Search Window):** When the customer extends an expired search (+30 min), the new deadline is calculated from `max(now, existingDeadline) + 30m`. The booking returns to `waiting_for_pros` or `partially_filled` and becomes immediately acceptable on the job board.
+22. **Test 22 (Separate Scheduled Expiration):** Scheduled appointments continue to enforce strict past-date/time checks. An appointment scheduled for earlier today or a past date cannot be booked or accepted.
+23. **Test 23 (Multi-Worker Coordinated Intervals):** Multi-worker moving bookings share one coordinated work period `[startMin, endMin]` (accounting for 30m dispatch buffer). Pros with overlapping active jobs are blocked from double-booking.
+24. **Test 24 (Rescheduling with Pro Conflict Unassignment):** Rescheduling a booking to a time when an assigned Pro has a schedule conflict unassigns the conflicting Pro, restores their pending balance, updates the booking status, and leaves non-conflicting Pros assigned.
+25. **Test 25 (Timestamp Integrity):** `scheduledTime` strictly stores valid `HH:MM` timestamps. Human-readable statuses ("ASAP — Seeking Pros") are strictly presentation-layer labels rendered by `formatBookingTiming()`.
+
+---
+
+## 10. Stage 1.2 Matching & Scheduling Rules
+- **Configurable ASAP Window:** Defined as `ASAP_MATCHING_WINDOW_MINUTES = 60` and `ASAP_DISPATCH_BUFFER_MINUTES = 30` in `data.js`.
+- **Separate Expiration Logic:**
+  - `timingType === 'asap'`: Expiration evaluated via `isAsapExpired(booking, nowMs)` comparing `nowMs > booking.asapExpiresAt`.
+  - `timingType === 'scheduled'`: Expiration evaluated against exact Dallas appointment date and time (`booking.scheduledDate` and `booking.scheduledTime`).
+- **Timestamp Separation:** All timestamps in state objects (`scheduledTime`, `asapRequestedAt`, `asapExpiresAt`) must be ISO strings or standard 24-hour time strings (`HH:MM`). Textual statuses such as `"ASAP — Seeking Pros (45m window remaining)"` or `"ASAP — Window Expired"` are strictly generated dynamically by `formatBookingTiming()`.
+- **Multi-Worker Coordinated Work Window:** Function `getBookingWorkInterval(booking)` computes `{ date, startMin, endMin, durationMinutes }`. All workers on the booking share this period. `canProAcceptSlot()` verifies that candidate Pros have no overlapping active work intervals on that date (`startA < endB && startB < endA`).
+- **Extend Search:** Function `extendAsapBooking(bookingId, additionalMinutes = 30)` sets `asapExpiresAt = max(now, existingDeadline) + additionalMinutes`, updates status back to `partially_filled` or `waiting_for_pros`, and logs a system dispatch notification.
+- **Reschedule Booking:** Function `rescheduleBooking(bookingId, { newDate, newTime })` validates that the new appointment is in the future, updates schedule fields, and re-evaluates all assigned Pros with `canProAcceptSlot()`. Any Pro who does not fit is gracefully unassigned and their pending earnings adjusted.
+
+

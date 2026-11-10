@@ -27,6 +27,10 @@ export const DALLAS_SERVICE_ZIPS = {
   '75226': { areaName: 'Deep Ellum', neighborhoodId: 'deep_ellum' }
 };
 
+// Configurable ASAP matching window (60 minutes) and initial travel/prep arrival buffer (30 minutes)
+export const ASAP_MATCHING_WINDOW_MINUTES = 60;
+export const ASAP_DISPATCH_BUFFER_MINUTES = 30;
+
 export function lookupDallasZip(zip) {
   const cleanZip = String(zip || '').trim().slice(0, 5);
   if (DALLAS_SERVICE_ZIPS[cleanZip]) {

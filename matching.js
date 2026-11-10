@@ -9,6 +9,8 @@ import {
   DALLAS_NEIGHBORHOODS,
   DALLAS_SERVICE_ZIPS,
   lookupDallasZip,
+  ASAP_MATCHING_WINDOW_MINUTES,
+  ASAP_DISPATCH_BUFFER_MINUTES,
   INITIAL_PROS,
   INITIAL_CUSTOMERS,
   INITIAL_BOOKINGS
@@ -17,7 +19,7 @@ import {
 const STORAGE_KEY = 'crewly_marketplace_state_v1';
 
 // ---------------------------------------------------------------------------
-// 0. Dallas Pilot Local Time & Helpers
+// 0. Dallas Pilot Local Time & Scheduling Helpers
 // ---------------------------------------------------------------------------
 export function getDallasLocalNow() {
   const now = new Date();
@@ -37,6 +39,52 @@ export function getDallasLocalNow() {
   const dateStr = `${partMap.year}-${partMap.month}-${partMap.day}`;
   const timeStr = `${hour}:${partMap.minute}`;
   return { dateStr, timeStr, fullDate: new Date(`${dateStr}T${timeStr}:00`) };
+}
+
+export function isAsapExpired(booking, nowMs) {
+  if (!booking || booking.timingType !== 'asap') return false;
+  if (!booking.asapExpiresAt) return false;
+  const current = typeof nowMs === 'number' ? nowMs : Date.now();
+  return current > new Date(booking.asapExpiresAt).getTime();
+}
+
+export function getAsapRemainingMinutes(booking, nowMs) {
+  if (!booking || booking.timingType !== 'asap') return 0;
+  if (!booking.asapExpiresAt) return 0;
+  const current = typeof nowMs === 'number' ? nowMs : Date.now();
+  const diffMs = new Date(booking.asapExpiresAt).getTime() - current;
+  return Math.max(0, Math.ceil(diffMs / (60 * 1000)));
+}
+
+/**
+ * Returns a coordinated work interval [startMin, endMin] for an assignment.
+ * All Pros on the same multi-worker booking share this coordinated work period.
+ * Uses realistic transit/arrival assumptions (30m buffer for ASAP dispatch).
+ */
+export function getBookingWorkInterval(booking) {
+  const durationMinutes = Math.round((parseFloat(booking.estimatedDurationHours) || 1.5) * 60);
+
+  let startMin = 600; // default 10:00 AM
+  const timeStr = booking.scheduledTime || '10:00';
+  if (timeStr.includes(':')) {
+    const [h, m] = timeStr.split(':').map(Number);
+    if (!isNaN(h) && !isNaN(m)) {
+      startMin = h * 60 + m;
+    }
+  }
+
+  // For ASAP bookings, work starts after realistic travel/arrival buffer
+  if (booking.timingType === 'asap') {
+    startMin += (ASAP_DISPATCH_BUFFER_MINUTES || 30);
+  }
+
+  const endMin = startMin + durationMinutes;
+  return {
+    date: booking.scheduledDate,
+    startMin,
+    endMin,
+    durationMinutes
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -84,6 +132,20 @@ function migrateStateIfNeeded(state) {
         b.customerId = 'cust_sarah';
       }
       dirty = true;
+    }
+
+    // --- Migrate: ASAP window fields on existing bookings ---
+    if (b.timingType === 'asap') {
+      if (!b.asapRequestedAt) {
+        b.asapRequestedAt = b.createdAt || new Date().toISOString();
+        dirty = true;
+      }
+      if (!b.asapExpiresAt) {
+        const reqTime = new Date(b.asapRequestedAt).getTime();
+        b.asapExpiresAt = new Date(reqTime + (ASAP_MATCHING_WINDOW_MINUTES || 60) * 60 * 1000).toISOString();
+        b.asapMatchingWindowMinutes = ASAP_MATCHING_WINDOW_MINUTES || 60;
+        dirty = true;
+      }
     }
 
     // --- Migrate: per-slot payoutReleased flag ---
@@ -282,10 +344,15 @@ export function createBooking({
   // Validate timing (Priority 2: Prevent Past-Date Bookings)
   let finalDate = scheduledDate;
   let finalTime = scheduledTime;
+  let asapRequestedAt = null;
+  let asapExpiresAt = null;
 
   if (timingType === 'asap') {
+    const nowMs = Date.now();
+    asapRequestedAt = new Date(nowMs).toISOString();
+    asapExpiresAt = new Date(nowMs + (ASAP_MATCHING_WINDOW_MINUTES || 60) * 60 * 1000).toISOString();
     finalDate = dallasNow.dateStr;
-    finalTime = dallasNow.timeStr;
+    finalTime = dallasNow.timeStr; // Valid HH:MM timestamp
   } else {
     if (!finalDate || finalDate < dallasNow.dateStr) {
       throw new Error(`Scheduled date (${finalDate || 'unspecified'}) cannot be in the past.`);
@@ -351,6 +418,9 @@ export function createBooking({
     timingType: timingType || 'scheduled',
     scheduledDate: finalDate,
     scheduledTime: finalTime || '10:00',
+    asapRequestedAt,
+    asapExpiresAt,
+    asapMatchingWindowMinutes: timingType === 'asap' ? (ASAP_MATCHING_WINDOW_MINUTES || 60) : null,
     estimatedDurationHours: hours,
     workersNeeded: workersCount,
     serviceDetails: intakeDetails,
@@ -387,7 +457,7 @@ export function createBooking({
 // ---------------------------------------------------------------------------
 // 5. Rule-Based Eligibility & Conflict Check Engine
 // ---------------------------------------------------------------------------
-export function canProAcceptSlot(proId, bookingId, slotId) {
+export function canProAcceptSlot(proId, bookingId, slotId, options = {}) {
   const state = loadState();
   const pro = state.pros.find(p => p.id === proId);
   const booking = state.bookings.find(b => b.id === bookingId);
@@ -398,21 +468,34 @@ export function canProAcceptSlot(proId, bookingId, slotId) {
   const slot = booking.workerAssignments.find(s => s.slotId === slotId);
   if (!slot) return { allowed: false, reason: 'Assignment slot not found.' };
 
-  // Rule 0: PAST SCHEDULE CHECK (Cannot accept appointments that have already passed)
+  // Rule 0: EXPIRATION CHECK (Separated ASAP matching window vs Scheduled exact appointment)
   const dallasNow = getDallasLocalNow();
-  if (booking.scheduledDate) {
-    if (booking.scheduledDate < dallasNow.dateStr) {
+  const currentMs = (options && typeof options.currentTimeMs === 'number') ? options.currentTimeMs : Date.now();
+
+  if (booking.timingType === 'asap') {
+    // Priority 1 & 2: ASAP requests remain available during the configurable 60m matching window
+    if (isAsapExpired(booking, currentMs)) {
       return {
         allowed: false,
-        reason: `Schedule Expired: This appointment was scheduled for ${booking.scheduledDate}, which has already passed.`
+        reason: 'ASAP matching window has expired. Waiting for customer to extend search (+30 min) or reschedule.'
       };
     }
-    if (booking.scheduledDate === dallasNow.dateStr && booking.scheduledTime && booking.scheduledTime.includes(':')) {
-      if (booking.scheduledTime < dallasNow.timeStr) {
+  } else {
+    // Scheduled appointments require future date & time
+    if (booking.scheduledDate) {
+      if (booking.scheduledDate < dallasNow.dateStr) {
         return {
           allowed: false,
-          reason: `Schedule Expired: Scheduled time (${booking.scheduledTime}) has already passed today.`
+          reason: `Schedule Expired: This appointment was scheduled for ${booking.scheduledDate}, which has already passed.`
         };
+      }
+      if (booking.scheduledDate === dallasNow.dateStr && booking.scheduledTime && booking.scheduledTime.includes(':')) {
+        if (booking.scheduledTime < dallasNow.timeStr) {
+          return {
+            allowed: false,
+            reason: `Schedule Expired: Scheduled time (${booking.scheduledTime}) has already passed today.`
+          };
+        }
       }
     }
   }
@@ -456,23 +539,27 @@ export function canProAcceptSlot(proId, bookingId, slotId) {
     }
   }
 
-  // Rule 5: SCHEDULE CONFLICT DETECTION
+  // Rule 5: REALISTIC WORK-PERIOD SCHEDULE CONFLICT DETECTION (Adjustment 2)
+  // Calculates conflicts using the expected work period rather than only the original request minute.
+  // All Pros on the same moving booking share one coordinated estimated work window.
+  const thisInterval = getBookingWorkInterval(booking);
+
   const conflictingBooking = state.bookings.find(other => {
     if (other.id === booking.id) return false;
     if (other.overallStatus === 'completed' || other.overallStatus === 'cancelled') return false;
 
-    // Is pro assigned to any slot in this other booking?
+    // Is pro assigned to any active slot in this other booking?
     const proIsAssigned = other.workerAssignments.some(s =>
       s.assignedProId === pro.id && s.status !== 'completed'
     );
     if (!proIsAssigned) return false;
 
-    // Compare date & time proximity
+    // Compare date & interval overlap
     if (other.scheduledDate === booking.scheduledDate) {
-      const thisTimeHour = parseInt((booking.scheduledTime || '10:00').split(':')[0], 10);
-      const otherTimeHour = parseInt((other.scheduledTime || '10:00').split(':')[0], 10);
-      // If within 2 hours of each other on same day, flag as schedule conflict
-      if (!isNaN(thisTimeHour) && !isNaN(otherTimeHour) && Math.abs(thisTimeHour - otherTimeHour) < 2) {
+      const otherInterval = getBookingWorkInterval(other);
+      // Interval overlap check: [startA, endA) overlaps [startB, endB)
+      const overlaps = (thisInterval.startMin < otherInterval.endMin && otherInterval.startMin < thisInterval.endMin);
+      if (overlaps) {
         return true;
       }
     }
@@ -480,9 +567,11 @@ export function canProAcceptSlot(proId, bookingId, slotId) {
   });
 
   if (conflictingBooking) {
+    const otherInterval = getBookingWorkInterval(conflictingBooking);
+    const formatMin = (m) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
     return {
       allowed: false,
-      reason: `Schedule Conflict: You are already assigned to booking ${conflictingBooking.id} on ${conflictingBooking.scheduledDate} around ${conflictingBooking.scheduledTime}.`
+      reason: `Schedule Conflict: You are already assigned to booking ${conflictingBooking.id} on ${conflictingBooking.scheduledDate} (work window ${formatMin(otherInterval.startMin)}–${formatMin(otherInterval.endMin)}).`
     };
   }
 
@@ -674,6 +763,146 @@ export function evaluateAutoBookForBooking(bookingId) {
       }
     }
   }
+}
+
+// ---------------------------------------------------------------------------
+// 8b. ASAP Extension & Rescheduling Logic (Stage 1.2 Adjustment 3)
+// ---------------------------------------------------------------------------
+export function extendAsapBooking(bookingId, additionalMinutes = 30) {
+  const state = loadState();
+  const booking = state.bookings.find(b => b.id === bookingId);
+  if (!booking) return { success: false, error: 'Booking not found.' };
+  if (booking.timingType !== 'asap') {
+    return { success: false, error: 'Only ASAP bookings can have their search window extended.' };
+  }
+
+  // Calculate new deadline from the later of current time or existing deadline
+  const currentMs = Date.now();
+  const existingDeadlineMs = booking.asapExpiresAt ? new Date(booking.asapExpiresAt).getTime() : currentMs;
+  const baseMs = Math.max(currentMs, existingDeadlineMs);
+  const newDeadlineMs = baseMs + (additionalMinutes * 60 * 1000);
+
+  booking.asapExpiresAt = new Date(newDeadlineMs).toISOString();
+  booking.asapMatchingWindowMinutes = (booking.asapMatchingWindowMinutes || 60) + additionalMinutes;
+
+  // An expired booking must become eligible again for matching on the job board
+  const totalSlots = booking.workerAssignments.length;
+  const assignedSlots = booking.workerAssignments.filter(s => s.status !== 'unassigned').length;
+  if (assignedSlots < totalSlots) {
+    booking.overallStatus = assignedSlots > 0 ? 'partially_filled' : 'waiting_for_pros';
+    booking.partialFulfillmentNotice = `${assignedSlots} of ${totalSlots} workers assigned. Crewly is matching remaining position(s).`;
+  }
+
+  booking.messages.push({
+    id: `msg_${Date.now()}`,
+    senderRole: 'system',
+    senderName: 'Crewly Dispatch',
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    text: `Customer extended Pro search window by ${additionalMinutes} minutes. Dispatch active on Dallas Job Board.`
+  });
+
+  saveState(state);
+  return { success: true, booking, newExpiresAt: booking.asapExpiresAt };
+}
+
+export function rescheduleBooking(bookingId, { newDate, newTime }) {
+  const state = loadState();
+  const booking = state.bookings.find(b => b.id === bookingId);
+  if (!booking) return { success: false, error: 'Booking not found.' };
+  if (booking.overallStatus === 'completed' || booking.overallStatus === 'cancelled') {
+    return { success: false, error: 'Completed or cancelled bookings cannot be rescheduled.' };
+  }
+
+  const dallasNow = getDallasLocalNow();
+
+  // Validate that new appointment is strictly in the future
+  if (!newDate || newDate < dallasNow.dateStr) {
+    return { success: false, error: `Scheduled date (${newDate || 'empty'}) cannot be in the past.` };
+  }
+  if (newDate === dallasNow.dateStr && (!newTime || newTime < dallasNow.timeStr)) {
+    return { success: false, error: `Scheduled time (${newTime}) has already passed today.` };
+  }
+
+  // Update booking schedule
+  booking.timingType = 'scheduled';
+  booking.scheduledDate = newDate;
+  booking.scheduledTime = newTime;
+  delete booking.asapExpiresAt;
+  delete booking.asapRequestedAt;
+
+  // Recheck existing worker assignments for conflicts
+  // Requirement: Do not silently retain assignments that no longer fit the updated schedule.
+  // Snapshot current assignments before rechecking
+  const assignedSlotsInfo = booking.workerAssignments
+    .filter(s => s.assignedProId)
+    .map(s => ({
+      slotId: s.slotId,
+      proId: s.assignedProId,
+      proName: s.assignedProName,
+      payout: s.payout
+    }));
+
+  // Temporarily mark slots unassigned and save state so canProAcceptSlot evaluates with new schedule
+  booking.workerAssignments.forEach(slot => {
+    slot.status = 'unassigned';
+    slot.assignedProId = null;
+    slot.assignedProName = null;
+  });
+  saveState(state);
+
+  const unassignedPros = [];
+  assignedSlotsInfo.forEach(info => {
+    const currentState = loadState();
+    const currentBooking = currentState.bookings.find(b => b.id === bookingId);
+    const slot = currentBooking ? currentBooking.workerAssignments.find(s => s.slotId === info.slotId) : null;
+    if (!slot) return;
+
+    const check = canProAcceptSlot(info.proId, bookingId, slot.slotId);
+    if (check.allowed) {
+      // Worker fits the rescheduled time! Reassign
+      slot.assignedProId = info.proId;
+      slot.assignedProName = info.proName;
+      slot.status = 'assigned';
+      saveState(currentState);
+    } else {
+      // Worker has a conflict with the new time! Remove and deduct pending balance
+      unassignedPros.push({ name: info.proName, reason: check.reason });
+      const pro = currentState.pros.find(p => p.id === info.proId);
+      if (pro && pro.earnings) {
+        pro.earnings.pendingBalance = Math.max(0, (pro.earnings.pendingBalance || 0) - (info.payout || 0));
+      }
+      saveState(currentState);
+    }
+  });
+
+  // Reload latest state to compute overall status and dispatch notification
+  const finalState = loadState();
+  const finalBooking = finalState.bookings.find(b => b.id === bookingId);
+  const totalSlots = finalBooking.workerAssignments.length;
+  const assignedSlots = finalBooking.workerAssignments.filter(s => s.status !== 'unassigned').length;
+  if (assignedSlots === totalSlots) {
+    finalBooking.overallStatus = 'fully_confirmed';
+    finalBooking.partialFulfillmentNotice = null;
+  } else {
+    finalBooking.overallStatus = assignedSlots > 0 ? 'partially_filled' : 'waiting_for_pros';
+    finalBooking.partialFulfillmentNotice = `${assignedSlots} of ${totalSlots} workers assigned. Crewly is matching remaining position(s).`;
+  }
+
+  let statusMsg = `Booking rescheduled to ${newDate} at ${newTime}.`;
+  if (unassignedPros.length > 0) {
+    statusMsg += ` Note: ${unassignedPros.map(p => `${p.name} unassigned (${p.reason})`).join(', ')}.`;
+  }
+
+  finalBooking.messages.push({
+    id: `msg_${Date.now()}`,
+    senderRole: 'system',
+    senderName: 'Crewly Dispatch',
+    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    text: statusMsg
+  });
+
+  saveState(finalState);
+  return { success: true, booking: finalBooking, unassignedPros };
 }
 
 // ---------------------------------------------------------------------------

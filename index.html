@@ -536,6 +536,44 @@
     </div>
   </div>
 
+  <!-- ===================================================================
+       MODAL: CUSTOMER RESCHEDULE (Stage 1.2 Adjustment 3)
+       =================================================================== -->
+  <div class="modal-overlay" id="reschedule-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h2>📅 Reschedule Appointment</h2>
+          <p id="reschedule-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
+            Select a new future date and time for your booking
+          </p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-reschedule">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: #EFF6FF; border-left: 4px solid var(--accent-blue); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #1E40AF;">
+          <strong>Rescheduling Notice:</strong> Existing worker assignments will be rechecked. Any worker with a schedule conflict or unavailability will be automatically unassigned so a replacement Pro can be matched.
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Appointment Date:</label>
+          <input type="date" id="input-reschedule-date" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Time Slot:</label>
+          <input type="time" id="input-reschedule-time" class="form-input" value="10:00" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-reschedule" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Cancel
+        </button>
+        <button class="btn-book-service" id="btn-confirm-reschedule" style="width: auto; padding: 10px 24px;">
+          Confirm Reschedule
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Alerts Container -->
   <div class="toast-container" id="toast-container"></div>
 
