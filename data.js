@@ -5,8 +5,8 @@
  */
 
 export const DALLAS_NEIGHBORHOODS = [
-  { id: 'uptown', name: 'Uptown Dallas', zip: '75201', sampleDistanceMiles: 2.4 },
-  { id: 'downtown', name: 'Downtown Dallas', zip: '75202', sampleDistanceMiles: 1.8 },
+  { id: 'uptown', name: 'Uptown Dallas', zip: '75204', sampleDistanceMiles: 2.4 },
+  { id: 'downtown', name: 'Downtown Dallas', zip: '75201', sampleDistanceMiles: 1.8 },
   { id: 'deep_ellum', name: 'Deep Ellum', zip: '75226', sampleDistanceMiles: 3.1 },
   { id: 'bishop_arts', name: 'Bishop Arts District', zip: '75208', sampleDistanceMiles: 4.5 },
   { id: 'lakewood', name: 'Lakewood / East Dallas', zip: '75214', sampleDistanceMiles: 5.2 },
@@ -14,6 +14,35 @@ export const DALLAS_NEIGHBORHOODS = [
   { id: 'lower_greenville', name: 'Lower Greenville', zip: '75206', sampleDistanceMiles: 4.1 },
   { id: 'preston_hollow', name: 'Preston Hollow', zip: '75225', sampleDistanceMiles: 7.8 }
 ];
+
+export const DALLAS_SERVICE_ZIPS = {
+  '75201': { areaName: 'Downtown / Arts District', neighborhoodId: 'downtown' },
+  '75202': { areaName: 'Downtown Dallas', neighborhoodId: 'downtown' },
+  '75204': { areaName: 'Uptown / West Village', neighborhoodId: 'uptown' },
+  '75206': { areaName: 'Lower Greenville', neighborhoodId: 'lower_greenville' },
+  '75208': { areaName: 'Bishop Arts / Oak Cliff', neighborhoodId: 'bishop_arts' },
+  '75214': { areaName: 'Lakewood / East Dallas', neighborhoodId: 'lakewood' },
+  '75219': { areaName: 'Oak Lawn', neighborhoodId: 'oak_lawn' },
+  '75225': { areaName: 'Preston Hollow', neighborhoodId: 'preston_hollow' },
+  '75226': { areaName: 'Deep Ellum', neighborhoodId: 'deep_ellum' }
+};
+
+export function lookupDallasZip(zip) {
+  const cleanZip = String(zip || '').trim().slice(0, 5);
+  if (DALLAS_SERVICE_ZIPS[cleanZip]) {
+    return {
+      valid: true,
+      zip: cleanZip,
+      areaName: DALLAS_SERVICE_ZIPS[cleanZip].areaName,
+      neighborhoodId: DALLAS_SERVICE_ZIPS[cleanZip].neighborhoodId
+    };
+  }
+  return {
+    valid: false,
+    zip: cleanZip,
+    message: 'Crewly pilot is currently limited to Dallas pilot ZIP codes (75201, 75202, 75204, 75206, 75208, 75214, 75219, 75225, 75226). Surrounding metroplex cities are scheduled for Phase 2 expansion.'
+  };
+}
 
 export const FUTURE_EXPANSION_CITIES = [
   { name: 'Plano, TX', status: 'Expansion Phase 2' },

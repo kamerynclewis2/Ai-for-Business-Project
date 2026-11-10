@@ -7,6 +7,8 @@
 import {
   PRICING_RATES,
   DALLAS_NEIGHBORHOODS,
+  DALLAS_SERVICE_ZIPS,
+  lookupDallasZip,
   INITIAL_PROS,
   INITIAL_CUSTOMERS
 } from './data.js';
@@ -24,7 +26,8 @@ import {
   updateProAssignmentStatus,
   simulateProCashOut,
   submitWorkerReview,
-  flagReviewDispute
+  flagReviewDispute,
+  getDallasLocalNow
 } from './matching.js';
 
 // Global UI State
@@ -34,6 +37,7 @@ let pendingReviewSlotId = null;
 let pendingReviewWorkerName = null;
 let pendingReviewRoleTitle = null;
 let currentRatingSelection = 5;
+let currentJobBoardFilter = 'available';
 
 // ---------------------------------------------------------------------------
 // Toast Notification Utility
@@ -307,21 +311,32 @@ function openIntakeModal(serviceKey) {
     `;
   }
 
-  // Populate neighborhoods
-  const neighborhoodSelect = document.getElementById('input-neighborhood');
-  neighborhoodSelect.innerHTML = DALLAS_NEIGHBORHOODS.map(n =>
-    `<option value="${n.id}">${n.name} (ZIP ${n.zip})</option>`
-  ).join('');
-
-  // Default address
+  // Default address & ZIP from active customer (Priority 1 & 4)
   const state = loadState();
   const activeCustomer = state.customers.find(c => c.id === state.activeCustomerId) || state.customers[0];
-  document.getElementById('input-address').value = activeCustomer.address;
+  const addressInput = document.getElementById('input-address');
+  const zipInput = document.getElementById('input-zip');
+  
+  if (addressInput) addressInput.value = activeCustomer.address || '';
+  
+  // Extract or default ZIP code
+  const zipMatch = (activeCustomer.address || '').match(/\b(75\d{3})\b/);
+  const defaultZip = zipMatch ? zipMatch[1] : '75204';
+  if (zipInput) {
+    zipInput.value = defaultZip;
+    updateZipIndicator(defaultZip);
+  }
 
-  // Set default scheduled date to tomorrow
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  document.getElementById('input-scheduled-date').value = tomorrow.toISOString().split('T')[0];
+  // Set minimum scheduled date to today in Dallas time (Priority 2)
+  const dallasNow = getDallasLocalNow();
+  const dateInput = document.getElementById('input-scheduled-date');
+  if (dateInput) {
+    dateInput.min = dallasNow.dateStr;
+    // Default scheduled date to tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    dateInput.value = tomorrow.toISOString().split('T')[0];
+  }
 
   // Attach live calculation listeners
   setupIntakeCalculationListeners();
@@ -330,12 +345,33 @@ function openIntakeModal(serviceKey) {
   modal.classList.add('open');
 }
 
+function updateZipIndicator(zip) {
+  const indicator = document.getElementById('zip-area-indicator');
+  if (!indicator) return;
+  const res = lookupDallasZip(zip);
+  if (res.valid) {
+    indicator.innerHTML = `<span style="color: var(--brand-emerald);">✓ ${res.areaName}</span>`;
+  } else if (zip && zip.length >= 5) {
+    indicator.innerHTML = `<span style="color: var(--accent-red);">⚠️ Unsupported ZIP</span>`;
+  } else {
+    indicator.innerHTML = `<span style="color: var(--text-muted); font-size: 0.75rem;">Enter 5-digit Dallas ZIP</span>`;
+  }
+}
+
 function setupIntakeCalculationListeners() {
   const form = document.getElementById('intake-form');
   form.querySelectorAll('select, input').forEach(input => {
     input.addEventListener('change', recalculateIntakePrice);
     input.addEventListener('input', recalculateIntakePrice);
   });
+
+  // Live ZIP validation listener
+  const zipInput = document.getElementById('input-zip');
+  if (zipInput) {
+    zipInput.addEventListener('input', (e) => {
+      updateZipIndicator(e.target.value);
+    });
+  }
 
   // Timing radio toggle
   form.querySelectorAll('input[name="timingType"]').forEach(radio => {
@@ -380,19 +416,44 @@ function recalculateIntakePrice() {
 function handleBookingSubmit(e) {
   e.preventDefault();
   const state = loadState();
+  const dallasNow = getDallasLocalNow();
 
-  const neighborhoodId = document.getElementById('input-neighborhood').value;
-  const address = document.getElementById('input-address').value;
-  const notes = document.getElementById('input-notes').value;
+  const address = (document.getElementById('input-address')?.value || '').trim();
+  const zipCode = (document.getElementById('input-zip')?.value || '').trim();
+  const notes = document.getElementById('input-notes')?.value || '';
+
+  if (!address) {
+    showToast('Please enter a service street address.', '⚠️');
+    return;
+  }
+
+  // Validate ZIP (Priority 4)
+  const zipCheck = lookupDallasZip(zipCode);
+  if (!zipCheck.valid) {
+    showToast(zipCheck.message, '⚠️');
+    return;
+  }
 
   const timingTypeRadio = document.querySelector('input[name="timingType"]:checked');
   const timingType = timingTypeRadio ? timingTypeRadio.value : 'asap';
-  const scheduledDate = timingType === 'scheduled'
-    ? document.getElementById('input-scheduled-date').value
-    : new Date().toISOString().split('T')[0];
-  const scheduledTime = timingType === 'scheduled'
-    ? document.getElementById('input-scheduled-time').value
-    : 'Immediate';
+  
+  let scheduledDate = dallasNow.dateStr;
+  let scheduledTime = dallasNow.timeStr;
+
+  if (timingType === 'scheduled') {
+    scheduledDate = document.getElementById('input-scheduled-date').value;
+    scheduledTime = document.getElementById('input-scheduled-time').value;
+
+    // Validate past dates and times (Priority 2)
+    if (!scheduledDate || scheduledDate < dallasNow.dateStr) {
+      showToast(`Scheduled date (${scheduledDate || 'empty'}) cannot be in the past.`, '⚠️');
+      return;
+    }
+    if (scheduledDate === dallasNow.dateStr && scheduledTime && scheduledTime < dallasNow.timeStr) {
+      showToast(`Scheduled time (${scheduledTime}) has already passed today. Please choose an upcoming time slot.`, '⚠️');
+      return;
+    }
+  }
 
   // Gather category details
   const intakeDetails = { notes };
@@ -411,20 +472,24 @@ function handleBookingSubmit(e) {
     intakeDetails.requiredEquipment = ['lawn_mower', 'string_trimmer'];
   }
 
-  const booking = createBooking({
-    customerId: state.activeCustomerId,
-    neighborhoodId,
-    address,
-    serviceCategory: currentSelectedService,
-    timingType,
-    scheduledDate,
-    scheduledTime,
-    intakeDetails
-  });
+  try {
+    const booking = createBooking({
+      customerId: state.activeCustomerId,
+      address,
+      zipCode,
+      serviceCategory: currentSelectedService,
+      timingType,
+      scheduledDate,
+      scheduledTime,
+      intakeDetails
+    });
 
-  document.getElementById('intake-modal').classList.remove('open');
-  showToast(`Booking ${booking.id} created! Dispatched to Dallas Job Board.`);
-  renderAll();
+    document.getElementById('intake-modal').classList.remove('open');
+    showToast(`Booking ${booking.id} created! Dispatched to Dallas Job Board for ${zipCheck.areaName}.`);
+    renderAll();
+  } catch (err) {
+    showToast(err.message || 'Error creating booking.', '⚠️');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -435,7 +500,12 @@ function renderCustomerActiveBookings() {
   if (!container) return;
 
   const state = loadState();
-  const activeBookings = state.bookings.filter(b => b.overallStatus !== 'completed' && b.overallStatus !== 'cancelled');
+  const currentCustomerId = state.activeCustomerId;
+  const activeBookings = state.bookings.filter(b =>
+    b.customerId === currentCustomerId &&
+    b.overallStatus !== 'completed' &&
+    b.overallStatus !== 'cancelled'
+  );
 
   if (activeBookings.length === 0) {
     container.innerHTML = `
@@ -638,7 +708,11 @@ function renderCustomerPastBookings() {
   if (!container) return;
 
   const state = loadState();
-  const completed = state.bookings.filter(b => b.overallStatus === 'completed');
+  const currentCustomerId = state.activeCustomerId;
+  const completed = state.bookings.filter(b =>
+    b.customerId === currentCustomerId &&
+    b.overallStatus === 'completed'
+  );
 
   if (completed.length === 0) {
     container.innerHTML = `
@@ -792,6 +866,7 @@ function renderProDashboard() {
   ).join('');
 
   renderProActiveAssignments(activePro);
+  renderProCompletedJobs(activePro);
   renderProJobBoard(activePro);
 }
 
@@ -819,6 +894,9 @@ function renderProActiveAssignments(activePro) {
 
   container.innerHTML = assignedBookings.map(b => {
     const slot = b.workerAssignments.find(s => s.assignedProId === activePro.id);
+    const totalSlots = b.workerAssignments.length;
+    const assignedSlots = b.workerAssignments.filter(s => s.status !== 'unassigned').length;
+    const isCrewIncomplete = b.workersNeeded > 1 && assignedSlots < totalSlots;
 
     return `
       <div class="booking-tracking-card" style="border-left: 4px solid var(--brand-emerald);">
@@ -840,18 +918,32 @@ function renderProActiveAssignments(activePro) {
           Scheduled: <strong>${b.scheduledDate} at ${b.scheduledTime}</strong> • Customer: <strong>${b.customerName}</strong>
         </div>
 
+        ${
+          isCrewIncomplete
+            ? `
+              <div style="background: #FEF3C7; border: 1px solid #F59E0B; color: #92400E; padding: 10px 14px; border-radius: var(--radius-sm); margin: 12px 0; font-size: 0.82rem; display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.2rem;">⏳</span>
+                <div>
+                  <strong>Crew In Formation (${assignedSlots} of ${totalSlots} assigned):</strong>
+                  Work can only begin once all required worker positions are filled. You will be able to start once your co-worker accepts.
+                </div>
+              </div>
+            `
+            : ''
+        }
+
         <!-- Pro Action Lifecycle Stepper Buttons -->
         <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; border-top: 1px solid var(--border-light); padding-top: 14px;">
-          <button class="btn-open-tab btn-pro-action" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-status="traveling" ${slot.status === 'traveling' ? 'disabled style="opacity:0.5;"' : ''}>
+          <button class="btn-open-tab btn-pro-action" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-status="traveling" ${isCrewIncomplete || slot.status === 'traveling' ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
             🚗 Mark En Route
           </button>
-          <button class="btn-open-tab btn-pro-action" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-status="arrived" ${slot.status === 'arrived' ? 'disabled style="opacity:0.5;"' : ''}>
+          <button class="btn-open-tab btn-pro-action" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-status="arrived" ${isCrewIncomplete || slot.status === 'arrived' ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
             📍 Mark Arrived
           </button>
-          <button class="btn-open-tab btn-pro-action" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-status="in_progress" ${slot.status === 'in_progress' ? 'disabled style="opacity:0.5;"' : ''}>
+          <button class="btn-open-tab btn-pro-action" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-status="in_progress" ${isCrewIncomplete || slot.status === 'in_progress' ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
             🔨 Start Work
           </button>
-          <button class="btn-book-service btn-pro-action" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-status="completed" style="width: auto; padding: 6px 16px; background: var(--brand-emerald);">
+          <button class="btn-book-service btn-pro-action" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-status="completed" ${isCrewIncomplete ? 'disabled style="opacity:0.5; cursor:not-allowed; width: auto; padding: 6px 16px; background: var(--text-muted);"' : 'style="width: auto; padding: 6px 16px; background: var(--brand-emerald);"'}>
             ✓ Complete & Finalize Payout
           </button>
         </div>
@@ -862,99 +954,248 @@ function renderProActiveAssignments(activePro) {
   // Attach status transition handlers
   container.querySelectorAll('.btn-pro-action').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const bookingId = e.currentTarget.getAttribute('data-booking-id');
-      const slotId = e.currentTarget.getAttribute('data-slot-id');
-      const newStatus = e.currentTarget.getAttribute('data-status');
+      const button = e.currentTarget;
+      if (button.disabled) return;
+      button.disabled = true;
+
+      const bookingId = button.getAttribute('data-booking-id');
+      const slotId = button.getAttribute('data-slot-id');
+      const newStatus = button.getAttribute('data-status');
 
       const result = updateProAssignmentStatus(bookingId, slotId, newStatus);
       if (result.success) {
         showToast(`Job status updated: ${newStatus.toUpperCase()}`);
         renderAll();
+      } else {
+        showToast(result.error || 'Status update could not be completed.', '⚠️');
+        button.disabled = false;
       }
     });
   });
 }
 
-// Render Pro Job Board with Eligibility & Conflict Explanations
+// ---------------------------------------------------------------------------
+// Render Pro Completed-Job History (Priority 6)
+// ---------------------------------------------------------------------------
+function renderProCompletedJobs(activePro) {
+  const container = document.getElementById('pro-completed-jobs-container');
+  if (!container) return;
+
+  const state = loadState();
+  const completedRecords = [];
+
+  (state.bookings || []).forEach(b => {
+    (b.workerAssignments || []).forEach(slot => {
+      if (slot.assignedProId === activePro.id && slot.status === 'completed') {
+        const review = (b.workerReviews || []).find(r => r.slotId === slot.slotId);
+        completedRecords.push({
+          bookingId: b.id,
+          serviceTitle: b.serviceTitle,
+          roleTitle: slot.roleTitle,
+          customerName: b.customerName,
+          completionDate: (review && review.date) || (slot.assignedAt ? slot.assignedAt.split('T')[0] : b.scheduledDate),
+          payout: slot.payout,
+          review
+        });
+      }
+    });
+  });
+
+  if (completedRecords.length === 0) {
+    container.innerHTML = `
+      <div style="background: white; border: 1px dashed var(--border-dark); border-radius: var(--radius-lg); padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+        No completed tasks yet for ${activePro.name}. Complete active assignments from the job board to build your earnings record.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = completedRecords.map(item => {
+    const ratingDisplay = item.review && item.review.stars
+      ? `<span style="color: var(--brand-emerald); font-weight: 700;">${'⭐'.repeat(item.review.stars)} ${item.review.stars} Star Rating</span>`
+      : `<span style="color: var(--text-muted); font-style: italic;">Not rated</span>`;
+
+    return `
+      <div style="background: white; border: 1px solid var(--border-light); border-left: 4px solid var(--brand-emerald); border-radius: var(--radius-md); padding: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+            <span class="booking-id-tag">${item.bookingId}</span>
+            <strong style="color: var(--primary-navy);">${item.serviceTitle} — ${item.roleTitle}</strong>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-secondary);">
+            Customer: <strong>${item.customerName}</strong> • Completed: <strong>${item.completionDate}</strong>
+          </div>
+          <div style="font-size: 0.82rem; margin-top: 4px;">
+            Rating Received: ${ratingDisplay}
+            ${item.review && item.review.comment ? `<span style="color: var(--text-muted); font-style: italic; margin-left: 8px;">"${item.review.comment}"</span>` : ''}
+          </div>
+        </div>
+
+        <div style="text-align: right;">
+          <div style="font-size: 1.3rem; font-weight: 800; color: var(--brand-emerald);">
+            +$${item.payout.toFixed(2)}
+          </div>
+          <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">
+            Earned Payout
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ---------------------------------------------------------------------------
+// Render Pro Job Board with Filters & Eligibility (Priority 5)
+// ---------------------------------------------------------------------------
 function renderProJobBoard(activePro) {
   const container = document.getElementById('pro-job-board-container');
   if (!container) return;
 
   const state = loadState();
+  const dallasNow = getDallasLocalNow();
+
   const openBookings = state.bookings.filter(b =>
     b.overallStatus !== 'completed' &&
     b.overallStatus !== 'cancelled' &&
     b.workerAssignments.some(s => s.status === 'unassigned')
   );
 
-  if (openBookings.length === 0) {
+  // Collect all unassigned slots and categorize
+  const allJobItems = [];
+  openBookings.forEach(b => {
+    const unassignedSlots = b.workerAssignments.filter(s => s.status === 'unassigned');
+    unassignedSlots.forEach(slot => {
+      const eligibility = canProAcceptSlot(activePro.id, b.id, slot.slotId);
+      const isPast = b.scheduledDate < dallasNow.dateStr || (b.scheduledDate === dallasNow.dateStr && b.scheduledTime && b.scheduledTime < dallasNow.timeStr);
+      const isFuture = b.scheduledDate > dallasNow.dateStr;
+
+      allJobItems.push({
+        booking: b,
+        slot,
+        eligibility,
+        isPast,
+        isFuture,
+        isAvailable: eligibility.allowed && !isPast,
+        isUpcoming: eligibility.allowed && isFuture,
+        isIneligible: !eligibility.allowed || isPast
+      });
+    });
+  });
+
+  // Calculate counts for filter pills
+  const countAvailable = allJobItems.filter(item => item.isAvailable).length;
+  const countUpcoming = allJobItems.filter(item => item.isUpcoming).length;
+  const countIneligible = allJobItems.filter(item => item.isIneligible).length;
+
+  const countAvailableEl = document.getElementById('count-filter-available');
+  const countUpcomingEl = document.getElementById('count-filter-upcoming');
+  const countIneligibleEl = document.getElementById('count-filter-ineligible');
+  if (countAvailableEl) countAvailableEl.textContent = countAvailable;
+  if (countUpcomingEl) countUpcomingEl.textContent = countUpcoming;
+  if (countIneligibleEl) countIneligibleEl.textContent = countIneligible;
+
+  // Filter button active state styles
+  const btnAvailable = document.getElementById('job-filter-available');
+  const btnUpcoming = document.getElementById('job-filter-upcoming');
+  const btnIneligible = document.getElementById('job-filter-ineligible');
+
+  const setFilterBtnStyle = (btn, isActive) => {
+    if (!btn) return;
+    if (isActive) {
+      btn.style.background = 'var(--primary-navy)';
+      btn.style.color = 'white';
+      btn.style.border = '1px solid var(--primary-navy)';
+    } else {
+      btn.style.background = 'white';
+      btn.style.color = 'var(--text-secondary)';
+      btn.style.border = '1px solid var(--border-light)';
+    }
+  };
+
+  setFilterBtnStyle(btnAvailable, currentJobBoardFilter === 'available');
+  setFilterBtnStyle(btnUpcoming, currentJobBoardFilter === 'upcoming');
+  setFilterBtnStyle(btnIneligible, currentJobBoardFilter === 'ineligible');
+
+  // Filter items according to active pill
+  let filteredItems = [];
+  if (currentJobBoardFilter === 'available') {
+    filteredItems = allJobItems.filter(item => item.isAvailable);
+  } else if (currentJobBoardFilter === 'upcoming') {
+    filteredItems = allJobItems.filter(item => item.isUpcoming);
+  } else {
+    filteredItems = allJobItems.filter(item => item.isIneligible);
+  }
+
+  if (filteredItems.length === 0) {
+    const emptyMessages = {
+      available: `No currently available positions match your qualifications and availability for today. Check "Upcoming Jobs" to schedule future dates.`,
+      upcoming: `No upcoming future jobs scheduled right now. Check back as new customer requests arrive.`,
+      ineligible: `No ineligible or conflicting jobs found on the board.`
+    };
     container.innerHTML = `
       <div style="background: white; border: 1px dashed var(--border-dark); border-radius: var(--radius-lg); padding: 32px; text-align: center; color: var(--text-muted); font-size: 0.88rem;">
-        No open positions on the Dallas job board right now. Check back soon or toggle Auto-Book.
+        ${emptyMessages[currentJobBoardFilter] || 'No jobs in this category.'}
       </div>
     `;
     return;
   }
 
-  container.innerHTML = openBookings.map(b => {
-    // Render an acceptance card for each unassigned slot
-    const unassignedSlots = b.workerAssignments.filter(s => s.status === 'unassigned');
+  container.innerHTML = filteredItems.map(item => {
+    const b = item.booking;
+    const slot = item.slot;
+    const eligibility = item.eligibility;
 
-    return unassignedSlots.map(slot => {
-      const eligibility = canProAcceptSlot(activePro.id, b.id, slot.slotId);
-
-      return `
-        <div class="job-board-card ${eligibility.allowed ? '' : 'ineligible'}">
-          <div class="job-card-header">
-            <div class="job-title-group">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span class="booking-id-tag">${b.id}</span>
-                <h3>${b.serviceTitle} — ${slot.roleTitle}</h3>
-              </div>
-              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
-                Customer: ${b.customerName} (${b.neighborhoodName})
-              </div>
+    return `
+      <div class="job-board-card ${eligibility.allowed ? '' : 'ineligible'}">
+        <div class="job-card-header">
+          <div class="job-title-group">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="booking-id-tag">${b.id}</span>
+              <h3>${b.serviceTitle} — ${slot.roleTitle}</h3>
             </div>
-            
-            <!-- Pro Payout Only (Strict separation: customer fees and platform margins are hidden) -->
-            <div class="job-payout-badge">
-              <div class="job-payout-amount">$${slot.payout.toFixed(2)}</div>
-              <div class="job-payout-label">Your Offered Payout</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">
+              Customer: ${b.customerName} (${b.neighborhoodName}${b.zipCode ? ' ' + b.zipCode : ''})
             </div>
           </div>
-
-          <div class="job-meta-row">
-            <div class="job-meta-item">📍 Dallas: <strong>${b.neighborhoodName}</strong></div>
-            <div class="job-meta-item">📅 Date: <strong>${b.scheduledDate}</strong></div>
-            <div class="job-meta-item">⏰ Time: <strong>${b.scheduledTime}</strong></div>
-            <div class="job-meta-item">⏱️ Duration: <strong>${b.estimatedDurationHours} hrs</strong></div>
+          
+          <!-- Pro Payout Only (Strict separation: customer fees and platform margins are hidden) -->
+          <div class="job-payout-badge">
+            <div class="job-payout-amount">$${slot.payout.toFixed(2)}</div>
+            <div class="job-payout-label">Your Offered Payout</div>
           </div>
-
-          <!-- Eligibility Evaluation Output -->
-          ${
-            eligibility.allowed
-              ? `
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; border-top: 1px solid var(--border-light); padding-top: 12px;">
-                  <span style="font-size: 0.82rem; color: var(--brand-emerald); font-weight: 700;">
-                    ✓ You are eligible & verified for this task
-                  </span>
-                  <button class="btn-book-service btn-accept-job" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" style="width: auto; padding: 8px 20px;">
-                    Accept Job ($${slot.payout.toFixed(2)})
-                  </button>
-                </div>
-              `
-              : `
-                <div style="margin-top: 12px; border-top: 1px solid var(--border-light); padding-top: 10px;">
-                  <div class="ineligible-reason-badge">
-                    <span>⚠️</span>
-                    <span>${eligibility.reason}</span>
-                  </div>
-                </div>
-              `
-          }
         </div>
-      `;
-    }).join('');
+
+        <div class="job-meta-row">
+          <div class="job-meta-item">📍 Area: <strong>${b.neighborhoodName}</strong></div>
+          <div class="job-meta-item">📅 Date: <strong>${b.scheduledDate}</strong></div>
+          <div class="job-meta-item">⏰ Time: <strong>${b.scheduledTime}</strong></div>
+          <div class="job-meta-item">⏱️ Duration: <strong>${b.estimatedDurationHours} hrs</strong></div>
+        </div>
+
+        <!-- Eligibility Evaluation Output -->
+        ${
+          eligibility.allowed
+            ? `
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; border-top: 1px solid var(--border-light); padding-top: 12px;">
+                <span style="font-size: 0.82rem; color: var(--brand-emerald); font-weight: 700;">
+                  ✓ You are eligible & verified for this task
+                </span>
+                <button class="btn-book-service btn-accept-job" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" style="width: auto; padding: 8px 20px;">
+                  Accept Job ($${slot.payout.toFixed(2)})
+                </button>
+              </div>
+            `
+            : `
+              <div style="margin-top: 12px; border-top: 1px solid var(--border-light); padding-top: 10px;">
+                <div class="ineligible-reason-badge">
+                  <span>⚠️</span>
+                  <span>${eligibility.reason}</span>
+                </div>
+              </div>
+            `
+        }
+      </div>
+    `;
   }).join('');
 
   // Attach job acceptance clicks
@@ -968,7 +1209,7 @@ function renderProJobBoard(activePro) {
         showToast(`Accepted ${slotId} on ${bookingId}! Added to your active assignments.`);
         renderAll();
       } else {
-        alert(res.error);
+        showToast(res.error || 'Could not accept job.', '⚠️');
       }
     });
   });
@@ -1101,12 +1342,7 @@ function initUserSelectors() {
     const state = loadState();
     state.activeCustomerId = e.target.value;
     saveState(state);
-    const customer = state.customers.find(c => c.id === state.activeCustomerId);
-    if (customer) {
-      document.getElementById('customer-active-neighborhood').textContent = customer.neighborhood;
-    }
-    renderCustomerActiveBookings();
-    renderCustomerPastBookings();
+    renderAll();
   });
 
   proSelector.addEventListener('change', (e) => {
@@ -1141,6 +1377,12 @@ function renderAll() {
     customerSelector.innerHTML = state.customers.map(c =>
       `<option value="${c.id}" ${c.id === state.activeCustomerId ? 'selected' : ''}>${c.name} (${c.neighborhood})</option>`
     ).join('');
+  }
+
+  const activeCustomer = state.customers.find(c => c.id === state.activeCustomerId) || state.customers[0];
+  const activeNeighborhoodEl = document.getElementById('customer-active-neighborhood');
+  if (activeNeighborhoodEl && activeCustomer) {
+    activeNeighborhoodEl.textContent = activeCustomer.neighborhood;
   }
 
   renderServiceCards();
@@ -1189,6 +1431,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Review modal
   setupReviewModal();
+
+  // Job Board Category Filter Tab Handlers (Priority 5)
+  document.getElementById('job-filter-available')?.addEventListener('click', () => {
+    currentJobBoardFilter = 'available';
+    const state = loadState();
+    const activePro = state.pros.find(p => p.id === state.activeProId) || state.pros[0];
+    renderProJobBoard(activePro);
+  });
+  document.getElementById('job-filter-upcoming')?.addEventListener('click', () => {
+    currentJobBoardFilter = 'upcoming';
+    const state = loadState();
+    const activePro = state.pros.find(p => p.id === state.activeProId) || state.pros[0];
+    renderProJobBoard(activePro);
+  });
+  document.getElementById('job-filter-ineligible')?.addEventListener('click', () => {
+    currentJobBoardFilter = 'ineligible';
+    const state = loadState();
+    const activePro = state.pros.find(p => p.id === state.activeProId) || state.pros[0];
+    renderProJobBoard(activePro);
+  });
 
   // Reset Demo Data
   document.getElementById('btn-reset-demo').addEventListener('click', () => {

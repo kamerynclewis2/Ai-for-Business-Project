@@ -220,12 +220,37 @@
         <!-- Rendered dynamically -->
       </div>
 
+      <!-- Pro Completed Jobs History Section -->
+      <div class="section-title-row" style="margin-top: 36px;">
+        <div>
+          <h2 class="section-title">My Completed Jobs</h2>
+          <p class="section-subtitle">Your personal verified job record, earned payouts, and customer ratings</p>
+        </div>
+      </div>
+
+      <div id="pro-completed-jobs-container" style="margin-bottom: 36px;">
+        <!-- Rendered dynamically -->
+      </div>
+
       <!-- Pro Job Board Section -->
       <div class="section-title-row">
         <div>
           <h2 class="section-title">Dallas Job Board</h2>
           <p class="section-subtitle">Browse and accept available customer jobs (Worker Payouts clearly listed)</p>
         </div>
+      </div>
+
+      <!-- Job Board Category Filter Pills -->
+      <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+        <button id="job-filter-available" class="btn-banner-link" style="padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; background: var(--primary-navy); color: white;">
+          ⚡ Available to Me (<span id="count-filter-available">0</span>)
+        </button>
+        <button id="job-filter-upcoming" class="btn-banner-link" style="padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; background: white; color: var(--text-secondary); border: 1px solid var(--border-light);">
+          📅 Upcoming Jobs (<span id="count-filter-upcoming">0</span>)
+        </button>
+        <button id="job-filter-ineligible" class="btn-banner-link" style="padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; background: white; color: var(--text-secondary); border: 1px solid var(--border-light);">
+          ⚠️ Conflicts / Ineligible (<span id="count-filter-ineligible">0</span>)
+        </button>
       </div>
 
       <div id="pro-job-board-container">
@@ -288,17 +313,21 @@
             </div>
           </div>
 
-          <!-- Dallas Location Selector -->
+          <!-- Dallas Pilot Location Inputs (Street & ZIP) -->
           <div class="form-group">
-            <label class="form-label">Dallas Neighborhood:</label>
-            <select id="input-neighborhood" class="form-select">
-              <!-- Rendered dynamically -->
-            </select>
+            <label class="form-label">Service Street Address:</label>
+            <input type="text" id="input-address" class="form-input" placeholder="e.g. 2800 McKinney Ave, Apt 402" required>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Service Street Address:</label>
-            <input type="text" id="input-address" class="form-input" placeholder="e.g. 2800 McKinney Ave, Apt 402">
+            <label class="form-label">Dallas ZIP Code (Pilot Service Area):</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input type="text" id="input-zip" class="form-input" placeholder="75204" maxlength="5" style="max-width: 140px;" required>
+              <div id="zip-area-indicator" style="font-size: 0.82rem; font-weight: 600;"></div>
+            </div>
+            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 4px;">
+              Supported Dallas pilot ZIP codes: 75201, 75202, 75204, 75206, 75208, 75214, 75219, 75225, 75226
+            </div>
           </div>
 
           <div class="form-group">

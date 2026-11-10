@@ -7,12 +7,37 @@
 import {
   PRICING_RATES,
   DALLAS_NEIGHBORHOODS,
+  DALLAS_SERVICE_ZIPS,
+  lookupDallasZip,
   INITIAL_PROS,
   INITIAL_CUSTOMERS,
   INITIAL_BOOKINGS
 } from './data.js';
 
 const STORAGE_KEY = 'crewly_marketplace_state_v1';
+
+// ---------------------------------------------------------------------------
+// 0. Dallas Pilot Local Time & Helpers
+// ---------------------------------------------------------------------------
+export function getDallasLocalNow() {
+  const now = new Date();
+  const dallasFormatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Chicago',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+  const parts = dallasFormatter.formatToParts(now);
+  const partMap = {};
+  parts.forEach(p => partMap[p.type] = p.value);
+  const hour = partMap.hour === '24' ? '00' : partMap.hour;
+  const dateStr = `${partMap.year}-${partMap.month}-${partMap.day}`;
+  const timeStr = `${hour}:${partMap.minute}`;
+  return { dateStr, timeStr, fullDate: new Date(`${dateStr}T${timeStr}:00`) };
+}
 
 // ---------------------------------------------------------------------------
 // 1. Multi-Tab Session & Role Separation
@@ -44,7 +69,22 @@ export function setActiveRole(role) {
 function migrateStateIfNeeded(state) {
   let dirty = false;
 
+  // Ensure activeCustomerId is always initialized
+  if (!state.activeCustomerId) {
+    state.activeCustomerId = 'cust_sarah';
+    dirty = true;
+  }
+
   state.bookings = (state.bookings || []).map(b => {
+    // Ensure every booking has customerId associated
+    if (!b.customerId) {
+      if (b.customerName && b.customerName.includes('David')) {
+        b.customerId = 'cust_david';
+      } else {
+        b.customerId = 'cust_sarah';
+      }
+      dirty = true;
+    }
 
     // --- Migrate: per-slot payoutReleased flag ---
     // For slots already in 'completed' status with no payoutReleased flag,
@@ -93,14 +133,15 @@ function migrateStateIfNeeded(state) {
     b.messages = (b.messages || []).map(m => {
       if (m.senderRole === 'system') {
         const original = m.text;
-        // Pattern: "Name joined as Role ($75 offered payout)." →
-        //          "Name has accepted the Role assignment."
+        // Pattern 1: "Name joined as Role ($75 payout)." or "Name joined as Role ($75 offered payout)." →
+        //            "Name has accepted the Role assignment."
         m.text = m.text.replace(
-          /^(.+?) joined as (.+?) \(\$[\d.]+ offered payout\)\.?$/,
+          /^(.+?) joined as (.+?)\s*\(\$[\d.]+\s*(?:offered\s*)?payout\)\.?$/i,
           '$1 has accepted the $2 assignment.'
         );
-        // Generic cleanup for any other remaining payout references
-        m.text = m.text.replace(/\s*\(\$[\d,.]+ (?:offered )?payout\)/gi, '');
+        // Pattern 2: Generic cleanup for any other remaining payout references in system messages
+        m.text = m.text.replace(/\s*\((?:worker\s*)?(?:offered\s*)?payout(?:\s*of)?\s*\$[\d,.]+\)/gi, '');
+        m.text = m.text.replace(/\s*\(\$[\d,.]+\s*(?:offered\s*)?payout\)/gi, '');
         if (m.text !== original) dirty = true;
       }
       return m;
@@ -228,17 +269,40 @@ export function calculatePricing(serviceCategory, options = {}) {
 // ---------------------------------------------------------------------------
 export function createBooking({
   customerId,
-  neighborhoodId,
   address,
+  zipCode,
   serviceCategory,
   timingType,
   scheduledDate,
   scheduledTime,
   intakeDetails
 }) {
+  const dallasNow = getDallasLocalNow();
+
+  // Validate timing (Priority 2: Prevent Past-Date Bookings)
+  let finalDate = scheduledDate;
+  let finalTime = scheduledTime;
+
+  if (timingType === 'asap') {
+    finalDate = dallasNow.dateStr;
+    finalTime = dallasNow.timeStr;
+  } else {
+    if (!finalDate || finalDate < dallasNow.dateStr) {
+      throw new Error(`Scheduled date (${finalDate || 'unspecified'}) cannot be in the past.`);
+    }
+    if (finalDate === dallasNow.dateStr && finalTime && finalTime < dallasNow.timeStr) {
+      throw new Error(`Scheduled time (${finalTime}) has already passed today. Please pick an upcoming time.`);
+    }
+  }
+
+  // Validate Location & ZIP code (Priority 4: Simplify Service Location)
+  const zipResult = lookupDallasZip(zipCode);
+  if (!zipResult.valid) {
+    throw new Error(zipResult.message);
+  }
+
   const state = loadState();
   const customer = state.customers.find(c => c.id === customerId) || state.customers[0];
-  const neighborhood = state.neighborhoods.find(n => n.id === neighborhoodId) || state.neighborhoods[0];
   const rateConfig = state.rates[serviceCategory];
 
   const workersCount = serviceCategory === 'moving'
@@ -269,7 +333,8 @@ export function createBooking({
       assignedProId: null,
       assignedProName: null,
       assignedAt: null,
-      payout: pricing.workerPayoutPerPerson
+      payout: pricing.workerPayoutPerPerson,
+      payoutReleased: false
     });
   }
 
@@ -277,14 +342,15 @@ export function createBooking({
     id: `CRW-${Math.floor(1000 + Math.random() * 9000)}`,
     customerId: customer.id,
     customerName: customer.name,
-    neighborhoodId: neighborhood.id,
-    neighborhoodName: neighborhood.name,
+    neighborhoodId: zipResult.neighborhoodId,
+    neighborhoodName: zipResult.areaName,
+    zipCode: zipResult.zip,
     address: address || customer.address,
     serviceCategory,
     serviceTitle: rateConfig.name,
     timingType: timingType || 'scheduled',
-    scheduledDate: scheduledDate || new Date().toISOString().split('T')[0],
-    scheduledTime: scheduledTime || '10:00',
+    scheduledDate: finalDate,
+    scheduledTime: finalTime || '10:00',
     estimatedDurationHours: hours,
     workersNeeded: workersCount,
     serviceDetails: intakeDetails,
@@ -300,11 +366,12 @@ export function createBooking({
         senderRole: 'system',
         senderName: 'Crewly Dispatch',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: `Booking received for ${rateConfig.name} in ${neighborhood.name}. Matching Dallas Pros...`
+        text: `Booking received for ${rateConfig.name} in ${zipResult.areaName} (${zipResult.zip}). Matching Dallas Pros...`
       }
     ],
     rating: null,
     review: null,
+    workerReviews: [],
     createdAt: new Date().toISOString()
   };
 
@@ -330,6 +397,25 @@ export function canProAcceptSlot(proId, bookingId, slotId) {
 
   const slot = booking.workerAssignments.find(s => s.slotId === slotId);
   if (!slot) return { allowed: false, reason: 'Assignment slot not found.' };
+
+  // Rule 0: PAST SCHEDULE CHECK (Cannot accept appointments that have already passed)
+  const dallasNow = getDallasLocalNow();
+  if (booking.scheduledDate) {
+    if (booking.scheduledDate < dallasNow.dateStr) {
+      return {
+        allowed: false,
+        reason: `Schedule Expired: This appointment was scheduled for ${booking.scheduledDate}, which has already passed.`
+      };
+    }
+    if (booking.scheduledDate === dallasNow.dateStr && booking.scheduledTime && booking.scheduledTime.includes(':')) {
+      if (booking.scheduledTime < dallasNow.timeStr) {
+        return {
+          allowed: false,
+          reason: `Schedule Expired: Scheduled time (${booking.scheduledTime}) has already passed today.`
+        };
+      }
+    }
+  }
 
   // Rule 1: Slot already filled
   if (slot.status !== 'unassigned') {
@@ -383,10 +469,10 @@ export function canProAcceptSlot(proId, bookingId, slotId) {
 
     // Compare date & time proximity
     if (other.scheduledDate === booking.scheduledDate) {
-      const thisTimeHour = parseInt(booking.scheduledTime.split(':')[0], 10);
-      const otherTimeHour = parseInt(other.scheduledTime.split(':')[0], 10);
+      const thisTimeHour = parseInt((booking.scheduledTime || '10:00').split(':')[0], 10);
+      const otherTimeHour = parseInt((other.scheduledTime || '10:00').split(':')[0], 10);
       // If within 2 hours of each other on same day, flag as schedule conflict
-      if (Math.abs(thisTimeHour - otherTimeHour) < 2) {
+      if (!isNaN(thisTimeHour) && !isNaN(otherTimeHour) && Math.abs(thisTimeHour - otherTimeHour) < 2) {
         return true;
       }
     }
@@ -479,6 +565,29 @@ export function updateProAssignmentStatus(bookingId, slotId, newStatus) {
   const slot = booking.workerAssignments.find(s => s.slotId === slotId);
   if (!slot) return { success: false, error: 'Slot not found.' };
 
+  // Guard against completing or modifying an already completed assignment
+  if (slot.status === 'completed') {
+    return { success: false, error: 'This assignment has already been completed and finalized.' };
+  }
+
+  // Guard against repeated identical status calls (prevents duplicate activity messages)
+  if (slot.status === newStatus) {
+    return { success: false, error: `Assignment is already marked as ${newStatus}.` };
+  }
+
+  // Priority 3 Guard: Enforce Required Crew Size for Active Work
+  // If a booking requires multiple workers and not all slots are assigned,
+  // workers cannot start traveling, arrive, start work, or complete the job.
+  const unassignedCount = booking.workerAssignments.filter(s => s.status === 'unassigned').length;
+  if (booking.workersNeeded > 1 && unassignedCount > 0) {
+    if (['traveling', 'arrived', 'in_progress', 'completed'].includes(newStatus)) {
+      return {
+        success: false,
+        error: `Cannot begin or advance work: This multi-worker booking requires ${booking.workersNeeded} Pros (${booking.workerAssignments.length - unassignedCount} of ${booking.workersNeeded} assigned). Work can only start once all positions are filled.`
+      };
+    }
+  }
+
   const pro = state.pros.find(p => p.id === slot.assignedProId);
 
   slot.status = newStatus;
@@ -521,7 +630,9 @@ export function updateProAssignmentStatus(bookingId, slotId, newStatus) {
   const anyArrived = booking.workerAssignments.some(s => s.status === 'arrived');
   const anyTraveling = booking.workerAssignments.some(s => s.status === 'traveling');
 
-  if (allCompleted) {
+  if (unassignedCount > 0) {
+    booking.overallStatus = (booking.workerAssignments.length - unassignedCount) > 0 ? 'partially_filled' : 'waiting_for_pros';
+  } else if (allCompleted) {
     booking.overallStatus = 'completed';
   } else if (anyInProgress) {
     booking.overallStatus = 'in_progress';
@@ -599,14 +710,28 @@ export function submitWorkerReview(bookingId, slotId, { rating, comment }) {
   const booking = state.bookings.find(b => b.id === bookingId);
   if (!booking) return { success: false, error: 'Booking not found.' };
 
+  // Validation 1: Booking must be in completed status
+  if (booking.overallStatus !== 'completed') {
+    return { success: false, error: 'Reviews can only be submitted for completed bookings.' };
+  }
+
   const slot = booking.workerAssignments.find(s => s.slotId === slotId);
   if (!slot) return { success: false, error: 'Worker assignment not found.' };
   if (!slot.assignedProId) return { success: false, error: 'No Pro is assigned to this position.' };
 
-  // Initialize workerReviews if absent (migration fallback)
-  if (!booking.workerReviews) booking.workerReviews = [];
+  // Validation 2: Worker assignment slot must be completed
+  if (slot.status !== 'completed') {
+    return { success: false, error: 'Reviews can only be submitted for completed worker assignments.' };
+  }
 
-  // Prevent duplicate review for the same worker assignment slot
+  // Validation 3: Rating must be an integer between 1 and 5
+  const ratingNum = Number(rating);
+  if (!Number.isInteger(ratingNum) || ratingNum < 1 || ratingNum > 5) {
+    return { success: false, error: 'Review rating must be an integer between 1 and 5.' };
+  }
+
+  // Validation 4: Prevent duplicate review for the same worker assignment slot
+  if (!booking.workerReviews) booking.workerReviews = [];
   if (booking.workerReviews.some(r => r.slotId === slotId)) {
     return { success: false, error: 'You have already submitted a review for this worker.' };
   }
@@ -619,7 +744,7 @@ export function submitWorkerReview(bookingId, slotId, { rating, comment }) {
     proId: slot.assignedProId,
     proName: slot.assignedProName,
     roleTitle: slot.roleTitle,
-    stars: rating,
+    stars: ratingNum,
     comment: comment || '',
     date: new Date().toISOString().split('T')[0],
     disputed: false
@@ -631,12 +756,12 @@ export function submitWorkerReview(bookingId, slotId, { rating, comment }) {
     const oldCount = pro.reviewCount || 0;
     const oldRating = pro.rating || 0;
     const newCount = oldCount + 1;
-    pro.rating = Number(((oldRating * oldCount + rating) / newCount).toFixed(2));
+    pro.rating = Number(((oldRating * oldCount + ratingNum) / newCount).toFixed(2));
     pro.reviewCount = newCount;
   }
 
   // Preserve a booking-level rating field for reference
-  booking.rating = rating;
+  booking.rating = ratingNum;
 
   saveState(state);
   return { success: true, booking };
