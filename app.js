@@ -23,13 +23,16 @@ import {
   assignProToSlot,
   updateProAssignmentStatus,
   simulateProCashOut,
-  submitCustomerReview,
+  submitWorkerReview,
   flagReviewDispute
 } from './matching.js';
 
 // Global UI State
 let currentSelectedService = 'moving';
 let pendingReviewBookingId = null;
+let pendingReviewSlotId = null;
+let pendingReviewWorkerName = null;
+let pendingReviewRoleTitle = null;
 let currentRatingSelection = 5;
 
 // ---------------------------------------------------------------------------
@@ -647,22 +650,60 @@ function renderCustomerPastBookings() {
   }
 
   container.innerHTML = completed.map(b => {
-    const reviewBlock = b.review
-      ? `
-        <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px; margin-top: 12px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <span style="font-weight: 700; color: var(--primary-navy);">⭐ ${b.review.stars} Star Rating</span>
-            <span style="font-size: 0.75rem; color: var(--text-muted);">${b.review.date}</span>
-          </div>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); font-style: italic;">"${b.review.comment}"</p>
-          ${b.review.disputed ? '<span style="font-size: 0.72rem; color: var(--accent-red); font-weight: 600;">⚠️ Disputed by Pro (Investigation Pending)</span>' : ''}
+    // Per-worker review section: one card per assigned Pro slot.
+    // Customers see only service prices and totals — no payout information.
+    const workerReviews = b.workerReviews || [];
+    const assignedSlots = b.workerAssignments.filter(s => s.assignedProId);
+
+    const workerReviewSectionHtml = assignedSlots.length > 0 ? `
+      <div style="margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-light);">
+        <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px;">
+          Worker Reviews (${assignedSlots.length} ${assignedSlots.length === 1 ? 'Worker' : 'Workers'}):
         </div>
-      `
-      : `
-        <button class="btn-book-service btn-open-review" data-booking-id="${b.id}" style="width: auto; padding: 6px 14px; font-size: 0.82rem; margin-top: 10px;">
-          ⭐ Leave Star Rating & Review
-        </button>
-      `;
+        ${assignedSlots.map(slot => {
+          const existingReview = workerReviews.find(r => r.slotId === slot.slotId);
+          if (existingReview) {
+            return `
+              <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px; margin-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span style="font-weight: 700; font-size: 0.88rem; color: var(--primary-navy);">
+                    👷 ${existingReview.proName}
+                    <span style="font-weight: 400; color: var(--text-muted);">— ${existingReview.roleTitle}</span>
+                  </span>
+                  <span style="font-size: 0.72rem; color: var(--text-muted);">${existingReview.date}</span>
+                </div>
+                <div style="font-size: 0.88rem; color: var(--brand-emerald); font-weight: 700; margin-bottom: 4px;">
+                  ${'⭐'.repeat(existingReview.stars)} ${existingReview.stars} Star${existingReview.stars !== 1 ? 's' : ''}
+                </div>
+                ${existingReview.comment
+                  ? `<p style="font-size: 0.82rem; color: var(--text-secondary); font-style: italic; margin: 0;">"${existingReview.comment}"</p>`
+                  : ''}
+                ${existingReview.disputed
+                  ? '<div style="font-size: 0.72rem; color: var(--accent-red); font-weight: 600; margin-top: 4px;">⚠️ Disputed by Pro (Investigation Pending)</div>'
+                  : ''}
+              </div>
+            `;
+          } else {
+            return `
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #F8FAFC; border: 1px dashed var(--border-dark); border-radius: var(--radius-md); margin-bottom: 10px;">
+                <span style="font-size: 0.85rem; color: var(--text-secondary);">
+                  👷 <strong>${slot.assignedProName}</strong>
+                  <span style="color: var(--text-muted);">— ${slot.roleTitle}</span>
+                </span>
+                <button class="btn-open-review"
+                  data-booking-id="${b.id}"
+                  data-slot-id="${slot.slotId}"
+                  data-pro-name="${slot.assignedProName}"
+                  data-role-title="${slot.roleTitle}"
+                  style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; background: var(--primary-navy); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; white-space: nowrap;">
+                  ⭐ Review
+                </button>
+              </div>
+            `;
+          }
+        }).join('')}
+      </div>
+    ` : '';
 
     return `
       <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 18px; margin-bottom: 14px;">
@@ -676,15 +717,35 @@ function renderCustomerPastBookings() {
           </div>
           <span class="status-badge completed">✓ Completed</span>
         </div>
-        ${reviewBlock}
+        ${workerReviewSectionHtml}
       </div>
     `;
   }).join('');
 
-  // Attach review triggers
+  // Attach per-worker review triggers
   container.querySelectorAll('.btn-open-review').forEach(btn => {
     btn.addEventListener('click', (e) => {
       pendingReviewBookingId = e.currentTarget.getAttribute('data-booking-id');
+      pendingReviewSlotId = e.currentTarget.getAttribute('data-slot-id');
+      pendingReviewWorkerName = e.currentTarget.getAttribute('data-pro-name');
+      pendingReviewRoleTitle = e.currentTarget.getAttribute('data-role-title');
+
+      // Update modal worker context line
+      const workerInfoEl = document.getElementById('review-modal-worker-info');
+      if (workerInfoEl) {
+        workerInfoEl.textContent = `${pendingReviewWorkerName} — ${pendingReviewRoleTitle}`;
+      }
+
+      // Reset star selection to 5 stars for each new review
+      currentRatingSelection = 5;
+      const starText = document.getElementById('star-rating-text');
+      if (starText) starText.textContent = '5 Stars (Excellent Service)';
+      document.querySelectorAll('#star-rating-selector span').forEach(s => {
+        s.style.opacity = '1';
+      });
+      const reviewTextArea = document.getElementById('input-review-text');
+      if (reviewTextArea) reviewTextArea.value = '';
+
       document.getElementById('review-modal').classList.add('open');
     });
   });
@@ -1004,17 +1065,25 @@ function setupReviewModal() {
   });
 
   document.getElementById('btn-submit-review').addEventListener('click', () => {
-    if (!pendingReviewBookingId) return;
+    if (!pendingReviewBookingId || !pendingReviewSlotId) return;
     const text = document.getElementById('input-review-text').value.trim();
 
-    submitCustomerReview(pendingReviewBookingId, {
+    const result = submitWorkerReview(pendingReviewBookingId, pendingReviewSlotId, {
       rating: currentRatingSelection,
       comment: text || 'Great service, highly recommended!'
     });
 
-    reviewModal.classList.remove('open');
-    showToast('Thank you! Your verified rating and review have been submitted.', '⭐');
-    renderAll();
+    if (result.success) {
+      reviewModal.classList.remove('open');
+      showToast(
+        `Thank you! Your ${currentRatingSelection}-star review for ${pendingReviewWorkerName || 'your Pro'} has been submitted.`,
+        '⭐'
+      );
+      pendingReviewSlotId = null;
+      renderAll();
+    } else {
+      showToast(result.error || 'Could not submit review. Please try again.', '⚠️');
+    }
   });
 
   document.getElementById('btn-close-review').addEventListener('click', () => reviewModal.classList.remove('open'));

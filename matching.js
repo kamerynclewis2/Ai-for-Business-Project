@@ -39,6 +39,83 @@ export function setActiveRole(role) {
 }
 
 // ---------------------------------------------------------------------------
+// 2a. State Migration (Schema Upgrades — Preserves Existing Data)
+// ---------------------------------------------------------------------------
+function migrateStateIfNeeded(state) {
+  let dirty = false;
+
+  state.bookings = (state.bookings || []).map(b => {
+
+    // --- Migrate: per-slot payoutReleased flag ---
+    // For slots already in 'completed' status with no payoutReleased flag,
+    // mark as already released so historical completed jobs cannot generate
+    // duplicate earnings credits on future interactions.
+    b.workerAssignments = (b.workerAssignments || []).map(slot => {
+      if (slot.status === 'completed' && slot.payoutReleased === undefined) {
+        slot.payoutReleased = true;
+        dirty = true;
+      }
+      return slot;
+    });
+
+    // --- Migrate: per-worker workerReviews array ---
+    // Convert old single booking.review to the new per-worker workerReviews[].
+    // The old booking.review field is preserved as null after migration so
+    // the booking schema remains stable.
+    if (!b.workerReviews) {
+      if (b.review && b.review.stars) {
+        // Attribute the legacy review to the first completed assigned slot
+        const targetSlot = b.workerAssignments.find(
+          s => s.assignedProId && s.status === 'completed'
+        );
+        b.workerReviews = targetSlot
+          ? [{
+              slotId: targetSlot.slotId,
+              proId: targetSlot.assignedProId,
+              proName: targetSlot.assignedProName,
+              roleTitle: targetSlot.roleTitle,
+              stars: b.review.stars,
+              comment: b.review.comment || '',
+              date: b.review.date || new Date().toISOString().split('T')[0],
+              disputed: b.review.disputed || false
+            }]
+          : [];
+      } else {
+        b.workerReviews = [];
+      }
+      dirty = true;
+    }
+
+    // --- Migrate: sanitize payout amounts from customer-visible system messages ---
+    // Strips worker payout dollar figures from Crewly Dispatch system messages.
+    // Customer and Pro authored messages (senderRole !== 'system') are never
+    // modified — only system-generated dispatch notifications are sanitized.
+    b.messages = (b.messages || []).map(m => {
+      if (m.senderRole === 'system') {
+        const original = m.text;
+        // Pattern: "Name joined as Role ($75 offered payout)." →
+        //          "Name has accepted the Role assignment."
+        m.text = m.text.replace(
+          /^(.+?) joined as (.+?) \(\$[\d.]+ offered payout\)\.?$/,
+          '$1 has accepted the $2 assignment.'
+        );
+        // Generic cleanup for any other remaining payout references
+        m.text = m.text.replace(/\s*\(\$[\d,.]+ (?:offered )?payout\)/gi, '');
+        if (m.text !== original) dirty = true;
+      }
+      return m;
+    });
+
+    return b;
+  });
+
+  if (dirty) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+  return state;
+}
+
+// ---------------------------------------------------------------------------
 // 2. Central State Hydration & Storage
 // ---------------------------------------------------------------------------
 export function loadState() {
@@ -51,7 +128,7 @@ export function loadState() {
     if (!parsed || !parsed.bookings || !parsed.pros) {
       return resetStateToSeed();
     }
-    return parsed;
+    return migrateStateIfNeeded(parsed);
   } catch (err) {
     console.warn('Error loading Crewly state from localStorage; resetting to seed.', err);
     return resetStateToSeed();
@@ -384,7 +461,7 @@ export function assignProToSlot(bookingId, slotId, proId) {
     senderRole: 'system',
     senderName: 'Crewly Dispatch',
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    text: `${pro.name} joined as ${slot.roleTitle} ($${slot.payout} offered payout).`
+    text: `${pro.name} has accepted the ${slot.roleTitle} assignment.`
   });
 
   saveState(state);
@@ -424,6 +501,20 @@ export function updateProAssignmentStatus(bookingId, slotId, newStatus) {
     });
   }
 
+  // Per-slot earnings release with idempotency guard.
+  // Each Pro's payout is released when THEIR OWN slot completes.
+  // The customer booking remains active until every worker finishes.
+  // The payoutReleased flag prevents duplicate credits if the completion
+  // action is triggered more than once on the same slot.
+  if (newStatus === 'completed' && !slot.payoutReleased) {
+    slot.payoutReleased = true;
+    if (pro && pro.earnings) {
+      pro.earnings.pendingBalance = Math.max(0, pro.earnings.pendingBalance - slot.payout);
+      pro.earnings.availableBalance += slot.payout;
+      pro.earnings.lifetimeEarned += slot.payout;
+    }
+  }
+
   // Update overall booking status based on combined slot statuses
   const allCompleted = booking.workerAssignments.every(s => s.status === 'completed');
   const anyInProgress = booking.workerAssignments.some(s => s.status === 'in_progress');
@@ -432,13 +523,6 @@ export function updateProAssignmentStatus(bookingId, slotId, newStatus) {
 
   if (allCompleted) {
     booking.overallStatus = 'completed';
-
-    // Move payout from pending to available balance for this Pro
-    if (pro && pro.earnings) {
-      pro.earnings.pendingBalance = Math.max(0, pro.earnings.pendingBalance - slot.payout);
-      pro.earnings.availableBalance += slot.payout;
-      pro.earnings.lifetimeEarned += slot.payout;
-    }
   } else if (anyInProgress) {
     booking.overallStatus = 'in_progress';
   } else if (anyArrived) {
@@ -510,29 +594,49 @@ export function simulateProCashOut(proId, method = 'instant') {
   };
 }
 
-export function submitCustomerReview(bookingId, { rating, comment }) {
+export function submitWorkerReview(bookingId, slotId, { rating, comment }) {
   const state = loadState();
   const booking = state.bookings.find(b => b.id === bookingId);
   if (!booking) return { success: false, error: 'Booking not found.' };
 
-  booking.rating = rating;
-  booking.review = {
+  const slot = booking.workerAssignments.find(s => s.slotId === slotId);
+  if (!slot) return { success: false, error: 'Worker assignment not found.' };
+  if (!slot.assignedProId) return { success: false, error: 'No Pro is assigned to this position.' };
+
+  // Initialize workerReviews if absent (migration fallback)
+  if (!booking.workerReviews) booking.workerReviews = [];
+
+  // Prevent duplicate review for the same worker assignment slot
+  if (booking.workerReviews.some(r => r.slotId === slotId)) {
+    return { success: false, error: 'You have already submitted a review for this worker.' };
+  }
+
+  const pro = state.pros.find(p => p.id === slot.assignedProId);
+
+  // Record the per-worker review
+  booking.workerReviews.push({
+    slotId,
+    proId: slot.assignedProId,
+    proName: slot.assignedProName,
+    roleTitle: slot.roleTitle,
     stars: rating,
-    comment,
+    comment: comment || '',
     date: new Date().toISOString().split('T')[0],
     disputed: false
-  };
-
-  // Recalculate assigned pros' ratings
-  booking.workerAssignments.forEach(slot => {
-    if (slot.assignedProId) {
-      const pro = state.pros.find(p => p.id === slot.assignedProId);
-      if (pro) {
-        pro.reviewCount = (pro.reviewCount || 0) + 1;
-        pro.rating = Number(((pro.rating * (pro.reviewCount - 1) + rating) / pro.reviewCount).toFixed(2));
-      }
-    }
   });
+
+  // Update the Pro's rating using correct weighted average over their review history.
+  // Uses pro.reviewCount (verified review count), not completed job count.
+  if (pro) {
+    const oldCount = pro.reviewCount || 0;
+    const oldRating = pro.rating || 0;
+    const newCount = oldCount + 1;
+    pro.rating = Number(((oldRating * oldCount + rating) / newCount).toFixed(2));
+    pro.reviewCount = newCount;
+  }
+
+  // Preserve a booking-level rating field for reference
+  booking.rating = rating;
 
   saveState(state);
   return { success: true, booking };
@@ -541,10 +645,24 @@ export function submitCustomerReview(bookingId, { rating, comment }) {
 export function flagReviewDispute(bookingId, proId, reason) {
   const state = loadState();
   const booking = state.bookings.find(b => b.id === bookingId);
-  if (!booking || !booking.review) return { success: false, error: 'Review not found.' };
+  if (!booking) return { success: false, error: 'Booking not found.' };
 
-  booking.review.disputed = true;
-  booking.review.disputeReason = reason || 'Pro requested platform investigation of review conditions.';
-  saveState(state);
-  return { success: true, booking };
+  // Flag the specific Pro's review in workerReviews (new schema)
+  const proReview = (booking.workerReviews || []).find(r => r.proId === proId);
+  if (proReview) {
+    proReview.disputed = true;
+    proReview.disputeReason = reason || 'Pro requested platform investigation of review conditions.';
+    saveState(state);
+    return { success: true, booking };
+  }
+
+  // Backward compat: flag old-format single review if workerReviews is empty
+  if (booking.review) {
+    booking.review.disputed = true;
+    booking.review.disputeReason = reason || 'Pro requested platform investigation of review conditions.';
+    saveState(state);
+    return { success: true, booking };
+  }
+
+  return { success: false, error: 'No review found for this worker on this booking.' };
 }

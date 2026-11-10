@@ -319,6 +319,7 @@ export const INITIAL_BOOKINGS = [
     ],
     rating: null,
     review: null,
+    workerReviews: [],
     createdAt: '2026-11-05T09:10:00Z'
   },
   {
@@ -374,6 +375,7 @@ export const INITIAL_BOOKINGS = [
     ],
     rating: null,
     review: null,
+    workerReviews: [],
     createdAt: '2026-11-05T09:45:00Z'
   },
   {
@@ -413,7 +415,8 @@ export const INITIAL_BOOKINGS = [
         assignedProId: 'pro_carlos',
         assignedProName: 'Carlos Mendez',
         assignedAt: '2026-11-04T08:00:00Z',
-        payout: 35
+        payout: 35,
+        payoutReleased: true
       }
     ],
     overallStatus: 'completed',
@@ -428,12 +431,19 @@ export const INITIAL_BOOKINGS = [
       }
     ],
     rating: 5,
-    review: {
-      stars: 5,
-      comment: 'Carlos did a phenomenal job! Edges are super crisp and cleaned up all clippings from the driveway.',
-      date: '2026-11-04',
-      disputed: false
-    },
+    review: null,
+    workerReviews: [
+      {
+        slotId: 'slot_1',
+        proId: 'pro_carlos',
+        proName: 'Carlos Mendez',
+        roleTitle: 'Lawn Care Specialist',
+        stars: 5,
+        comment: 'Carlos did a phenomenal job! Edges are super crisp and cleaned up all clippings from the driveway.',
+        date: '2026-11-04',
+        disputed: false
+      }
+    ],
     createdAt: '2026-11-03T14:20:00Z'
   }
 ];
