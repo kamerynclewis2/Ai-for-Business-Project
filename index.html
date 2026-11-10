@@ -188,22 +188,72 @@
           </div>
         </div>
 
-        <!-- Pro Earnings Ledger -->
-        <div class="pro-earnings-grid">
-          <div class="earnings-stat-box">
-            <span class="earnings-stat-label">Available Balance</span>
-            <span class="earnings-stat-value available" id="pro-stat-available">$275.00</span>
-            <button class="btn-cashout" id="btn-cashout-trigger">Simulated Cash-Out</button>
+        <!-- Pro Wallet & Earnings Dashboard (Stage 2) -->
+        <div class="wallet-section-container" style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 24px; margin-top: 16px; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 1.4rem;">💼</span>
+                <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-navy); margin: 0;">My Crewly Wallet</h2>
+              </div>
+              <p style="font-size: 0.83rem; color: var(--text-muted); margin: 4px 0 0 0;">
+                Transparent simulated earnings ledger, pending payouts, and simulated transfers for <strong id="wallet-pro-name">Dallas Pro</strong>
+              </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="verified-credential-chip" style="background: #ECFDF5; color: var(--brand-emerald); border-color: #A7F3D0; font-size: 0.75rem;">
+                ✓ Simulated Ledger Active
+              </span>
+              <button class="btn-cashout" id="btn-cashout-trigger" style="margin: 0; padding: 10px 20px; font-size: 0.9rem;">
+                💵 Cash Out Funds
+              </button>
+            </div>
           </div>
-          <div class="earnings-stat-box">
-            <span class="earnings-stat-label">Pending Payouts</span>
-            <span class="earnings-stat-value" id="pro-stat-pending">$75.00</span>
-            <span style="font-size: 0.72rem; color: var(--text-muted);">From jobs in-progress</span>
+
+          <!-- 3 Primary Financial Metrics -->
+          <div class="pro-earnings-grid" style="margin-top: 0; margin-bottom: 24px;">
+            <div class="earnings-stat-box">
+              <span class="earnings-stat-label">Available Balance</span>
+              <span class="earnings-stat-value available" id="pro-stat-available">$0.00</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Ready to withdraw (eligible completed jobs)</span>
+            </div>
+            <div class="earnings-stat-box">
+              <span class="earnings-stat-label">Pending Earnings</span>
+              <span class="earnings-stat-value" id="pro-stat-pending">$0.00</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">From accepted / ongoing assignments</span>
+            </div>
+            <div class="earnings-stat-box">
+              <span class="earnings-stat-label">Lifetime Earned</span>
+              <span class="earnings-stat-value" id="pro-stat-lifetime">$0.00</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Total historical earnings (never decreases)</span>
+            </div>
           </div>
-          <div class="earnings-stat-box">
-            <span class="earnings-stat-label">Lifetime Earned</span>
-            <span class="earnings-stat-value" id="pro-stat-lifetime">$2,450.00</span>
-            <span style="font-size: 0.72rem; color: var(--text-muted);">Dallas Marketplace</span>
+
+          <!-- Wallet Transaction History -->
+          <div style="border-top: 1px solid var(--border-light); padding-top: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+              <div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--primary-navy); margin: 0;">Transaction History & Receipts</h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Historical job credits, opening snapshots, and simulated withdrawals</p>
+              </div>
+              <!-- Filter Pills -->
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button id="wallet-filter-all" class="wallet-filter-pill active" style="padding: 5px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; cursor: pointer; background: var(--primary-navy); color: white; border: 1px solid var(--primary-navy);">
+                  All Transactions (<span id="wallet-count-all">0</span>)
+                </button>
+                <button id="wallet-filter-earnings" class="wallet-filter-pill" style="padding: 5px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; cursor: pointer; background: white; color: var(--text-secondary); border: 1px solid var(--border-light);">
+                  💰 Earnings (<span id="wallet-count-earnings">0</span>)
+                </button>
+                <button id="wallet-filter-cashouts" class="wallet-filter-pill" style="padding: 5px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; cursor: pointer; background: white; color: var(--text-secondary); border: 1px solid var(--border-light);">
+                  💵 Cash-Outs (<span id="wallet-count-cashouts">0</span>)
+                </button>
+              </div>
+            </div>
+
+            <!-- Transaction List Container -->
+            <div id="wallet-transactions-container">
+              <!-- Rendered dynamically -->
+            </div>
           </div>
         </div>
       </div>
@@ -440,46 +490,92 @@
   </div>
 
   <!-- ===================================================================
-       MODAL: SIMULATED PRO CASHOUT
+       MODAL: SIMULATED PRO CASHOUT (Stage 2 Section 5 & 6)
        =================================================================== -->
   <div class="modal-overlay" id="cashout-modal">
-    <div class="modal-dialog">
+    <div class="modal-dialog" style="max-width: 520px;">
       <div class="modal-header">
-        <h2>💵 Pro Simulated Cash-Out</h2>
+        <div>
+          <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary-navy); margin: 0;">💵 Pro Simulated Cash-Out</h2>
+          <p id="cashout-modal-pro-subtitle" style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0 0;">
+            Dallas Pro Wallet Withdrawal Simulation
+          </p>
+        </div>
         <button class="modal-close-btn" id="btn-close-cashout">&times;</button>
       </div>
       <div class="modal-body">
-        <div style="text-align: center; margin-bottom: 20px;">
-          <div style="font-size: 0.85rem; color: var(--text-muted);">Available for Transfer:</div>
-          <div style="font-size: 2.2rem; font-weight: 800; color: var(--brand-emerald);" id="cashout-modal-amount">$0.00</div>
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px; text-align: center; margin-bottom: 18px;">
+          <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Available for Transfer:</div>
+          <div style="font-size: 2.2rem; font-weight: 900; color: var(--brand-emerald);" id="cashout-modal-amount">$0.00</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">From eligible completed job payouts</div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Withdrawal Amount:</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Default: Full Balance</span>
+          </label>
+          <div style="display: flex; gap: 8px;">
+            <div style="position: relative; flex: 1;">
+              <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-secondary);">$</span>
+              <input type="number" id="input-cashout-amount" class="form-input" min="1" step="0.01" placeholder="0.00" style="padding-left: 28px; font-size: 1.1rem; font-weight: 700;" required>
+            </div>
+            <button type="button" id="btn-cashout-max" style="padding: 0 16px; background: #EFF6FF; border: 1px solid var(--accent-blue); color: var(--accent-blue); border-radius: var(--radius-md); font-weight: 700; font-size: 0.85rem; cursor: pointer;">
+              Max
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
           <label class="form-label">Transfer Method:</label>
           <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label style="padding: 12px; border: 1px solid var(--border-dark); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+            <label style="padding: 12px; border: 1px solid var(--border-dark); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white;" id="cashout-method-instant-label">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <input type="radio" name="cashoutMethod" value="instant" checked>
                 <div>
-                  <div style="font-weight: 700; font-size: 0.9rem;">Instant Cash-Out (Dallas Debit Card ****4012)</div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">Funds available in minutes ($1.50 simulated fee)</div>
+                  <div style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy);">⚡ Instant Cash-Out (Dallas Debit Card ****4012)</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Funds available in minutes • Flat $1.50 simulated fee</div>
                 </div>
               </div>
             </label>
-            <label style="padding: 12px; border: 1px solid var(--border-dark); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+            <label style="padding: 12px; border: 1px solid var(--border-dark); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white;" id="cashout-method-standard-label">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <input type="radio" name="cashoutMethod" value="standard">
                 <div>
-                  <div style="font-weight: 700; font-size: 0.9rem;">Standard ACH Transfer (Bank of Texas ****8921)</div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">1-2 business days (Free)</div>
+                  <div style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy);">🏦 Standard ACH Transfer (Bank of Texas ****8921)</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">1–2 business days (simulated) • Free ($0.00 fee)</div>
                 </div>
               </div>
             </label>
           </div>
         </div>
 
-        <div style="background: #F8FAFC; border: 1px solid var(--border-light); padding: 12px; border-radius: var(--radius-sm); font-size: 0.78rem; color: var(--text-muted);">
-          ⚠️ <strong>Demonstration Notice:</strong> Payout ledger is simulated in-browser. No real bank accounts or debit cards are charged or credited.
+        <!-- Live Calculation Breakdown -->
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 14px; font-size: 0.85rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span style="color: var(--text-muted);">Gross Withdrawal:</span>
+            <strong id="cashout-summary-gross">$0.00</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span style="color: var(--text-muted);">Simulated Fee:</span>
+            <span style="color: var(--accent-red);" id="cashout-summary-fee">-$1.50</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-light); padding-top: 6px; margin-bottom: 6px;">
+            <span style="font-weight: 700; color: var(--primary-navy);">Net Transferred:</span>
+            <strong style="color: var(--brand-emerald); font-size: 1rem;" id="cashout-summary-net">$0.00</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); border-top: 1px dashed var(--border-light); padding-top: 4px;">
+            <span>Remaining Available Balance:</span>
+            <span id="cashout-summary-remaining">$0.00</span>
+          </div>
+        </div>
+
+        <!-- Validation Error Message Alert -->
+        <div id="cashout-validation-msg" style="display: none; background: #FEE2E2; border: 1px solid #DC2626; color: #991B1B; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 0.82rem; margin-bottom: 12px;"></div>
+
+        <!-- Disclaimer -->
+        <div style="background: #FFFBEB; border: 1px solid #F59E0B; padding: 10px 12px; border-radius: var(--radius-sm); font-size: 0.75rem; color: #92400E; text-align: center; font-weight: 700;">
+          ⚠️ SIMULATED TRANSACTION — NO REAL MONEY TRANSFERRED
         </div>
       </div>
       <div class="modal-footer">
@@ -488,6 +584,78 @@
         </button>
         <button class="btn-book-service" id="btn-confirm-cashout" style="width: auto; padding: 10px 24px;">
           Confirm Simulated Transfer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: SIMULATED TRANSFER RECEIPT (Stage 2 Section 8)
+       =================================================================== -->
+  <div class="modal-overlay" id="receipt-modal">
+    <div class="modal-dialog" style="max-width: 500px;">
+      <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.4rem;">🧾</span>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary-navy); margin: 0;">Transfer Receipt</h2>
+          </div>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Crewly Dallas Pilot — Pro Wallet Simulation</p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-receipt">&times;</button>
+      </div>
+      <div class="modal-body" style="padding-top: 10px;">
+        <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 16px; font-size: 0.75rem; color: #92400E; text-align: center; font-weight: 800; text-transform: uppercase;">
+          ⚠️ SIMULATED TRANSACTION — NO REAL MONEY TRANSFERRED
+        </div>
+
+        <div style="border: 1px dashed var(--border-dark); border-radius: var(--radius-md); padding: 18px; background: #FAFAFA;">
+          <div style="text-align: center; border-bottom: 1px solid var(--border-light); padding-bottom: 14px; margin-bottom: 14px;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Net Simulated Transfer</div>
+            <div style="font-size: 2.2rem; font-weight: 900; color: var(--brand-emerald);" id="receipt-net-amount">$0.00</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;" id="receipt-status-pill">
+              <span class="status-badge confirmed" id="receipt-status-text">✓ Transfer Confirmed</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Transaction ID:</span>
+              <strong style="font-family: monospace; font-size: 0.8rem;" id="receipt-tx-id">txn_123</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Recipient Pro:</span>
+              <strong id="receipt-pro-name">Marcus Davis</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Date & Time:</span>
+              <span id="receipt-timestamp">2026-11-10 10:00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Transfer Method:</span>
+              <span id="receipt-method">Instant Cash-Out (Debit Card ****4012)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-light); padding-top: 8px; margin-top: 4px;">
+              <span style="color: var(--text-muted);">Gross Withdrawal:</span>
+              <span id="receipt-gross-amount">$100.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Processing Fee:</span>
+              <span style="color: var(--accent-red);" id="receipt-fee">-$1.50</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: 800; border-top: 1px solid var(--border-light); padding-top: 8px; color: var(--primary-navy); font-size: 0.95rem;">
+              <span>Delivered Net:</span>
+              <span style="color: var(--brand-emerald);" id="receipt-final-net">$98.50</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between;">
+        <button class="btn-open-tab" id="btn-print-receipt" style="padding: 8px 16px; border-radius: var(--radius-md);">
+          🖨️ Print Receipt
+        </button>
+        <button class="btn-book-service" id="btn-done-receipt" style="width: auto; padding: 8px 22px;">
+          Done
         </button>
       </div>
     </div>

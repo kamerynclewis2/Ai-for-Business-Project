@@ -9,6 +9,7 @@ import {
   DALLAS_NEIGHBORHOODS,
   DALLAS_SERVICE_ZIPS,
   lookupDallasZip,
+  WALLET_CONFIG,
   INITIAL_PROS,
   INITIAL_CUSTOMERS
 } from './data.js';
@@ -31,7 +32,10 @@ import {
   isAsapExpired,
   getAsapRemainingMinutes,
   extendAsapBooking,
-  rescheduleBooking
+  rescheduleBooking,
+  getProWalletSummary,
+  dollarsToCents,
+  centsToDollars
 } from './matching.js';
 
 // Global UI State
@@ -43,6 +47,8 @@ let pendingReviewRoleTitle = null;
 let currentRatingSelection = 5;
 let currentJobBoardFilter = 'available';
 let pendingRescheduleBookingId = null;
+let currentWalletFilter = 'all'; // 'all' | 'earnings' | 'cashouts'
+let isCashoutSubmitting = false;
 
 // ---------------------------------------------------------------------------
 // Timing Formatting Utility (Separates human labels from valid ISO/time values)
@@ -964,9 +970,19 @@ function renderProDashboard() {
   autobookCheckbox.checked = !!activePro.autoBookEnabled;
 
   // Earnings Display
-  document.getElementById('pro-stat-available').textContent = `$${(activePro.earnings?.availableBalance || 0).toFixed(2)}`;
-  document.getElementById('pro-stat-pending').textContent = `$${(activePro.earnings?.pendingBalance || 0).toFixed(2)}`;
-  document.getElementById('pro-stat-lifetime').textContent = `$${(activePro.earnings?.lifetimeEarned || 0).toFixed(2)}`;
+  const availableVal = activePro.earnings?.availableBalance || 0;
+  const pendingVal = activePro.earnings?.pendingBalance || 0;
+  const lifetimeVal = activePro.earnings?.lifetimeEarned || 0;
+
+  document.getElementById('pro-stat-available').textContent = `$${availableVal.toFixed(2)}`;
+  document.getElementById('pro-stat-pending').textContent = `$${pendingVal.toFixed(2)}`;
+  document.getElementById('pro-stat-lifetime').textContent = `$${lifetimeVal.toFixed(2)}`;
+
+  const walletProName = document.getElementById('wallet-pro-name');
+  if (walletProName) walletProName.textContent = activePro.name;
+
+  // Render Pro Wallet Transaction Ledger (Stage 2)
+  renderProWalletTransactions(activePro);
 
   // Populate Pro selector dropdown
   const proSelector = document.getElementById('pro-selector');
@@ -977,6 +993,161 @@ function renderProDashboard() {
   renderProActiveAssignments(activePro);
   renderProCompletedJobs(activePro);
   renderProJobBoard(activePro);
+}
+
+// ---------------------------------------------------------------------------
+// Render Pro Wallet Transaction Ledger & Filter Tabs (Stage 2)
+// ---------------------------------------------------------------------------
+function renderProWalletTransactions(activePro) {
+  const container = document.getElementById('wallet-transactions-container');
+  if (!container) return;
+
+  const rawTxs = activePro.earnings?.walletTransactions || [];
+
+  // Update count badges
+  const countAll = rawTxs.length;
+  const countEarnings = rawTxs.filter(t => t.type === 'earnings_credit' || t.type === 'historical_job_import' || t.type === 'opening_balance_snapshot').length;
+  const countCashouts = rawTxs.filter(t => t.type === 'cashout_instant' || t.type === 'cashout_standard').length;
+
+  const elAll = document.getElementById('wallet-count-all');
+  const elEarnings = document.getElementById('wallet-count-earnings');
+  const elCashouts = document.getElementById('wallet-count-cashouts');
+  if (elAll) elAll.textContent = countAll;
+  if (elEarnings) elEarnings.textContent = countEarnings;
+  if (elCashouts) elCashouts.textContent = countCashouts;
+
+  // Filter pills visual state
+  const btnAll = document.getElementById('wallet-filter-all');
+  const btnEarnings = document.getElementById('wallet-filter-earnings');
+  const btnCashouts = document.getElementById('wallet-filter-cashouts');
+
+  const setFilterPillState = (btn, isActive) => {
+    if (!btn) return;
+    if (isActive) {
+      btn.classList.add('active');
+      btn.style.background = 'var(--primary-navy)';
+      btn.style.color = 'white';
+      btn.style.borderColor = 'var(--primary-navy)';
+    } else {
+      btn.classList.remove('active');
+      btn.style.background = 'white';
+      btn.style.color = 'var(--text-secondary)';
+      btn.style.borderColor = 'var(--border-light)';
+    }
+  };
+
+  setFilterPillState(btnAll, currentWalletFilter === 'all');
+  setFilterPillState(btnEarnings, currentWalletFilter === 'earnings');
+  setFilterPillState(btnCashouts, currentWalletFilter === 'cashouts');
+
+  let filteredTxs = rawTxs;
+  if (currentWalletFilter === 'earnings') {
+    filteredTxs = rawTxs.filter(t => t.type === 'earnings_credit' || t.type === 'historical_job_import' || t.type === 'opening_balance_snapshot');
+  } else if (currentWalletFilter === 'cashouts') {
+    filteredTxs = rawTxs.filter(t => t.type === 'cashout_instant' || t.type === 'cashout_standard');
+  }
+
+  if (filteredTxs.length === 0) {
+    const emptyMsgs = {
+      all: `No wallet activity recorded yet for ${activePro.name}.`,
+      earnings: `No job earnings credited yet for ${activePro.name}. Complete jobs on the board to earn payouts.`,
+      cashouts: `No cash-out withdrawals requested yet. Click "Cash Out Funds" above when you have available earnings.`
+    };
+    container.innerHTML = `
+      <div style="background: white; border: 1px dashed var(--border-dark); border-radius: var(--radius-md); padding: 24px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+        ${emptyMsgs[currentWalletFilter] || 'No transactions found.'}
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filteredTxs.map(tx => {
+    const isEarnings = tx.type === 'earnings_credit' || tx.type === 'historical_job_import';
+    const isSnapshot = tx.type === 'opening_balance_snapshot';
+    const isCashout = tx.type === 'cashout_instant' || tx.type === 'cashout_standard';
+
+    let cardClass = isEarnings ? 'earnings' : (isCashout ? 'cashout' : 'snapshot');
+    let iconClass = cardClass;
+    let iconSymbol = isEarnings ? '💰' : (isCashout ? (tx.type === 'cashout_instant' ? '⚡' : '🏦') : '📋');
+
+    let amountFormatted = '';
+    let amountColor = 'var(--text-primary)';
+    if (isEarnings) {
+      amountFormatted = `+$${(tx.amountCents / 100).toFixed(2)}`;
+      amountColor = 'var(--brand-emerald)';
+    } else if (isCashout) {
+      amountFormatted = `-$${(tx.amountCents / 100).toFixed(2)}`;
+      amountColor = 'var(--accent-red)';
+    } else {
+      amountFormatted = '$0.00';
+      amountColor = 'var(--text-muted)';
+    }
+
+    let statusBadge = '';
+    if (tx.status === 'completed') {
+      statusBadge = `<span class="slot-status-pill completed">✓ CREDITED</span>`;
+    } else if (tx.status === 'simulated_instant_confirmed') {
+      statusBadge = `<span class="slot-status-pill in_progress" style="background:#ECFDF5; color:var(--brand-emerald); border-color:#A7F3D0;">✓ CONFIRMED (SIMULATED)</span>`;
+    } else if (tx.status === 'simulated_processing') {
+      statusBadge = `<span class="slot-status-pill assigned" style="background:#EFF6FF; color:#1E40AF;">⏳ PROCESSING (1-2 DAYS)</span>`;
+    } else if (tx.status === 'historical_snapshot') {
+      statusBadge = `<span class="slot-status-pill unassigned" style="background:#FEF3C7; color:#92400E;">SNAPSHOT</span>`;
+    } else if (tx.status === 'historical_import') {
+      statusBadge = `<span class="slot-status-pill completed">HISTORICAL</span>`;
+    }
+
+    return `
+      <div class="wallet-tx-card ${cardClass}">
+        <div style="display: flex; align-items: center; gap: 14px; flex: 1; min-width: 260px;">
+          <div class="wallet-tx-icon ${iconClass}">
+            ${iconSymbol}
+          </div>
+          <div style="flex: 1;">
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 2px;">
+              <strong style="color: var(--primary-navy); font-size: 0.92rem;">${tx.description}</strong>
+              ${statusBadge}
+            </div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <span>📅 ${tx.displayDate || (tx.isoTimestamp ? tx.isoTimestamp.split('T')[0] : '')}</span>
+              <span style="font-family: monospace; font-size: 0.75rem;">ID: ${tx.txId}</span>
+              ${tx.bookingId ? `<span>Booking: <strong>${tx.bookingId}</strong></span>` : ''}
+              ${tx.feeCents > 0 ? `<span>Fee: -$${(tx.feeCents / 100).toFixed(2)}</span>` : ''}
+              ${isCashout ? `<span style="color: var(--brand-emerald); font-weight: 700;">Net: $${(tx.netCents / 100).toFixed(2)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align: right; display: flex; align-items: center; gap: 14px;">
+          <div>
+            <div style="font-size: 1.25rem; font-weight: 800; color: ${amountColor};">
+              ${amountFormatted}
+            </div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">
+              ${isEarnings ? 'Earned Payout' : (isCashout ? 'Withdrawn' : 'Baseline Reference')}
+            </div>
+          </div>
+          ${
+            isCashout
+              ? `<button class="btn-open-tab btn-view-receipt" data-tx-id="${tx.txId}" style="padding: 6px 12px; font-size: 0.76rem; border-radius: var(--radius-sm); white-space: nowrap; cursor: pointer;">
+                  🧾 Receipt
+                </button>`
+              : ''
+          }
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Attach Receipt button listeners
+  container.querySelectorAll('.btn-view-receipt').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const txId = e.currentTarget.getAttribute('data-tx-id');
+      const tx = rawTxs.find(t => t.txId === txId);
+      if (tx) {
+        openReceiptModal(tx, activePro.name);
+      }
+    });
+  });
 }
 
 // Render Pro Active Assignments
@@ -1362,32 +1533,168 @@ function openAdminMetricsModal() {
 }
 
 // ---------------------------------------------------------------------------
-// Simulated Cash-Out Modal Handlers
+// Simulated Cash-Out Modal Handlers (Stage 2 Section 5 & 6)
 // ---------------------------------------------------------------------------
 function openCashoutModal() {
   const state = loadState();
   const activePro = state.pros.find(p => p.id === state.activeProId) || state.pros[0];
   const modal = document.getElementById('cashout-modal');
+  if (!modal) return;
+
+  const subtitle = document.getElementById('cashout-modal-pro-subtitle');
+  if (subtitle) {
+    subtitle.textContent = `Dallas Pro Wallet Withdrawal Simulation (${activePro.name})`;
+  }
 
   const available = activePro.earnings?.availableBalance || 0;
-  document.getElementById('cashout-modal-amount').textContent = `$${available.toFixed(2)}`;
+  const amountDisplay = document.getElementById('cashout-modal-amount');
+  if (amountDisplay) {
+    amountDisplay.textContent = `$${available.toFixed(2)}`;
+  }
+
+  const amountInput = document.getElementById('input-cashout-amount');
+  if (amountInput) {
+    amountInput.value = available > 0 ? available.toFixed(2) : '0.00';
+    amountInput.max = available;
+  }
+
+  // Reset instant method as checked by default
+  const instantRadio = document.querySelector('input[name="cashoutMethod"][value="instant"]');
+  if (instantRadio) instantRadio.checked = true;
+
+  updateCashoutCalculationPreview();
   modal.classList.add('open');
 }
 
+function updateCashoutCalculationPreview() {
+  const state = loadState();
+  const activePro = state.pros.find(p => p.id === state.activeProId) || state.pros[0];
+  const available = activePro.earnings?.availableBalance || 0;
+
+  const amountInput = document.getElementById('input-cashout-amount');
+  const rawVal = parseFloat(amountInput ? amountInput.value : 0);
+  const requestedGross = isNaN(rawVal) ? 0 : rawVal;
+
+  const method = document.querySelector('input[name="cashoutMethod"]:checked')?.value || 'instant';
+  const fee = method === 'instant'
+    ? (WALLET_CONFIG.INSTANT_CASHOUT_FEE_CENTS / 100)
+    : (WALLET_CONFIG.STANDARD_CASHOUT_FEE_CENTS / 100);
+
+  const net = Math.max(0, requestedGross - fee);
+  const remaining = Math.max(0, available - requestedGross);
+
+  const elGross = document.getElementById('cashout-summary-gross');
+  const elFee = document.getElementById('cashout-summary-fee');
+  const elNet = document.getElementById('cashout-summary-net');
+  const elRemaining = document.getElementById('cashout-summary-remaining');
+  const valMsg = document.getElementById('cashout-validation-msg');
+  const confirmBtn = document.getElementById('btn-confirm-cashout');
+
+  if (elGross) elGross.textContent = `$${requestedGross.toFixed(2)}`;
+  if (elFee) elFee.textContent = fee > 0 ? `-$${fee.toFixed(2)}` : '$0.00 (Free)';
+  if (elNet) elNet.textContent = `$${net.toFixed(2)}`;
+  if (elRemaining) elRemaining.textContent = `$${remaining.toFixed(2)}`;
+
+  // Validation
+  let errorMsg = null;
+  if (available <= 0) {
+    errorMsg = 'No available balance to withdraw. Complete assignments to earn payouts.';
+  } else if (requestedGross <= 0) {
+    errorMsg = 'Withdrawal amount must be greater than zero.';
+  } else if (requestedGross > available) {
+    errorMsg = `Requested withdrawal ($${requestedGross.toFixed(2)}) exceeds available balance ($${available.toFixed(2)}).`;
+  } else if (method === 'instant' && requestedGross <= fee) {
+    errorMsg = `Instant Cash-Out requires a withdrawal amount greater than the $${fee.toFixed(2)} simulated fee.`;
+  }
+
+  if (valMsg && confirmBtn) {
+    if (errorMsg) {
+      valMsg.textContent = errorMsg;
+      valMsg.style.display = 'block';
+      confirmBtn.disabled = true;
+      confirmBtn.style.opacity = '0.5';
+      confirmBtn.style.cursor = 'not-allowed';
+    } else {
+      valMsg.style.display = 'none';
+      confirmBtn.disabled = false;
+      confirmBtn.style.opacity = '1';
+      confirmBtn.style.cursor = 'pointer';
+    }
+  }
+}
+
 function handleConfirmCashout() {
+  if (isCashoutSubmitting) return;
+
   const state = loadState();
   const activePro = state.pros.find(p => p.id === state.activeProId) || state.pros[0];
   const method = document.querySelector('input[name="cashoutMethod"]:checked')?.value || 'instant';
+  const amountInput = document.getElementById('input-cashout-amount');
+  const requestedGross = parseFloat(amountInput ? amountInput.value : 0);
 
-  const res = simulateProCashOut(activePro.id, method);
-  document.getElementById('cashout-modal').classList.remove('open');
+  // Generate stable requestId for idempotency
+  const requestId = `req_${activePro.id}_${Date.now()}`;
+
+  const confirmBtn = document.getElementById('btn-confirm-cashout');
+  isCashoutSubmitting = true;
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Processing...';
+  }
+
+  const res = simulateProCashOut(activePro.id, {
+    method,
+    requestedAmountDollars: requestedGross,
+    requestId
+  });
+
+  isCashoutSubmitting = false;
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = 'Confirm Simulated Transfer';
+  }
+
+  document.getElementById('cashout-modal')?.classList.remove('open');
 
   if (res.success) {
-    showToast(`Transferred $${res.netAmount.toFixed(2)} via ${res.method}! (${res.notice})`, '💵');
+    showToast(`Transferred $${res.netAmountDollars.toFixed(2)} via ${res.method}! (${res.notice})`, '💵');
     renderAll();
+    if (res.transaction) {
+      openReceiptModal(res.transaction, activePro.name);
+    }
   } else {
-    alert(res.error);
+    showToast(res.error || 'Withdrawal failed.', '⚠️');
   }
+}
+
+// ---------------------------------------------------------------------------
+// Simulated Receipt Modal Handlers (Stage 2 Section 8)
+// ---------------------------------------------------------------------------
+function openReceiptModal(tx, proName) {
+  const modal = document.getElementById('receipt-modal');
+  if (!modal || !tx) return;
+
+  const txIdEl = document.getElementById('receipt-tx-id');
+  const proNameEl = document.getElementById('receipt-pro-name');
+  const timestampEl = document.getElementById('receipt-timestamp');
+  const methodEl = document.getElementById('receipt-method');
+  const grossEl = document.getElementById('receipt-gross-amount');
+  const feeEl = document.getElementById('receipt-fee');
+  const netEl = document.getElementById('receipt-net-amount');
+  const finalNetEl = document.getElementById('receipt-final-net');
+  const statusPill = document.getElementById('receipt-status-text');
+
+  if (txIdEl) txIdEl.textContent = tx.txId;
+  if (proNameEl) proNameEl.textContent = proName || 'Dallas Pro';
+  if (timestampEl) timestampEl.textContent = `${tx.displayDate || ''} ${tx.isoTimestamp ? tx.isoTimestamp.substring(11, 16) : ''} CST`;
+  if (methodEl) methodEl.textContent = tx.methodLabel || tx.description;
+  if (grossEl) grossEl.textContent = `$${(tx.amountCents / 100).toFixed(2)}`;
+  if (feeEl) feeEl.textContent = tx.feeCents > 0 ? `-$${(tx.feeCents / 100).toFixed(2)}` : '$0.00 (Free)';
+  if (netEl) netEl.textContent = `$${(tx.netCents / 100).toFixed(2)}`;
+  if (finalNetEl) finalNetEl.textContent = `$${(tx.netCents / 100).toFixed(2)}`;
+  if (statusPill) statusPill.textContent = tx.statusLabel || '✓ Simulated Transfer Confirmed';
+
+  modal.classList.add('open');
 }
 
 // ---------------------------------------------------------------------------
@@ -1539,6 +1846,54 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('cashout-modal').classList.remove('open');
   });
   document.getElementById('btn-confirm-cashout').addEventListener('click', handleConfirmCashout);
+
+  // Cashout Modal input calculations & quick Max (Stage 2)
+  document.getElementById('input-cashout-amount')?.addEventListener('input', updateCashoutCalculationPreview);
+  document.getElementById('input-cashout-amount')?.addEventListener('change', updateCashoutCalculationPreview);
+  document.querySelectorAll('input[name="cashoutMethod"]').forEach(r => {
+    r.addEventListener('change', updateCashoutCalculationPreview);
+  });
+  document.getElementById('btn-cashout-max')?.addEventListener('click', () => {
+    const state = loadState();
+    const activePro = state.pros.find(p => p.id === state.activeProId) || state.pros[0];
+    const available = activePro.earnings?.availableBalance || 0;
+    const amountInput = document.getElementById('input-cashout-amount');
+    if (amountInput) {
+      amountInput.value = available.toFixed(2);
+      updateCashoutCalculationPreview();
+    }
+  });
+
+  // Receipt Modal Handlers (Stage 2)
+  document.getElementById('btn-close-receipt')?.addEventListener('click', () => {
+    document.getElementById('receipt-modal')?.classList.remove('open');
+  });
+  document.getElementById('btn-done-receipt')?.addEventListener('click', () => {
+    document.getElementById('receipt-modal')?.classList.remove('open');
+  });
+  document.getElementById('btn-print-receipt')?.addEventListener('click', () => {
+    window.print();
+  });
+
+  // Wallet Transaction Filter Handlers (Stage 2)
+  document.getElementById('wallet-filter-all')?.addEventListener('click', () => {
+    currentWalletFilter = 'all';
+    const state = loadState();
+    const activePro = state.pros.find(p => p.id === state.activeProId) || state.pros[0];
+    renderProWalletTransactions(activePro);
+  });
+  document.getElementById('wallet-filter-earnings')?.addEventListener('click', () => {
+    currentWalletFilter = 'earnings';
+    const state = loadState();
+    const activePro = state.pros.find(p => p.id === state.activeProId) || state.pros[0];
+    renderProWalletTransactions(activePro);
+  });
+  document.getElementById('wallet-filter-cashouts')?.addEventListener('click', () => {
+    currentWalletFilter = 'cashouts';
+    const state = loadState();
+    const activePro = state.pros.find(p => p.id === state.activeProId) || state.pros[0];
+    renderProWalletTransactions(activePro);
+  });
 
   // Review modal
   setupReviewModal();

@@ -1051,3 +1051,88 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===================================================================
+   PRO WALLET & TRANSACTION LEDGER (Stage 2)
+   =================================================================== */
+.wallet-tx-card {
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  transition: all 0.2s ease;
+}
+
+.wallet-tx-card:hover {
+  border-color: var(--border-dark);
+  box-shadow: var(--shadow-sm);
+}
+
+.wallet-tx-card.earnings {
+  border-left: 4px solid var(--brand-emerald);
+}
+
+.wallet-tx-card.cashout {
+  border-left: 4px solid var(--accent-blue);
+}
+
+.wallet-tx-card.snapshot {
+  border-left: 4px solid var(--accent-amber);
+}
+
+.wallet-tx-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.wallet-tx-icon.earnings {
+  background: var(--brand-mint);
+  color: var(--brand-emerald);
+}
+
+.wallet-tx-icon.cashout {
+  background: var(--accent-blue-light);
+  color: var(--accent-blue);
+}
+
+.wallet-tx-icon.snapshot {
+  background: var(--accent-amber-light);
+  color: var(--accent-amber);
+}
+
+.wallet-filter-pill.active {
+  background: var(--primary-navy) !important;
+  color: white !important;
+  border-color: var(--primary-navy) !important;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #receipt-modal, #receipt-modal * {
+    visibility: visible;
+  }
+  #receipt-modal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: white;
+  }
+  #receipt-modal .modal-footer, #receipt-modal .modal-close-btn {
+    display: none !important;
+  }
+}

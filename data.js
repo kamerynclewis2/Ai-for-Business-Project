@@ -31,6 +31,26 @@ export const DALLAS_SERVICE_ZIPS = {
 export const ASAP_MATCHING_WINDOW_MINUTES = 60;
 export const ASAP_DISPATCH_BUFFER_MINUTES = 30;
 
+// ---------------------------------------------------------------------------
+// Wallet Configuration (Stage 2 — Simulated Pro Wallet)
+// ---------------------------------------------------------------------------
+// All fee values in INTEGER CENTS. Dollar balances (availableBalance,
+// pendingBalance, lifetimeEarned) remain as floating-point dollars per
+// their established schema; cents are used only within the transaction
+// ledger and for cash-out arithmetic at conversion boundaries.
+export const WALLET_CONFIG = {
+  INSTANT_CASHOUT_FEE_CENTS:    150,    // $1.50 simulated instant transfer fee
+  STANDARD_CASHOUT_FEE_CENTS:   0,      // $0.00 — standard ACH, no fee
+  INSTANT_METHOD_ID:            'instant',
+  STANDARD_METHOD_ID:           'standard',
+  INSTANT_LABEL:                'Instant Cash-Out — Dallas Debit Card ****4012',
+  STANDARD_LABEL:               'Standard ACH Transfer — Bank of Texas ****8921',
+  INSTANT_PROCESSING_TIME:      'Funds available in minutes (simulated)',
+  STANDARD_PROCESSING_TIME:     '1–2 business days (simulated)',
+  SCHEMA_VERSION:               2,       // wallet migration version gate
+  SIMULATED_DISCLAIMER:         'SIMULATED TRANSACTION — NO REAL MONEY TRANSFERRED'
+};
+
 export function lookupDallasZip(zip) {
   const cleanZip = String(zip || '').trim().slice(0, 5);
   if (DALLAS_SERVICE_ZIPS[cleanZip]) {
@@ -143,7 +163,8 @@ export const INITIAL_PROS = [
     earnings: {
       availableBalance: 275.00,
       pendingBalance: 75.00,
-      lifetimeEarned: 2450.00
+      lifetimeEarned: 2450.00,
+      walletTransactions: []
     }
   },
   {
@@ -180,7 +201,8 @@ export const INITIAL_PROS = [
     earnings: {
       availableBalance: 410.00,
       pendingBalance: 0.00,
-      lifetimeEarned: 4890.00
+      lifetimeEarned: 4890.00,
+      walletTransactions: []
     }
   },
   {
@@ -217,7 +239,8 @@ export const INITIAL_PROS = [
     earnings: {
       availableBalance: 165.00,
       pendingBalance: 35.00,
-      lifetimeEarned: 1340.00
+      lifetimeEarned: 1340.00,
+      walletTransactions: []
     }
   },
   {
@@ -254,7 +277,8 @@ export const INITIAL_PROS = [
     earnings: {
       availableBalance: 85.00,
       pendingBalance: 0.00,
-      lifetimeEarned: 520.00
+      lifetimeEarned: 520.00,
+      walletTransactions: []
     }
   }
 ];

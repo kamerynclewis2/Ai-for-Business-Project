@@ -160,4 +160,43 @@ Every build iteration must pass the following test benchmarks:
 - **Extend Search:** Function `extendAsapBooking(bookingId, additionalMinutes = 30)` sets `asapExpiresAt = max(now, existingDeadline) + additionalMinutes`, updates status back to `partially_filled` or `waiting_for_pros`, and logs a system dispatch notification.
 - **Reschedule Booking:** Function `rescheduleBooking(bookingId, { newDate, newTime })` validates that the new appointment is in the future, updates schedule fields, and re-evaluates all assigned Pros with `canProAcceptSlot()`. Any Pro who does not fit is gracefully unassigned and their pending earnings adjusted.
 
+---
+
+## 11. Stage 2 Pro Wallet & Earnings Management Rules
+- **Dual Balance Precision Architecture:**
+  - Existing fields `availableBalance`, `pendingBalance`, and `lifetimeEarned` remain as 2-decimal floating-point numbers in dollar units for 100% backward compatibility with all customer, Pro, and matching views.
+  - All new financial operations, fee deductions, net calculations, and ledger records internally compute in **integer cents** (`dollarsToCents`, `centsToDollars`) to completely prevent floating-point rounding errors.
+- **Opening-Balance Snapshot:**
+  - In `migrateStateIfNeeded()`, existing balances are preserved by inserting a non-balance-modifying `opening_balance_snapshot` record with `amountCents: 0`.
+  - The migration is idempotent and gated by `WALLET_CONFIG.SCHEMA_VERSION = 2`. Repeated page reloads never duplicate snapshots or alter balances.
+- **Earnings Ledger & Completion Idempotency:**
+  - When a worker marks their assignment completed, `slot.payoutReleased` is set to `true`, pending balance decreases by the slot payout, available balance increases, lifetime earned increases, and an `earnings_credit` transaction is pushed to `pro.earnings.walletTransactions`.
+  - Duplicate status updates on an already completed slot are rejected with an explicit error and do not generate duplicate balance credits or ledger entries.
+- **Simulated Cash-Out Experience & Fees:**
+  - **Instant Cash-Out:** Simulated debit-card payout with a flat $1.50 simulated fee (`WALLET_CONFIG.INSTANT_CASHOUT_FEE_CENTS = 150`). Status: `simulated_instant_confirmed`.
+  - **Standard ACH:** Free simulated bank transfer ($0.00 fee). Status: `simulated_processing` (1–2 business days).
+  - **Partial Withdrawals:** Workers can withdraw any amount between $1.00 and their available balance.
+  - **Guard Conditions:** Withdrawals exceeding available balance, negative balances, and instant withdrawals smaller than or equal to the $1.50 fee ($1.00 instant) are strictly rejected.
+  - **Lifetime Earnings Invariance:** Withdrawing funds strictly deducts from `availableBalance`; `lifetimeEarned` must never decrease.
+- **Cash-Out Idempotency:**
+  - Each cash-out operation accepts a stable `requestId`. If a request with the same `requestId` is re-submitted, the system returns the existing transaction without deducting funds a second time.
+- **Simulated Receipts:**
+  - Every withdrawal produces an interactive receipt modal displaying Pro name, transaction ID, date/time, method, gross amount, fee, net delivered, and the required disclosure: `SIMULATED TRANSACTION — NO REAL MONEY TRANSFERRED`.
+  - Printable via browser print styles; re-openable anytime from the transaction history list.
+
+---
+
+## 12. Stage 2 Acceptance Test Benchmarks (Tests A–K)
+1. **Test A (Earnings Credit):** Worker completes $75 assignment → pending decreases by $75, available increases by $75, lifetime increases by $75, exactly one `earnings_credit` transaction created.
+2. **Test B (Independent Worker Earnings):** Multi-mover booking: Marcus completes slot 1 while Jamar remains pending → Marcus credited, Jamar pending, customer booking remains active.
+3. **Test C (Duplicate Earnings Prevention):** Repeated completion call on the same slot is rejected with zero duplicate balance credit or transaction creation.
+4. **Test D (Instant Cash-Out):** $100 withdrawal with $1.50 fee → $98.50 net delivered, $0 remaining available from $100, lifetime earnings unchanged, transaction and receipt recorded.
+5. **Test E (Standard Cash-Out):** $100 withdrawal with $0.00 fee → $100 net delivered, $0 remaining available, lifetime earnings unchanged, `simulated_processing` status recorded.
+6. **Test F (Insufficient Funds):** Attempt to withdraw more than available balance is strictly rejected with no negative balance or transaction creation.
+7. **Test G (Duplicate Cash-Out Idempotency):** Resubmission with same `requestId` returns already-processed result without double balance deduction.
+8. **Test H (Transaction History Persistence):** Completed jobs and withdrawals persist accurately across browser reloads; receipts remain accessible.
+9. **Test I (Profile Isolation):** Switching between Marcus Davis and Elena Rodriguez shows strictly isolated balances, transactions, and receipts.
+10. **Test J (Legacy Data Migration):** Loading state without `walletSchemaVersion` safely creates opening snapshots without fabricating cash-outs or duplicating earnings.
+11. **Test K (Regression Testing):** Verified that customer booking, dynamic pricing, ASAP matching, scheduled appointments, crew-size enforcement, job-board acceptance, reviews, and cross-tab sync remain 100% operational.
+
 

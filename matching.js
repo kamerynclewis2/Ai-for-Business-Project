@@ -11,6 +11,7 @@ import {
   lookupDallasZip,
   ASAP_MATCHING_WINDOW_MINUTES,
   ASAP_DISPATCH_BUFFER_MINUTES,
+  WALLET_CONFIG,
   INITIAL_PROS,
   INITIAL_CUSTOMERS,
   INITIAL_BOOKINGS
@@ -85,6 +86,26 @@ export function getBookingWorkInterval(booking) {
     endMin,
     durationMinutes
   };
+}
+
+// ---------------------------------------------------------------------------
+// Wallet Utility Helpers (Stage 2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Convert floating-point dollar balance to integer cents.
+ * Math.round prevents accumulated float noise (e.g. 2.9999999 → 300).
+ */
+export function dollarsToCents(dollars) {
+  return Math.round((dollars || 0) * 100);
+}
+
+/**
+ * Convert integer cents to a formatted dollar string.
+ * Always returns two decimal places (e.g. 7500 → "75.00").
+ */
+export function centsToDollars(cents) {
+  return ((cents || 0) / 100).toFixed(2);
 }
 
 // ---------------------------------------------------------------------------
@@ -211,6 +232,99 @@ function migrateStateIfNeeded(state) {
 
     return b;
   });
+
+  // ---------------------------------------------------------------------------
+  // --- Migrate: Wallet Schema v2 (Transaction Ledger) ---
+  // Gate: runs only once per stored state. Safe across repeated page loads.
+  // Does NOT recalculate, reset, or add to any numeric balance fields.
+  // ---------------------------------------------------------------------------
+  if (!state.walletSchemaVersion || state.walletSchemaVersion < WALLET_CONFIG.SCHEMA_VERSION) {
+    const migrationTimestamp = new Date().toISOString();
+    const migrationDate = migrationTimestamp.split('T')[0];
+
+    (state.pros || []).forEach(pro => {
+      // Ensure earnings object exists
+      if (!pro.earnings) {
+        pro.earnings = { availableBalance: 0, pendingBalance: 0, lifetimeEarned: 0 };
+      }
+      // Ensure walletTransactions array exists
+      if (!Array.isArray(pro.earnings.walletTransactions)) {
+        pro.earnings.walletTransactions = [];
+      }
+
+      // Insert opening-balance snapshot only if none already present.
+      // This is a reference record only — it documents the pre-Stage-2
+      // balance without affecting any numeric totals.
+      const hasOpeningSnapshot = pro.earnings.walletTransactions.some(
+        t => t.type === 'opening_balance_snapshot'
+      );
+      if (!hasOpeningSnapshot) {
+        pro.earnings.walletTransactions.push({
+          txId: `txn_${pro.id}_opening_v2`,
+          proId: pro.id,
+          type: 'opening_balance_snapshot',
+          bookingId: null,
+          slotId: null,
+          description: 'Crewly Dallas Pilot — Prior earnings summary (not a new credit). Balance carried forward from pre-Stage-2 records.',
+          // Snapshot values in cents for reference — do NOT use to modify balances
+          snapshotAvailableCents: dollarsToCents(pro.earnings.availableBalance),
+          snapshotPendingCents:   dollarsToCents(pro.earnings.pendingBalance),
+          snapshotLifetimeCents:  dollarsToCents(pro.earnings.lifetimeEarned),
+          amountCents:  0,   // Explicitly zero — no balance change
+          feeCents:     0,
+          netCents:     0,
+          isoTimestamp: migrationTimestamp,
+          displayDate:  migrationDate,
+          status:       'historical_snapshot',
+          isSimulated:  true,
+          isHistoricalImport: true
+        });
+        dirty = true;
+      }
+
+      // Insert historical-import records for completed assignments that were
+      // already paid before Stage 2. These are reference-only records:
+      // they do NOT credit any balance (the payout is already in availableBalance
+      // via the opening snapshot above).
+      (state.bookings || []).forEach(b => {
+        (b.workerAssignments || []).forEach(slot => {
+          if (
+            slot.assignedProId === pro.id &&
+            slot.status === 'completed' &&
+            slot.payoutReleased === true
+          ) {
+            const histTxId = `txn_${pro.id}_hist_${b.id}_${slot.slotId}`;
+            const alreadyImported = pro.earnings.walletTransactions.some(
+              t => t.txId === histTxId
+            );
+            if (!alreadyImported) {
+              const jobDate = (slot.assignedAt || b.scheduledDate || migrationDate).split('T')[0];
+              pro.earnings.walletTransactions.push({
+                txId: histTxId,
+                proId: pro.id,
+                type: 'historical_job_import',
+                bookingId:   b.id,
+                slotId:      slot.slotId,
+                description: `${b.serviceTitle || 'Job'} — ${slot.roleTitle || 'Worker'} (historical record — already included in opening balance; no duplicate credit)`,
+                amountCents: dollarsToCents(slot.payout),
+                feeCents:    0,
+                netCents:    dollarsToCents(slot.payout),
+                isoTimestamp: slot.assignedAt || b.createdAt || migrationTimestamp,
+                displayDate:  jobDate,
+                status:       'historical_import',
+                isSimulated:  true,
+                isHistoricalImport: true
+              });
+              dirty = true;
+            }
+          }
+        });
+      });
+    });
+
+    state.walletSchemaVersion = WALLET_CONFIG.SCHEMA_VERSION;
+    dirty = true;
+  }
 
   if (dirty) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -628,7 +742,7 @@ export function assignProToSlot(bookingId, slotId, proId) {
   if (!pro.earnings) {
     pro.earnings = { availableBalance: 0, pendingBalance: 0, lifetimeEarned: 0 };
   }
-  pro.earnings.pendingBalance += slot.payout;
+  pro.earnings.pendingBalance = Math.round(((pro.earnings.pendingBalance || 0) + slot.payout) * 100) / 100;
 
   // Add system message to timeline
   booking.messages.push({
@@ -707,9 +821,38 @@ export function updateProAssignmentStatus(bookingId, slotId, newStatus) {
   if (newStatus === 'completed' && !slot.payoutReleased) {
     slot.payoutReleased = true;
     if (pro && pro.earnings) {
-      pro.earnings.pendingBalance = Math.max(0, pro.earnings.pendingBalance - slot.payout);
-      pro.earnings.availableBalance += slot.payout;
-      pro.earnings.lifetimeEarned += slot.payout;
+      // Keep dollar balance fields as floating-point; use round-trip cents for precision
+      pro.earnings.pendingBalance  = Math.max(0, Math.round((pro.earnings.pendingBalance  - slot.payout) * 100) / 100);
+      pro.earnings.availableBalance = Math.round((pro.earnings.availableBalance + slot.payout) * 100) / 100;
+      pro.earnings.lifetimeEarned   = Math.round((pro.earnings.lifetimeEarned   + slot.payout) * 100) / 100;
+
+      // Record earnings_credit transaction in the wallet ledger.
+      // Guard: skip if a record for this exact booking+slot already exists
+      // (protects against future edge-case double-calls despite payoutReleased).
+      if (!Array.isArray(pro.earnings.walletTransactions)) {
+        pro.earnings.walletTransactions = [];
+      }
+      const earnTxId = `txn_${pro.id}_earn_${bookingId}_${slotId}`;
+      const alreadyRecorded = pro.earnings.walletTransactions.some(t => t.txId === earnTxId);
+      if (!alreadyRecorded) {
+        const dallasNow = getDallasLocalNow();
+        pro.earnings.walletTransactions.push({
+          txId:         earnTxId,
+          proId:        pro.id,
+          type:         'earnings_credit',
+          bookingId:    bookingId,
+          slotId:       slotId,
+          description:  `${booking.serviceTitle || 'Job'} — ${slot.roleTitle || 'Worker'} (${booking.customerName || 'Customer'})`,
+          amountCents:  dollarsToCents(slot.payout),
+          feeCents:     0,
+          netCents:     dollarsToCents(slot.payout),
+          isoTimestamp: new Date().toISOString(),
+          displayDate:  dallasNow.dateStr,
+          status:       'completed',
+          isSimulated:  true,
+          isHistoricalImport: false
+        });
+      }
     }
   }
 
@@ -906,31 +1049,161 @@ export function rescheduleBooking(bookingId, { newDate, newTime }) {
 }
 
 // ---------------------------------------------------------------------------
-// 9. Simulated Instant Cash-Out & Reviews
+// 9. Simulated Instant Cash-Out & Reviews (Stage 2 Pro Wallet)
 // ---------------------------------------------------------------------------
-export function simulateProCashOut(proId, method = 'instant') {
+export function simulateProCashOut(proId, options = {}) {
+  // Support both legacy signature: simulateProCashOut(proId, 'instant')
+  // and new signature: simulateProCashOut(proId, { method, requestedAmountDollars, requestedAmountCents, requestId })
+  let method = 'instant';
+  let requestedAmountCents = null;
+  let requestId = null;
+
+  if (typeof options === 'string') {
+    method = options;
+  } else if (typeof options === 'object' && options !== null) {
+    method = options.method || 'instant';
+    requestId = options.requestId || null;
+    if (typeof options.requestedAmountCents === 'number') {
+      requestedAmountCents = Math.round(options.requestedAmountCents);
+    } else if (typeof options.requestedAmountDollars === 'number') {
+      requestedAmountCents = dollarsToCents(options.requestedAmountDollars);
+    }
+  }
+
   const state = loadState();
   const pro = state.pros.find(p => p.id === proId);
   if (!pro || !pro.earnings) return { success: false, error: 'Worker not found.' };
 
-  const currentAvailable = pro.earnings.availableBalance;
-  if (currentAvailable <= 0) {
+  if (!Array.isArray(pro.earnings.walletTransactions)) {
+    pro.earnings.walletTransactions = [];
+  }
+
+  // Idempotency check with stable requestId (Product Lead Requirement 3)
+  if (requestId) {
+    const existingTx = pro.earnings.walletTransactions.find(t => t.requestId === requestId);
+    if (existingTx) {
+      return {
+        success: true,
+        alreadyProcessed: true,
+        transaction: existingTx,
+        withdrawnDollars: existingTx.amountCents / 100,
+        feeDollars: existingTx.feeCents / 100,
+        netAmountDollars: existingTx.netCents / 100,
+        remainingAvailableDollars: pro.earnings.availableBalance,
+        method: existingTx.methodLabel,
+        notice: WALLET_CONFIG.SIMULATED_DISCLAIMER
+      };
+    }
+  }
+
+  const availableCents = dollarsToCents(pro.earnings.availableBalance);
+  if (availableCents <= 0) {
     return { success: false, error: 'No available funds to cash out.' };
   }
 
-  const fee = method === 'instant' ? 1.50 : 0.00;
-  const netAmount = Math.max(0, currentAvailable - fee);
+  // If no specific amount was requested, default to full available balance
+  const targetAmountCents = (typeof requestedAmountCents === 'number' && requestedAmountCents > 0)
+    ? requestedAmountCents
+    : availableCents;
 
-  pro.earnings.availableBalance = 0;
+  // Validation 1: Must be positive integer
+  if (targetAmountCents <= 0) {
+    return { success: false, error: 'Withdrawal amount must be greater than zero.' };
+  }
+
+  // Validation 2: Cannot exceed available balance
+  if (targetAmountCents > availableCents) {
+    return {
+      success: false,
+      error: `Requested withdrawal ($${(targetAmountCents / 100).toFixed(2)}) exceeds available balance ($${(availableCents / 100).toFixed(2)}).`
+    };
+  }
+
+  // Validation 3: Fee calculation & instant fee exceeding requested amount guard
+  const feeCents = method === 'instant'
+    ? WALLET_CONFIG.INSTANT_CASHOUT_FEE_CENTS
+    : WALLET_CONFIG.STANDARD_CASHOUT_FEE_CENTS;
+
+  if (method === 'instant' && targetAmountCents <= feeCents) {
+    return {
+      success: false,
+      error: `Instant Cash-Out requires a withdrawal amount greater than the $${(feeCents / 100).toFixed(2)} simulated fee.`
+    };
+  }
+
+  const netCents = Math.max(0, targetAmountCents - feeCents);
+
+  // Accounting: Deduct targetAmountCents from availableBalance in dollars
+  const remainingCents = availableCents - targetAmountCents;
+  pro.earnings.availableBalance = Math.round(remainingCents) / 100;
+  // IMPORTANT: lifetimeEarned must NEVER decrease on cash-out!
+
+  const dallasNow = getDallasLocalNow();
+  const txId = `txn_${pro.id}_cashout_${Date.now()}`;
+  const effectiveRequestId = requestId || txId;
+
+  const transaction = {
+    txId,
+    requestId: effectiveRequestId,
+    proId: pro.id,
+    type: method === 'instant' ? 'cashout_instant' : 'cashout_standard',
+    bookingId: null,
+    slotId: null,
+    method,
+    methodLabel: method === 'instant' ? WALLET_CONFIG.INSTANT_LABEL : WALLET_CONFIG.STANDARD_LABEL,
+    description: method === 'instant'
+      ? `Instant Cash-Out — Dallas Debit Card ****4012 (simulated)`
+      : `Standard ACH Transfer — Bank of Texas ****8921 (simulated)`,
+    amountCents: targetAmountCents,
+    feeCents,
+    netCents,
+    isoTimestamp: new Date().toISOString(),
+    displayDate: dallasNow.dateStr,
+    status: method === 'instant' ? 'simulated_instant_confirmed' : 'simulated_processing',
+    statusLabel: method === 'instant' ? 'Simulated Transfer Confirmed' : 'Simulated Processing (1–2 Days)',
+    isSimulated: true,
+    isHistoricalImport: false,
+    disclaimer: WALLET_CONFIG.SIMULATED_DISCLAIMER
+  };
+
+  pro.earnings.walletTransactions.unshift(transaction);
   saveState(state);
 
   return {
     success: true,
-    withdrawn: currentAvailable,
-    fee,
-    netAmount,
-    method: method === 'instant' ? 'Instant Transfer (Dallas Chase Debit Card ****4012)' : 'Standard ACH (2 Business Days)',
-    notice: 'Simulated payout ledger only — No actual banking transfer occurs.'
+    transaction,
+    withdrawnDollars: targetAmountCents / 100,
+    feeDollars: feeCents / 100,
+    netAmountDollars: netCents / 100,
+    remainingAvailableDollars: pro.earnings.availableBalance,
+    method: transaction.methodLabel,
+    notice: WALLET_CONFIG.SIMULATED_DISCLAIMER
+  };
+}
+
+/**
+ * Returns wallet metrics and transaction records for a specific Pro.
+ */
+export function getProWalletSummary(proId) {
+  const state = loadState();
+  const pro = state.pros.find(p => p.id === proId);
+  if (!pro) return null;
+
+  const earnings = pro.earnings || { availableBalance: 0, pendingBalance: 0, lifetimeEarned: 0, walletTransactions: [] };
+  const txs = earnings.walletTransactions || [];
+
+  return {
+    proId: pro.id,
+    proName: pro.name,
+    availableBalance: earnings.availableBalance,
+    pendingBalance: earnings.pendingBalance,
+    lifetimeEarned: earnings.lifetimeEarned,
+    transactions: txs,
+    counts: {
+      all: txs.length,
+      earnings: txs.filter(t => t.type === 'earnings_credit' || t.type === 'historical_job_import').length,
+      cashouts: txs.filter(t => t.type === 'cashout_instant' || t.type === 'cashout_standard').length
+    }
   };
 }
 
