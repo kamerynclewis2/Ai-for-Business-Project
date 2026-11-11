@@ -43,6 +43,9 @@
         <button id="role-btn-pro" class="role-pill-btn">
           👷 Crewly Pro View
         </button>
+        <button id="role-btn-admin" class="role-pill-btn">
+          👔 Crewly Admin View
+        </button>
         <button id="btn-open-dual-tab" class="btn-open-tab" title="Open complementary role in a new browser tab for dual-screen demo">
           Open in New Tab ↗
         </button>
@@ -60,7 +63,7 @@
       <div class="customer-hero">
         <div class="market-indicator">
           <span class="market-pulse"></span>
-          Live in Dallas, Texas (Neighborhood Pilot)
+          ⚡ Dallas Pilot Demonstration — INSY 3331 Academic Simulation
         </div>
         <h1>On-demand home services.<br>Transparent upfront pricing.</h1>
         <p>
@@ -68,9 +71,9 @@
         </p>
 
         <div class="hero-highlights">
-          <div class="hero-chip">✓ Verified Background-Checked Pros</div>
+          <div class="hero-chip">✓ Pre-Screened Dallas Pro Profiles (Pilot Demo)</div>
           <div class="hero-chip">✓ Multi-Worker Moving Teams</div>
-          <div class="hero-chip">✓ Transparent Hourly & Fixed Pricing</div>
+          <div class="hero-chip">✓ Transparent Demonstration Pricing Assumptions</div>
         </div>
       </div>
 
@@ -306,6 +309,624 @@
       <div id="pro-job-board-container">
         <!-- Rendered dynamically -->
       </div>
+    </div>
+
+    <!-- ===================================================================
+         CREWLY ADMIN & DISPATCH CENTER VIEW (Stage 3 Phase 1)
+         =================================================================== -->
+    <div id="admin-view-section" style="display: none;">
+      
+      <!-- Academic & Operational Demonstration Header -->
+      <div class="admin-hero">
+        <div class="admin-badge-row">
+          <div class="admin-env-pill">
+            <span class="pulse-dot-admin"></span> Dallas Operations Center (Pilot Dispatch)
+          </div>
+          <div class="admin-role-disclaimer">
+            🎓 Classroom Demo: Client-side role selection for INSY 3331 evaluation. Not production authentication.
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-top: 14px;">
+          <div>
+            <h1 class="admin-view-title">Human-Controlled Operations & Dispatch</h1>
+            <p class="admin-view-subtitle">
+              Centralized administrative visibility, multi-worker assignment tracking, rules-based attention alerts, and marketplace financial integrity.
+            </p>
+          </div>
+          <div class="admin-operator-chip">
+            <span style="font-size: 1.2rem;">👔</span>
+            <div>
+              <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">Active Operator</div>
+              <strong style="color: var(--primary-navy); font-size: 0.88rem;" id="admin-operator-name">Dallas Dispatch Lead (Demo)</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Sub-Navigation Pills -->
+      <div class="admin-subnav-container">
+        <button class="admin-subnav-btn active" data-tab="overview" id="admin-tab-overview">
+          📊 Marketplace Overview
+        </button>
+        <button class="admin-subnav-btn" data-tab="alerts" id="admin-tab-alerts">
+          🚨 Needs Attention <span class="admin-tab-badge" id="admin-badge-alerts-count">0</span>
+        </button>
+        <button class="admin-subnav-btn" data-tab="dispatch" id="admin-tab-dispatch">
+          🚚 Dispatch Center
+        </button>
+        <button class="admin-subnav-btn" data-tab="workers" id="admin-tab-workers">
+          👷 Worker Directory
+        </button>
+        <button class="admin-subnav-btn" data-tab="support" id="admin-tab-support">
+          🎧 Customer Support
+        </button>
+        <button class="admin-subnav-btn" data-tab="finance" id="admin-tab-finance">
+          💰 Financial Operations
+        </button>
+        <button class="admin-subnav-btn" data-tab="trust" id="admin-tab-trust">
+          🛡️ Trust & Safety
+        </button>
+        <button class="admin-subnav-btn" data-tab="audit" id="admin-tab-audit">
+          📜 Audit Trail
+        </button>
+      </div>
+
+      <!-- TAB 1: MARKETPLACE OVERVIEW -->
+      <div class="admin-tab-panel active" id="admin-panel-overview">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Marketplace Operational Metrics</h2>
+            <p class="section-subtitle">Real-time counts aggregated dynamically from local marketplace state</p>
+          </div>
+        </div>
+
+        <div class="admin-metrics-grid">
+          <div class="admin-metric-card">
+            <div class="admin-metric-icon" style="background: #EFF6FF; color: #2563EB;">📋</div>
+            <div class="admin-metric-info">
+              <span class="admin-metric-label">Total Booking Requests</span>
+              <strong class="admin-metric-value" id="admin-stat-total-bookings">0</strong>
+              <span class="admin-metric-subtext">All pilot orders</span>
+            </div>
+          </div>
+
+          <div class="admin-metric-card">
+            <div class="admin-metric-icon" style="background: #FEF3C7; color: #D97706;">⚠️</div>
+            <div class="admin-metric-info">
+              <span class="admin-metric-label">Partially Filled Bookings</span>
+              <strong class="admin-metric-value" id="admin-stat-partially-filled" style="color: #D97706;">0</strong>
+              <span class="admin-metric-subtext">Missing required workers</span>
+            </div>
+          </div>
+
+          <div class="admin-metric-card">
+            <div class="admin-metric-icon" style="background: #E0E7FF; color: #4338CA;">⏳</div>
+            <div class="admin-metric-info">
+              <span class="admin-metric-label">Open / Seeking Pros</span>
+              <strong class="admin-metric-value" id="admin-stat-open-bookings">0</strong>
+              <span class="admin-metric-subtext">0 workers assigned</span>
+            </div>
+          </div>
+
+          <div class="admin-metric-card">
+            <div class="admin-metric-icon" style="background: #ECFDF5; color: #059669;">✓</div>
+            <div class="admin-metric-info">
+              <span class="admin-metric-label">Fully Confirmed / Active</span>
+              <strong class="admin-metric-value" id="admin-stat-confirmed-bookings" style="color: #059669;">0</strong>
+              <span class="admin-metric-subtext">Full crew assigned</span>
+            </div>
+          </div>
+
+          <div class="admin-metric-card">
+            <div class="admin-metric-icon" style="background: #F1F5F9; color: #475569;">🏁</div>
+            <div class="admin-metric-info">
+              <span class="admin-metric-label">Completed Bookings</span>
+              <strong class="admin-metric-value" id="admin-stat-completed-bookings">0</strong>
+              <span class="admin-metric-subtext">Finalized & reviewed</span>
+            </div>
+          </div>
+
+          <div class="admin-metric-card">
+            <div class="admin-metric-icon" style="background: #FEE2E2; color: #DC2626;">⏰</div>
+            <div class="admin-metric-info">
+              <span class="admin-metric-label">Expired ASAP Searches</span>
+              <strong class="admin-metric-value" id="admin-stat-expired-asap" style="color: #DC2626;">0</strong>
+              <span class="admin-metric-subtext">60-min window lapsed</span>
+            </div>
+          </div>
+
+          <div class="admin-metric-card">
+            <div class="admin-metric-icon" style="background: #EEF2FF; color: #4338CA;">👷</div>
+            <div class="admin-metric-info">
+              <span class="admin-metric-label">Pros Available Today</span>
+              <strong class="admin-metric-value" id="admin-stat-available-pros-today" style="color: #4338CA;">0</strong>
+              <span class="admin-metric-subtext"><span id="admin-stat-registered-pros">0</span> total registered Pros</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial Operations Breakdown (Product Lead Adjustment 5) -->
+        <div class="section-title-row" style="margin-top: 36px; margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Marketplace Financial Distinction & Integrity</h2>
+            <p class="section-subtitle">
+              Strict accounting separation: Gross customer billings vs booking fees vs Pro compensation vs gross margin
+            </p>
+          </div>
+        </div>
+
+        <div class="admin-finance-grid">
+          <div class="admin-finance-card">
+            <div class="admin-finance-label">Projected Gross Booking Value</div>
+            <div class="admin-finance-value" id="admin-fin-projected-gbv">$0.00</div>
+            <div class="admin-finance-hint">Total customer price of open/active bookings</div>
+          </div>
+
+          <div class="admin-finance-card">
+            <div class="admin-finance-label">Completed-Job Gross Value</div>
+            <div class="admin-finance-value" id="admin-fin-completed-gbv" style="color: #059669;">$0.00</div>
+            <div class="admin-finance-hint">Customer billings on finalized bookings</div>
+          </div>
+
+          <div class="admin-finance-card">
+            <div class="admin-finance-label">Platform Booking Fees</div>
+            <div class="admin-finance-value" id="admin-fin-booking-fees">$0.00</div>
+            <div class="admin-finance-hint">$10 platform fee per booking request</div>
+          </div>
+
+          <div class="admin-finance-card">
+            <div class="admin-finance-label">Worker Compensation (Total)</div>
+            <div class="admin-finance-value" id="admin-fin-worker-pay">$0.00</div>
+            <div class="admin-finance-hint">Committed (<span id="admin-fin-worker-pending">$0.00</span> pending, <span id="admin-fin-worker-released">$0.00</span> paid)</div>
+          </div>
+
+          <div class="admin-finance-card" style="border-left: 4px solid #059669;">
+            <div class="admin-finance-label">Realized Margin (Completed Jobs)</div>
+            <div class="admin-finance-value" id="admin-fin-completed-margin" style="color: #059669;">$0.00</div>
+            <div class="admin-finance-hint">Completed customer charges minus completed payouts</div>
+          </div>
+
+          <div class="admin-finance-card" style="border-left: 4px solid #2563EB;">
+            <div class="admin-finance-label">Projected Margin (Active Pipeline)</div>
+            <div class="admin-finance-value" id="admin-fin-projected-margin" style="color: #2563EB;">$0.00</div>
+            <div class="admin-finance-hint">Active/open customer charges minus pending payouts</div>
+          </div>
+
+          <div class="admin-finance-card" style="border-left: 4px solid #4338CA;">
+            <div class="admin-finance-label">Total Platform Gross Margin</div>
+            <div class="admin-finance-value" id="admin-fin-gross-margin" style="color: #4338CA;">$0.00</div>
+            <div class="admin-finance-hint">Total Customer Charges minus Total Worker Payouts</div>
+          </div>
+
+          <div class="admin-finance-card">
+            <div class="admin-finance-label">Simulated Cash-Out Volume</div>
+            <div class="admin-finance-value" id="admin-fin-simulated-cashouts">$0.00</div>
+            <div class="admin-finance-hint"><span id="admin-fin-cashout-count">0</span> withdrawals (<span id="admin-fin-cashout-fees">$0.00</span> instant fees)</div>
+          </div>
+        </div>
+
+        <!-- Academic Net Profit Transparency Callout -->
+        <div class="admin-profit-disclaimer-box">
+          <div style="font-size: 1.1rem; line-height: 1;">💡</div>
+          <div>
+            <strong>Educational Accounting Distinction:</strong>
+            Platform Gross Margin (<span id="admin-disclaimer-margin-val">$0.00</span>) and Customer Gross Billings are <strong>not</strong> Crewly's Net Profit.
+            In commercial operations, net profit must deduct merchant credit card processing (2.9% + $0.30 per charge), customer dispute loss reserves, Pro background checks ($32/worker), customer support operations, and cloud hosting infrastructure.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: RULES-BASED NEEDS ATTENTION QUEUE -->
+      <div class="admin-tab-panel" id="admin-panel-alerts">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Rules-Based Needs Attention Queue</h2>
+            <p class="section-subtitle">
+              Deterministic operational rules engine (not generative AI) evaluating staffing shortages, expiring windows, and unresolved tickets
+            </p>
+          </div>
+          <div style="font-size: 0.8rem; background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: var(--radius-sm); font-weight: 700;">
+            ⚡ Operational Engine: Active
+          </div>
+        </div>
+
+        <div id="admin-alerts-container">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+
+      <!-- TAB 3: DISPATCH CENTER (Phase 2 Active Management) -->
+      <div class="admin-tab-panel" id="admin-panel-dispatch">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Dispatch Management & Crew Staffing</h2>
+            <p class="section-subtitle">
+              Inspect staffing status, review candidate Pro qualifications, and manually assign or unassign workers
+            </p>
+          </div>
+          <div style="font-size: 0.8rem; background: #EEF2FF; color: #4338CA; padding: 6px 14px; border-radius: var(--radius-sm); font-weight: 700;">
+            👔 Human-Controlled Dispatch Active
+          </div>
+        </div>
+
+        <!-- Dispatch Search & Filter Bar -->
+        <div class="dispatch-toolbar" style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; background: white; padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+          <div style="flex: 1; min-width: 240px;">
+            <input type="text" id="admin-dispatch-search" class="form-input" placeholder="🔍 Search by ID (e.g. CRW-1004), customer name, service title, or neighborhood...">
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">Status Filter:</label>
+            <select id="admin-dispatch-filter-status" class="form-select" style="width: auto; padding: 7px 12px; font-size: 0.85rem;">
+              <option value="all">All Bookings</option>
+              <option value="partially_filled" selected>Partially Filled (Missing Pros)</option>
+              <option value="waiting_for_pros">Open / Seeking Pros</option>
+              <option value="fully_confirmed">Fully Confirmed / Active</option>
+              <option value="historical_past">Historical Past Appointments</option>
+              <option value="completed">Completed Bookings</option>
+            </select>
+            <button id="admin-dispatch-refresh-btn" class="btn-banner-link" style="padding: 7px 14px; background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-weight: 700; cursor: pointer; color: var(--primary-navy);">
+              🔄 Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Dispatch Bookings Cards Container -->
+        <div id="admin-dispatch-bookings-list">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+
+      <!-- TAB 4: WORKER DIRECTORY (Phase 3 Active) -->
+      <div class="admin-tab-panel" id="admin-panel-workers">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Crewly Pro Directory & Availability</h2>
+            <p class="section-subtitle">
+              Inspect Dallas pilot worker credentials, verified equipment, reward tiers, and evaluate real-time booking eligibility.
+            </p>
+          </div>
+          <div class="admin-demo-tag" style="align-self: flex-start;">
+            Fictional Demonstration Profiles — INSY 3331
+          </div>
+        </div>
+
+        <!-- Three-Concept Availability KPI Header -->
+        <div class="admin-metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 20px;">
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Registered Dallas Pros</div>
+            <div class="admin-metric-val" id="admin-workers-stat-registered">4</div>
+            <div class="admin-metric-sub">Total active onboarded workforce</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Available Pros Today</div>
+            <div class="admin-metric-val" id="admin-workers-stat-available-today" style="color: var(--primary-teal);">--</div>
+            <div class="admin-metric-sub" id="admin-workers-stat-today-name">Weekly schedule enabled today</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Active Dispatched Assignments</div>
+            <div class="admin-metric-val" id="admin-workers-stat-active-assignments" style="color: var(--warning-orange);">--</div>
+            <div class="admin-metric-sub">Ongoing uncompleted tasks</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Dallas Pilot Territory</div>
+            <div class="admin-metric-val" style="font-size: 1.2rem; color: var(--primary-navy); padding-top: 6px;">Dallas, TX</div>
+            <div class="admin-metric-sub">9 Urban Pilot ZIP Codes</div>
+          </div>
+        </div>
+
+        <!-- Booking Eligibility Inspector Toolbar -->
+        <div class="admin-eligibility-inspector-card" style="background: white; border-radius: var(--radius-md); border: 1px solid var(--border-light); padding: 16px 20px; margin-bottom: 20px; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <span class="admin-phase-badge" style="background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; font-size: 0.72rem; padding: 2px 8px; border-radius: 12px; font-weight: 700;">Matching Engine Inspector</span>
+              <h3 style="margin: 6px 0 2px 0; font-size: 1.05rem; color: var(--primary-navy);">Booking-Specific Pro Eligibility Inspector</h3>
+              <p style="margin: 0; font-size: 0.82rem; color: var(--text-secondary);">
+                Select an active customer booking to evaluate matching rules, schedule conflicts, verified equipment, and slot eligibility for every Dallas Pro.
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <label for="admin-inspector-booking-select" style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); white-space: nowrap;">Inspect Booking:</label>
+              <select id="admin-inspector-booking-select" class="form-select" style="min-width: 260px; font-size: 0.85rem; padding: 6px 12px;">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+          <div id="admin-inspector-booking-details" style="margin-top: 14px; border-top: 1px solid var(--border-light); padding-top: 12px; display: none;">
+            <!-- Populated dynamically with booking summary and per-pro eligibility breakdown -->
+          </div>
+        </div>
+
+        <!-- Worker Roster Grid -->
+        <div id="admin-workers-roster-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px;">
+          <!-- Populated dynamically by app.js -->
+        </div>
+      </div>
+
+      <!-- TAB 5: CUSTOMER SUPPORT (Phase 3 Active) -->
+      <div class="admin-tab-panel" id="admin-panel-support">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Customer Support Center</h2>
+            <p class="section-subtitle">
+              Manage staffing shortage alerts, customer booking inquiries, and internal dispatch incident notes.
+            </p>
+          </div>
+          <button id="btn-admin-create-case-open" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; background: var(--primary-teal); color: white; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;">
+            + Create Support Case
+          </button>
+        </div>
+
+        <!-- Support KPI Summary -->
+        <div class="admin-metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 20px;">
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Total Support Cases</div>
+            <div class="admin-metric-val" id="admin-support-stat-total">0</div>
+            <div class="admin-metric-sub">Unified support registry</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Open Cases</div>
+            <div class="admin-metric-val" id="admin-support-stat-open" style="color: var(--warning-orange);">0</div>
+            <div class="admin-metric-sub">Requires dispatcher action</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Under Review</div>
+            <div class="admin-metric-val" id="admin-support-stat-review" style="color: var(--primary-teal);">0</div>
+            <div class="admin-metric-sub">Active investigation</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Resolved Cases</div>
+            <div class="admin-metric-val" id="admin-support-stat-resolved" style="color: #10b981;">0</div>
+            <div class="admin-metric-sub">Successfully addressed</div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div class="admin-dispatch-filters-card" style="background: white; border-radius: var(--radius-md); border: 1px solid var(--border-light); padding: 14px 16px; margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; box-shadow: var(--shadow-sm);">
+          <div style="flex: 1; min-width: 220px;">
+            <input type="text" id="admin-support-search" class="form-input" placeholder="Search case ID, customer, booking ID, or title..." style="font-size: 0.85rem; width: 100%;" />
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">Status:</label>
+            <select id="admin-support-filter-status" class="form-select" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
+              <option value="all">All Statuses</option>
+              <option value="open">Open</option>
+              <option value="under_review">Under Review</option>
+              <option value="resolved">Resolved</option>
+            </select>
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); margin-left: 8px;">Priority:</label>
+            <select id="admin-support-filter-priority" class="form-select" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
+              <option value="all">All Priorities</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Cases Queue Container -->
+        <div id="admin-support-cases-list">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+
+      <!-- TAB 6: FINANCIAL OPERATIONS (Phase 3 Active) -->
+      <div class="admin-tab-panel" id="admin-panel-finance">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Financial Operations & Pro Wallet Ledger</h2>
+            <p class="section-subtitle">
+              Read-only aggregate financial reporting derived directly from Stage 2 Pro wallet balances, booking charges, and simulated cash-outs.
+            </p>
+          </div>
+          <div class="admin-demo-tag" style="align-self: flex-start;">
+            Read-Only Simulation — Dallas Pilot Assumptions
+          </div>
+        </div>
+
+        <!-- Financial KPI Cards -->
+        <div class="admin-metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-bottom: 20px;">
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Projected Gross Booking Value</div>
+            <div class="admin-metric-val" id="admin-fin-panel-projected-gbv" style="color: var(--primary-navy);">$0.00</div>
+            <div class="admin-metric-sub">Active pipeline customer charges</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Completed-Job Gross Value</div>
+            <div class="admin-metric-val" id="admin-fin-panel-completed-gbv" style="color: #10b981;">$0.00</div>
+            <div class="admin-metric-sub">Realized customer billings</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Platform Booking Fees</div>
+            <div class="admin-metric-val" id="admin-fin-panel-fees" style="color: var(--primary-teal);">$0.00</div>
+            <div class="admin-metric-sub">$10 per booking fee collected</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Total Worker Compensation</div>
+            <div class="admin-metric-val" id="admin-fin-panel-worker-comp" style="color: var(--text-primary);">$0.00</div>
+            <div class="admin-metric-sub">Pending + completed payouts</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Realized Gross Margin</div>
+            <div class="admin-metric-val" id="admin-fin-panel-completed-margin" style="color: #10b981;">$0.00</div>
+            <div class="admin-metric-sub">Completed customer billings minus worker pay</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Projected Pipeline Margin</div>
+            <div class="admin-metric-val" id="admin-fin-panel-projected-margin" style="color: var(--primary-navy);">$0.00</div>
+            <div class="admin-metric-sub">Projected GBV minus pending worker payouts</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Total Platform Gross Margin</div>
+            <div class="admin-metric-val" id="admin-fin-panel-total-margin" style="color: var(--primary-teal);">$0.00</div>
+            <div class="admin-metric-sub">Gross revenue before operating expenses</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Simulated Worker Cash-Outs</div>
+            <div class="admin-metric-val" id="admin-fin-panel-cashouts" style="color: var(--warning-orange);">$0.00</div>
+            <div class="admin-metric-sub" id="admin-fin-panel-cashouts-count">0 withdrawals ($0.00 fees)</div>
+          </div>
+        </div>
+
+        <!-- Net Profit Transparency Disclaimer Card -->
+        <div class="admin-disclaimer-box" style="margin-bottom: 24px; background: #FFFBEB; border: 1px solid #FDE68A; border-left: 4px solid #F59E0B; padding: 14px 18px; border-radius: var(--radius-sm);">
+          <div style="font-weight: 700; color: #92400E; margin-bottom: 4px; font-size: 0.88rem;">
+            ⚠️ Statutory & Commercial Financial Transparency Disclosure
+          </div>
+          <p style="margin: 0; font-size: 0.83rem; line-height: 1.5; color: #78350F;">
+            The Platform Gross Margin displayed above represents gross customer billing less direct worker compensation. 
+            <strong>In accordance with marketplace standards and INSY 3331 project rules, Platform Gross Margin must never be identified as net profit.</strong>
+            Commercial net income must deduct payment gateway interchange fees (2.9% + $0.30 per transaction), general liability and occupational accident insurance, customer dispute reserves, background check verification costs, and cloud infrastructure operations. All Pro wallet balances and cash-out operations are simulated client-side demonstration records.
+          </p>
+        </div>
+
+        <!-- Pro Balances Roster Table -->
+        <div class="section-title-row" style="margin-bottom: 12px;">
+          <h3 style="font-size: 1.05rem; color: var(--primary-navy); margin: 0;">Crewly Pro Wallet & Earnings Summary</h3>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Source of Truth: Stage 2 Pro Wallets</span>
+        </div>
+        <div class="admin-table-container" style="margin-bottom: 28px; background: white; border-radius: var(--radius-md); border: 1px solid var(--border-light); overflow-x: auto; box-shadow: var(--shadow-sm);">
+          <table class="admin-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead>
+              <tr style="background: #F8FAFC; border-bottom: 1px solid var(--border-light); text-align: left;">
+                <th style="padding: 10px 14px;">Pro Name</th>
+                <th style="padding: 10px 14px;">Tier</th>
+                <th style="padding: 10px 14px;">Available Balance</th>
+                <th style="padding: 10px 14px;">Pending Balance</th>
+                <th style="padding: 10px 14px;">Lifetime Earned</th>
+                <th style="padding: 10px 14px;">Simulated Cash-Outs</th>
+                <th style="padding: 10px 14px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="admin-finance-pros-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Unified Master Platform Transaction Ledger -->
+        <div class="section-title-row" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+          <div>
+            <h3 style="font-size: 1.05rem; color: var(--primary-navy); margin: 0;">Master Platform Transaction Ledger</h3>
+            <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-secondary);">
+              Aggregated transaction history across all Dallas worker wallets.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">Type:</label>
+            <select id="admin-finance-ledger-filter-type" class="form-select" style="width: auto; padding: 4px 10px; font-size: 0.82rem;">
+              <option value="all">All Types</option>
+              <option value="earnings_credit">Earnings Credit</option>
+              <option value="cashout_instant">Instant Cash-Out</option>
+              <option value="cashout_standard">Standard ACH Cash-Out</option>
+              <option value="opening_balance_snapshot">Opening Snapshot</option>
+              <option value="historical_job_import">Historical Job Import</option>
+            </select>
+          </div>
+        </div>
+        <div class="admin-table-container" style="background: white; border-radius: var(--radius-md); border: 1px solid var(--border-light); overflow-x: auto; box-shadow: var(--shadow-sm);">
+          <table class="admin-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead>
+              <tr style="background: #F8FAFC; border-bottom: 1px solid var(--border-light); text-align: left;">
+                <th style="padding: 10px 14px;">Timestamp</th>
+                <th style="padding: 10px 14px;">Pro</th>
+                <th style="padding: 10px 14px;">Transaction ID</th>
+                <th style="padding: 10px 14px;">Type</th>
+                <th style="padding: 10px 14px;">Reference</th>
+                <th style="padding: 10px 14px;">Gross</th>
+                <th style="padding: 10px 14px;">Fee</th>
+                <th style="padding: 10px 14px;">Net Delivered</th>
+                <th style="padding: 10px 14px;">Status</th>
+                <th style="padding: 10px 14px;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="admin-finance-ledger-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 7: TRUST & SAFETY (Phase 3 Active) -->
+      <div class="admin-tab-panel" id="admin-panel-trust">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Trust & Safety Review & Dispute Center</h2>
+            <p class="section-subtitle">
+              Inspect individual per-worker reviews, record dispatcher investigation notes, and manage review disputes without compromising rating integrity.
+            </p>
+          </div>
+          <div class="admin-demo-tag" style="align-self: flex-start;">
+            Worker Reputation Protection Active
+          </div>
+        </div>
+
+        <!-- Reputation Protection Rules Notice -->
+        <div class="admin-disclaimer-box" style="margin-bottom: 20px; background: #F0FDF4; border: 1px solid #BBF7D0; border-left: 4px solid #16A34A; padding: 14px 18px; border-radius: var(--radius-sm);">
+          <div style="font-weight: 700; color: #166534; margin-bottom: 4px; font-size: 0.88rem;">
+            🛡️ Crewly Reputation Protection Standards (Adjustment 2)
+          </div>
+          <p style="margin: 0; font-size: 0.83rem; line-height: 1.5; color: #15803d;">
+            Disputing a customer review opens an investigation in the unified case management system. 
+            <strong>Dispute tracking never automatically deletes a review, modifies original star ratings, deducts worker average ratings, penalizes customers, or suspends workers.</strong> 
+            Investigation findings are preserved in the administrative audit log to support evidence-based review appeals.
+          </p>
+        </div>
+
+        <!-- Reviews & Disputes Table / Cards -->
+        <div class="section-title-row" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+          <h3 style="font-size: 1.05rem; color: var(--primary-navy); margin: 0;">Customer Worker Reviews & Incident Queue</h3>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">Dispute Status:</label>
+            <select id="admin-trust-filter-status" class="form-select" style="width: auto; padding: 4px 10px; font-size: 0.82rem;">
+              <option value="all">All Reviews</option>
+              <option value="undisputed">Undisputed Only</option>
+              <option value="disputed">Disputed / Under Investigation</option>
+              <option value="resolved">Investigation Resolved</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="admin-trust-reviews-list">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+
+      <!-- TAB 8: AUDIT TRAIL (Phase 2 & Phase 3 Active Audit History) -->
+      <div class="admin-tab-panel" id="admin-panel-audit">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Administrative Audit Trail</h2>
+            <p class="section-subtitle">
+              Append-only audit history of administrative assignments, unassignments, support cases, and dispute investigations
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">Action Filter:</label>
+            <select id="admin-audit-filter-action" class="form-select" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
+              <option value="all">All Audit Actions</option>
+              <option value="worker_assigned">Worker Assigned</option>
+              <option value="worker_unassigned">Worker Unassigned</option>
+              <option value="assignment_rejected">Assignment Rejected (Diagnostic)</option>
+              <option value="support_case_created">Support Case Created</option>
+              <option value="support_case_status_updated">Support Status Updated</option>
+              <option value="support_case_note_added">Support Note Added</option>
+              <option value="review_dispute_flagged">Review Dispute Flagged</option>
+              <option value="trust_case_updated">Trust & Safety Updated</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); padding: 8px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.78rem; color: var(--text-secondary);">
+          ℹ️ <strong>Demonstration Disclaimer:</strong> Client-side audit log for academic evaluation in INSY 3331. In a production enterprise system, administrative audit trails are stored in an immutable write-once server database with cryptographic timestamping.
+        </div>
+
+        <!-- Audit Table Container -->
+        <div id="admin-audit-table-container" style="background: white; border-radius: var(--radius-md); border: 1px solid var(--border-light); overflow-x: auto; box-shadow: var(--shadow-sm);">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -737,6 +1358,400 @@
         </button>
         <button class="btn-book-service" id="btn-confirm-reschedule" style="width: auto; padding: 10px 24px;">
           Confirm Reschedule
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: ADMIN MANUAL PRO ASSIGNMENT (Stage 3 Phase 2)
+       =================================================================== -->
+  <div class="modal-overlay" id="admin-assign-modal">
+    <div class="modal-dialog" style="max-width: 640px;">
+      <div class="modal-header">
+        <div>
+          <h2>👔 Manual Pro Assignment</h2>
+          <p id="admin-assign-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
+            Review qualified Dallas Pros and assign to open position
+          </p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-admin-assign">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="admin-assign-booking-summary" style="background: #EFF6FF; border-left: 4px solid var(--accent-blue); padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 18px; font-size: 0.85rem; color: #1E40AF;">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 700;">Select Candidate Pro:</label>
+          <div id="admin-assign-candidates-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto; padding-right: 4px;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 16px;">
+          <label class="form-label">Administrative Reason / Justification (Required):</label>
+          <textarea id="input-admin-assign-reason" class="form-textarea" rows="2" placeholder="e.g. Assigned Jamar Washington to complete 2-person crew for Sarah Jenkins upcoming weekend move."></textarea>
+        </div>
+
+        <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.8rem; color: #92400E; display: flex; align-items: flex-start; gap: 8px;">
+          <span>🔒</span>
+          <span><strong>Privacy & Compliance:</strong> This administrative reason is preserved strictly in the internal audit log. It is not disclosed to the customer.</span>
+        </div>
+
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: var(--text-primary); font-weight: 600;">
+          <input type="checkbox" id="check-admin-assign-confirm">
+          <span>I verify this manual assignment satisfies Crewly marketplace qualification standards.</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-admin-assign" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Cancel
+        </button>
+        <button class="btn-book-service" id="btn-confirm-admin-assign" style="width: auto; padding: 10px 24px; background: #4338CA;" disabled>
+          Confirm Assignment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: ADMIN WORKER UNASSIGNMENT (Stage 3 Phase 2)
+       =================================================================== -->
+  <div class="modal-overlay" id="admin-unassign-modal">
+    <div class="modal-dialog" style="max-width: 560px;">
+      <div class="modal-header">
+        <div>
+          <h2 style="color: #DC2626;">⚠️ Worker Unassignment</h2>
+          <p id="admin-unassign-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
+            Pre-work reassignment and pending balance reversal
+          </p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-admin-unassign">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="admin-unassign-warning-box" style="background: #FEF2F2; border-left: 4px solid #DC2626; padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #991B1B;">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Administrative Reason for Unassignment (Required):</label>
+          <textarea id="input-admin-unassign-reason" class="form-textarea" rows="2" placeholder="e.g. Worker requested cancellation due to personal scheduling conflict; customer approved replacement."></textarea>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: flex-start; gap: 8px;">
+          <span>ℹ️</span>
+          <span><strong>Financial Integrity:</strong> Reverses exact pending earnings in integer cents without affecting historical cashouts, completed earnings, or lifetime balances.</span>
+        </div>
+
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: var(--text-primary); font-weight: 600;">
+          <input type="checkbox" id="check-admin-unassign-confirm">
+          <span>I verify that service work has not commenced and unassignment is authorized.</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-admin-unassign" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Cancel
+        </button>
+        <button class="btn-book-service" id="btn-confirm-admin-unassign" style="width: auto; padding: 10px 24px; background: #DC2626;" disabled>
+          Confirm Unassignment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Create Support Case -->
+  <div class="modal-overlay" id="modal-admin-create-case">
+    <div class="modal-dialog" style="max-width: 600px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" style="margin: 0; color: var(--primary-navy);">Create Support Case</h3>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
+            Record an operational incident, staffing shortage, or customer inquiry
+          </p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-modal-create-case">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Case Title (Required):</label>
+          <input type="text" id="input-case-title" class="form-input" placeholder="e.g. Unfilled Second Mover on Scheduled Job" />
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Category:</label>
+            <select id="select-case-category" class="form-select">
+              <option value="support">Customer / Operational Support</option>
+              <option value="trust_safety">Trust & Safety Investigation</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Issue Type:</label>
+            <select id="select-case-issuetype" class="form-select">
+              <option value="missing_second_mover">Staffing Shortage / Missing Worker</option>
+              <option value="asap_expired">Expired ASAP Window</option>
+              <option value="reschedule_request">Rescheduling Incompatibility</option>
+              <option value="booking_problem">Booking / Address Problem</option>
+              <option value="customer_complaint">Customer Service Complaint</option>
+              <option value="worker_complaint">Worker Dispatch Complaint</option>
+              <option value="general">General Operational Inquiry</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Associated Booking:</label>
+            <select id="select-case-booking" class="form-select">
+              <option value="">None / General Marketplace</option>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Priority Level:</label>
+            <select id="select-case-priority" class="form-select">
+              <option value="medium">Medium Priority</option>
+              <option value="high">High Priority</option>
+              <option value="critical">Critical Priority</option>
+              <option value="low">Low Priority</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Initial Internal Dispatcher Note (Required):</label>
+          <textarea id="input-case-initial-note" class="form-textarea" rows="3" placeholder="Describe the incident, operational context, and recommended resolution steps..."></textarea>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: flex-start; gap: 8px;">
+          <span>🔒</span>
+          <span><strong>Customer Privacy Guarantee:</strong> Internal notes remain strictly confidential within the Admin Center. They are never written to customer activity logs (<code>booking.messages</code>).</span>
+        </div>
+
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; cursor: pointer; color: var(--text-primary); font-weight: 600;">
+          <input type="checkbox" id="check-create-case-confirm">
+          <span>I verify that this case is documented for administrative review and contains no customer-visible content.</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-create-case" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Cancel
+        </button>
+        <button class="btn-book-service" id="btn-submit-create-case" style="width: auto; padding: 10px 24px;" disabled>
+          Create Case
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Support Case Details & Note Addition -->
+  <div class="modal-overlay" id="modal-admin-case-detail">
+    <div class="modal-dialog" style="max-width: 680px;">
+      <div class="modal-header">
+        <div>
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+            <span id="case-detail-badge-id" class="admin-phase-badge" style="background: #E0E7FF; color: #3730A3;">CASE-101</span>
+            <span id="case-detail-badge-status" class="admin-badge-status">OPEN</span>
+            <span id="case-detail-badge-priority" class="admin-alert-badge high">HIGH</span>
+          </div>
+          <h3 class="modal-title" id="case-detail-title" style="margin: 0; color: var(--primary-navy);">Case Title</h3>
+        </div>
+        <button class="modal-close-btn" id="btn-close-case-detail">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Metadata summary -->
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 16px; font-size: 0.82rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+          <div><strong style="color: var(--text-secondary);">Associated Booking:</strong> <span id="case-detail-booking-id">--</span></div>
+          <div><strong style="color: var(--text-secondary);">Customer:</strong> <span id="case-detail-customer-name">--</span></div>
+          <div><strong style="color: var(--text-secondary);">Issue Category:</strong> <span id="case-detail-issue-type">--</span></div>
+          <div><strong style="color: var(--text-secondary);">Created:</strong> <span id="case-detail-created-at">--</span></div>
+        </div>
+
+        <!-- Status update control -->
+        <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 16px;">
+          <h4 style="margin: 0 0 8px 0; font-size: 0.88rem; color: var(--primary-navy);">Update Case Status</h4>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <select id="case-detail-select-status" class="form-select" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
+              <option value="open">Open</option>
+              <option value="under_review">Under Review</option>
+              <option value="resolved">Resolved</option>
+            </select>
+            <input type="text" id="case-detail-status-reason" class="form-input" placeholder="Administrative reason for status change (Required)..." style="flex: 1; min-width: 200px; font-size: 0.85rem;" />
+            <button id="btn-case-detail-update-status" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.82rem; white-space: nowrap; background: var(--primary-teal); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;">
+              Update Status
+            </button>
+          </div>
+        </div>
+
+        <!-- Internal Notes Timeline -->
+        <h4 style="margin: 0 0 8px 0; font-size: 0.88rem; color: var(--primary-navy);">Internal Dispatcher Notes Timeline</h4>
+        <div id="case-detail-notes-timeline" style="max-height: 220px; overflow-y: auto; background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 14px;">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Add Note Section -->
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Add Internal Dispatcher Note:</label>
+          <textarea id="input-case-detail-new-note" class="form-textarea" rows="2" placeholder="Record internal findings, phone call notes, or instructions for next shift..."></textarea>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">🔒 Strictly internal; never shown to customers.</span>
+            <button id="btn-case-detail-add-note" class="btn btn-primary" style="padding: 6px 16px; font-size: 0.82rem; background: var(--primary-navy); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;">
+              Add Note
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-close-case-detail-footer" style="padding: 8px 20px; border-radius: var(--radius-md);">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Trust & Safety Review Investigation -->
+  <div class="modal-overlay" id="modal-admin-trust-detail">
+    <div class="modal-dialog" style="max-width: 640px;">
+      <div class="modal-header">
+        <div>
+          <span class="admin-phase-badge" style="background: #FEF3C7; color: #92400E; margin-bottom: 4px; display: inline-block;">Trust & Safety Review Reviewer</span>
+          <h3 class="modal-title" style="margin: 0; color: var(--primary-navy);">Review Dispute & Investigation</h3>
+        </div>
+        <button class="modal-close-btn" id="btn-close-trust-detail">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Original Review Details Card (Read-Only) -->
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div>
+              <strong id="trust-modal-pro-name" style="color: var(--primary-navy); font-size: 0.95rem;">Worker Name</strong>
+              <div id="trust-modal-role-title" style="font-size: 0.8rem; color: var(--text-secondary);">Role Title</div>
+            </div>
+            <div id="trust-modal-stars" style="font-size: 1.15rem; color: #F59E0B; font-weight: 700;">★★★★★</div>
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-primary); font-style: italic; margin-bottom: 8px;" id="trust-modal-comment">
+            "Customer comment text"
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); flex-wrap: wrap; gap: 8px;">
+            <span>Review Date: <span id="trust-modal-date">--</span></span>
+            <span>Customer: <span id="trust-modal-customer">--</span></span>
+            <span>Booking: <span id="trust-modal-booking">--</span></span>
+          </div>
+        </div>
+
+        <!-- Reputation Protection Rules Reminder -->
+        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.8rem; color: #166534;">
+          ℹ️ <strong>Reputation Protection Notice:</strong> Flagging a review as disputed records an investigation in the unified case management system. The original rating (<span id="trust-modal-original-stars">5</span>★) and worker average rating are protected and remain completely untouched.
+        </div>
+
+        <!-- Dispute Action Section -->
+        <div id="trust-dispute-action-container">
+          <!-- Rendered dynamically depending on whether already disputed or not -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-close-trust-footer" style="padding: 8px 20px; border-radius: var(--radius-md);">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: ADMIN BOOKING CANCELLATION (Stage 3.5)
+       =================================================================== -->
+  <div class="modal-overlay" id="modal-admin-cancel-booking">
+    <div class="modal-dialog" style="max-width: 580px;">
+      <div class="modal-header">
+        <div>
+          <h2 style="color: #DC2626; margin: 0; font-size: 1.25rem;">🚫 Cancel Booking</h2>
+          <p id="admin-cancel-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
+            Administrative all-or-nothing cancellation and pending payout reversal
+          </p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-admin-cancel">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="admin-cancel-summary-box" style="background: #FEF2F2; border-left: 4px solid #DC2626; padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #991B1B;">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 700;">Administrative Reason for Cancellation (Required):</label>
+          <textarea id="input-admin-cancel-reason" class="form-textarea" rows="2" placeholder="e.g. Customer requested cancellation prior to worker dispatch due to building access issue."></textarea>
+        </div>
+
+        <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.8rem; color: #92400E; display: flex; align-items: flex-start; gap: 8px;">
+          <span>🔒</span>
+          <span><strong>All-or-Nothing Financial Policy:</strong> Pre-work cancellation safely reverses attributable pending earnings in integer cents. It does not alter completed earnings, and customer resolution is marked <em>Pending Manual Review — No Refund Processed</em>.</span>
+        </div>
+
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: var(--text-primary); font-weight: 600;">
+          <input type="checkbox" id="check-admin-cancel-confirm">
+          <span>I confirm no worker has begun traveling or work, and this cancellation is authorized.</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-admin-cancel-action" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Keep Booking
+        </button>
+        <button class="btn-book-service" id="btn-confirm-admin-cancel" style="width: auto; padding: 10px 24px; background: #DC2626;" disabled>
+          Confirm Cancellation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: ADMIN-VERIFIED JOB COMPLETION (Stage 3.5)
+       =================================================================== -->
+  <div class="modal-overlay" id="modal-admin-verify-complete">
+    <div class="modal-dialog" style="max-width: 600px;">
+      <div class="modal-header">
+        <div>
+          <h2 style="color: #059669; margin: 0; font-size: 1.25rem;">✓ Verify & Complete Assignment</h2>
+          <p id="admin-verify-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
+            Affirmative administrative completion and worker earnings release
+          </p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-admin-verify">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="admin-verify-summary-box" style="background: #ECFDF5; border-left: 4px solid #059669; padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #065F46;">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 700;">Affirmative Verification Source (Demo Simulation):</label>
+          <select id="select-admin-verify-source" class="form-select">
+            <option value="Customer Direct Phone Confirmation (Demo Simulation)">Customer Direct Phone Confirmation (Demo Simulation)</option>
+            <option value="On-Site Dispatcher Field Check (Demo Simulation)">On-Site Dispatcher Field Check (Demo Simulation)</option>
+            <option value="Customer Support Ticket Verification (Demo Simulation)">Customer Support Ticket Verification (Demo Simulation)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 700;">Documented Verification Notes & Explanation (Required):</label>
+          <textarea id="input-admin-verify-explanation" class="form-textarea" rows="2" placeholder="e.g. Spoke directly with customer Sarah Jenkins who confirmed all loading/unloading tasks were finished satisfactorily."></textarea>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: flex-start; gap: 8px;">
+          <span>💼</span>
+          <span><strong>Single Source of Truth:</strong> Releases pending payout to available balance and records an earnings credit in the worker's ledger using the shared Pro completion engine.</span>
+        </div>
+
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: var(--text-primary); font-weight: 600;">
+          <input type="checkbox" id="check-admin-verify-confirm">
+          <span>I affirmatively verify that this worker completed all required job tasks.</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-admin-verify-action" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Cancel
+        </button>
+        <button class="btn-book-service" id="btn-confirm-admin-verify" style="width: auto; padding: 10px 24px; background: #059669;" disabled>
+          Verify & Release Payout
         </button>
       </div>
     </div>

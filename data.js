@@ -502,5 +502,139 @@ export const INITIAL_BOOKINGS = [
       }
     ],
     createdAt: '2026-11-03T14:20:00Z'
+  },
+  {
+    id: 'CRW-1004',
+    customerId: 'cust_sarah',
+    customerName: 'Sarah Jenkins',
+    neighborhoodId: 'uptown',
+    neighborhoodName: 'Uptown Dallas',
+    address: '2800 McKinney Ave, Apt 402, Dallas, TX 75204',
+    serviceCategory: 'moving',
+    serviceTitle: 'Moving & Lifting Assistance (Upcoming Weekend)',
+    timingType: 'scheduled',
+    scheduledDate: '2026-11-15',
+    scheduledTime: '10:00',
+    estimatedDurationHours: 3,
+    workersNeeded: 2,
+    serviceDetails: {
+      workersNeeded: 2,
+      hours: 3,
+      truckNeeded: false,
+      stairsElevator: 'Elevator access available',
+      largeItemsCount: 'Sofa, king bed, dining table, 15 boxes',
+      notes: 'Upcoming weekend move. Need 2 movers.'
+    },
+    pricing: {
+      customerSubtotal: 240,
+      bookingFee: 10,
+      customerTotal: 250,
+      workerPayoutPerPerson: 75,
+      totalWorkerPayouts: 150,
+      grossPlatformRevenue: 100
+    },
+    workerAssignments: [
+      {
+        slotId: 'slot_1',
+        roleTitle: 'Lead Mover',
+        status: 'assigned',
+        assignedProId: 'pro_marcus',
+        assignedProName: 'Marcus Davis',
+        assignedAt: '2026-11-10T09:15:00Z',
+        payout: 75
+      },
+      {
+        slotId: 'slot_2',
+        roleTitle: 'Assistant Mover',
+        status: 'unassigned',
+        assignedProId: null,
+        assignedProName: null,
+        assignedAt: null,
+        payout: 75
+      }
+    ],
+    overallStatus: 'partially_filled',
+    partialFulfillmentNotice: '1 of 2 workers assigned. Crewly is matching your 2nd mover.',
+    messages: [
+      {
+        id: 'msg_1004_1',
+        senderRole: 'system',
+        senderName: 'Crewly Match',
+        timestamp: '09:15 AM',
+        text: 'Marcus Davis has accepted the Lead Mover assignment.'
+      }
+    ],
+    rating: null,
+    review: null,
+    workerReviews: [],
+    createdAt: '2026-11-10T09:10:00Z'
+  }
+];
+
+// ---------------------------------------------------------------------------
+// Fictional Demonstration Initial Records for Stage 3 Admin/Dispatch
+// (Product Lead Adjustment 4: Explicitly labeled as fictional demo data)
+// ---------------------------------------------------------------------------
+
+export const INITIAL_SUPPORT_CASES = [
+  {
+    caseId: 'CASE-101',
+    category: 'support',
+    bookingId: 'CRW-1004',
+    customerId: 'cust_sarah',
+    proId: null,
+    issueType: 'missing_second_mover',
+    priority: 'high',
+    status: 'open',
+    title: 'Unfilled Second Mover on 2-Person Moving Booking',
+    notes: [
+      {
+        noteId: 'note_101_1',
+        author: 'Dallas Dispatch Lead (Fictional Demo Seed)',
+        timestamp: '2026-11-10T09:20:00.000Z',
+        text: 'Lead mover slot assigned to Marcus Davis. Assistant Mover slot 2 remains open; awaiting qualified mover candidate.'
+      }
+    ],
+    createdAt: '2026-11-10T09:20:00.000Z',
+    updatedAt: '2026-11-10T09:20:00.000Z'
+  }
+];
+
+export const INITIAL_AUDIT_LOG = [
+  {
+    auditId: 'audit_init_seed_1',
+    timestamp: '2026-11-05T09:15:00.000Z',
+    adminName: 'Crewly Dispatch System (Fictional Demo Seed)',
+    actionType: 'worker_assigned',
+    bookingId: 'CRW-1001',
+    proId: 'pro_marcus',
+    slotId: 'slot_1',
+    previousValue: 'unassigned',
+    newValue: 'assigned',
+    reason: 'Baseline marketplace worker assignment (Fictional demonstration seed)'
+  },
+  {
+    auditId: 'audit_init_seed_2',
+    timestamp: '2026-11-05T10:00:00.000Z',
+    adminName: 'Crewly Dispatch System (Fictional Demo Seed)',
+    actionType: 'worker_assigned',
+    bookingId: 'CRW-1002',
+    proId: 'pro_elena',
+    slotId: 'slot_1',
+    previousValue: 'unassigned',
+    newValue: 'assigned',
+    reason: 'Single-worker TV mounting dispatch (Fictional demonstration seed)'
+  },
+  {
+    auditId: 'audit_init_seed_3',
+    timestamp: '2026-11-10T09:15:00.000Z',
+    adminName: 'Crewly Dispatch System (Fictional Demo Seed)',
+    actionType: 'worker_assigned',
+    bookingId: 'CRW-1004',
+    proId: 'pro_marcus',
+    slotId: 'slot_1',
+    previousValue: 'unassigned',
+    newValue: 'assigned',
+    reason: 'Advance moving booking initial crew assignment (Fictional demonstration seed)'
   }
 ];

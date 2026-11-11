@@ -199,4 +199,181 @@ Every build iteration must pass the following test benchmarks:
 10. **Test J (Legacy Data Migration):** Loading state without `walletSchemaVersion` safely creates opening snapshots without fabricating cash-outs or duplicating earnings.
 11. **Test K (Regression Testing):** Verified that customer booking, dynamic pricing, ASAP matching, scheduled appointments, crew-size enforcement, job-board acceptance, reviews, and cross-tab sync remain 100% operational.
 
+---
+
+## 13. Stage 3 Human-Controlled Admin & Dispatch Rules (Phase 1)
+- **Role Isolation Architecture:**
+  - Header navigation supports three independent roles: Customer (`customer`), Crewly Pro (`pro`), and Crewly Admin (`admin`).
+  - Active role is persisted in `sessionStorage['crewly_active_role']` with URL parameter synchronization (`?role=admin`).
+  - Switching role in one browser tab does not overwrite or mutate the role of any other concurrent tab (tab-scoped isolation).
+  - Explicit classroom demonstration badge is displayed: client-side role switching is designed for academic evaluation in INSY 3331, not production RBAC/OAuth authentication.
+- **State Schema Version 3 Migration:**
+  - Gated by `state.adminSchemaVersion = 3`.
+  - Initializes `adminAuditLog: []` (append-only administrative audit records) with baseline fictional demo entries.
+  - Initializes `supportCases: []` with baseline fictional demo support records (e.g. `CASE-101`).
+  - Preserves 100% of existing customer bookings, Pro earnings, wallet transactions, and ratings without balance corruption.
+- **Rules-Based Operational Alerts (Deterministic):**
+  - Evaluated dynamically at runtime via `getOperationalAlerts(state)` to prevent stale duplicate alert records in localStorage.
+  - Explicitly identified as a deterministic operational rules engine, NOT an autonomous or generative AI agent.
+  - Generates alerts for:
+    1. Multi-worker staffing shortages (`partially_filled` bookings requiring full crew before work starts).
+    2. Unassigned booking requests (`waiting_for_pros`).
+    3. Expired ASAP matching windows (lapsed 60-minute window with unfilled slots).
+    4. Approaching same-day scheduled appointments with unfilled positions.
+    5. Open or under-review customer support tickets.
+- **Financial Accounting Separation Standards:**
+  - **Projected Gross Booking Value (GBV):** Aggregate customer price across open/active bookings.
+  - **Completed-Job Gross Value:** Aggregate customer billings on finalized bookings.
+  - **Platform Booking Fees:** Aggregate $10 booking fees recorded across bookings.
+  - **Worker Compensation:** Aggregate worker payouts committed (pending) or disbursed (completed).
+  - **Platform Gross Margin:** Total customer charges minus total worker compensation.
+  - **Simulated Cash-Out Volume:** Aggregate volume and fees from simulated worker debit card and ACH withdrawals.
+  - **Net Profit Disclosure:** Gross customer billings and platform gross margin must NEVER be identified as net profit. Commercial net profit deducts payment gateway processing (2.9% + $0.30), insurance, customer dispute reserves, background checks, and platform infrastructure.
+
+---
+
+## 14. Stage 3 Phase 2: Human-Controlled Dispatch Management & Audit Rules
+- **Rule-Based Manual Assignment:**
+  - Administrative manual assignment (`adminAssignPro`) strictly evaluates `canProAcceptSlot()` before modifying any booking or Pro record. No administrative overrides are permitted for verified skills, equipment, weekly availability, or schedule conflicts.
+  - Requires documented administrative reason and operator confirmation checkbox.
+  - Reuses the existing `assignProToSlot()` state transition logic: updates slot status, increments worker pending earnings by the exact slot payout, recalculates booking overall status (`fully_confirmed` if all slots filled), and logs sanitized system notification.
+  - Appends an audit record to `state.adminAuditLog` with actionType `'worker_assigned'` and status `'success'`.
+  - Ineligible assignment attempts are strictly rejected, and logged to `adminAuditLog` with actionType `'assignment_rejected'` and status `'failed'` for diagnostic auditing.
+- **Pre-Work Worker Unassignment & Earnings Reversal:**
+  - Administrative unassignment (`adminUnassignPro`) is restricted strictly to pre-work assignments (`slot.status === 'assigned'`).
+  - Active work (`traveling`, `arrived`, `in_progress`) and finalized work (`completed`) are protected from ordinary dispatch unassignment and must be escalated to dispute resolution.
+  - Reverses pending earnings using integer-cent precision (`pro.earnings.pendingBalance -= slot.payout`).
+  - **Financial Discrepancy Guard:** If a worker's pending balance is less than the assignment payout, the action is strictly rejected with an explicit operational error. Never silently clamp with `Math.max(0, ...)` to conceal balance inconsistencies.
+  - Completed earnings, withdrawal transactions, and lifetime earned balances are never altered.
+  - Reopens vacant position (`slot.status = 'unassigned'`, clearing assigned Pro ID and name).
+  - Recalculates booking status (`partially_filled` or `waiting_for_pros`).
+  - Appends an audit record with actionType `'worker_unassigned'`.
+- **Administrative Privacy & Sanitization:**
+  - Administrative reasons and internal dispatch notes are preserved exclusively inside `state.adminAuditLog` and the demo Admin Dashboard.
+  - Customer activity notifications in `booking.messages` remain strictly sanitized: announcing that crew staffing was updated without disclosing internal administrative reasons or individual worker payout dollar figures.
+- **Historical Appointment Handling:**
+  - Scheduled appointments whose dates have already passed (`scheduledDate < dallasNow.dateStr`) are flagged in the Needs Attention queue with `Historical Review Required`.
+  - Manual assignment is disabled for past appointments until the customer reschedules to a valid future appointment date.
+
+---
+
+## 15. Stage 3 Phase 3: Supporting Administrative Operations & Reputation Protection Rules
+- **Three-Tier Operational Pro Categorization (Adjustment 5):**
+  - **Registered Pros:** Total active onboarded workforce (4 Dallas Pros).
+  - **Available Pros Today:** Workers with weekly schedule availability enabled for the current Dallas local day of the week (`weeklyAvailability[todayName].enabled`).
+  - **Booking Eligibility Inspector:** Directly evaluates `canProAcceptSlot()` for every open slot on a selected booking. A Pro is never claimed to be available for a job based solely on general day-of-week availability. Meaningful disqualification reasons (missing Verified Mover skill, missing verified lawn equipment, schedule conflict, or expired booking window) are surfaced explicitly.
+- **Unified Case Management System (Adjustment 1):**
+  - All operational inquiries, staffing shortages, customer support requests, and Trust & Safety review disputes reside in a single unified collection: `state.supportCases`.
+  - Schema: `{ caseId, category ('support' | 'trust_safety'), bookingId, customerId, proId, reviewSlotId, issueType, priority, status ('open' | 'under_review' | 'resolved'), title, notes: [{ noteId, author, timestamp, text }], createdAt, updatedAt, resolvedAt }`.
+  - Idempotency & Duplicate Prevention: Submissions with identical `idempotencyKey` return the existing case without re-creation. Creating a duplicate open case for the same booking and identical title is rejected with an operational error.
+- **Reputation Protection Standards & Review Preservation (Adjustment 2):**
+  - Disputing a review creates a linked Trust & Safety case in `state.supportCases` and flags the review with `disputed = true` and `disputeStatus = 'under_investigation'`.
+  - **Strict Invariance:** Disputing a review NEVER deletes the review, alters original star ratings (`review.stars`), modifies worker average rating (`pro.rating`), alters review count (`pro.reviewCount`), penalizes the customer, or suspends the Pro.
+  - Multi-Worker Review Independence: Reviews on multi-worker bookings are stored per-slot in `booking.workerReviews[]`. Flagging one worker's review as disputed never bleeds into or attaches disputes to other co-workers' reviews on the same booking.
+- **Strictly Read-Only Financial Operations (Adjustment 3):**
+  - Reuses Stage 2 Pro wallet ledger and booking data as single source of truth.
+  - Opening or rendering the Financial Operations view guarantees ZERO state mutations, zero transaction creations, and zero balance adjustments.
+  - Transparently distinguishes Projected Gross Booking Value, Completed-Job Gross Value, Platform Booking Fees, Projected Gross Margin, Realized Completed Margin, Total Platform Gross Margin, and Worker Earnings.
+  - Prohibits identifying gross margin as net profit: explicit transparency disclaimers detail operating expenses, 2.9% + $0.30 gateway processing, general liability insurance, customer dispute reserves, background check costs, and cloud infrastructure.
+  - Historical wallet snapshots (`opening_balance_snapshot`) and historical job imports are never double-counted in cash-out totals.
+- **Customer Privacy & XSS Sanitization (Adjustment 4):**
+  - Internal dispatcher notes, administrative reasons, and Trust & Safety investigation notes remain strictly confidential within the Admin Center. They are never pushed to `booking.messages` or exposed in customer views.
+  - All user-entered titles, notes, and comments are sanitized via `escapeHtml()` to neutralize potential script injection.
+- **Unified Administrative Audit Trail (Adjustment 1 & 5):**
+  - Append-only audit logging for: `worker_assigned`, `worker_unassigned`, `assignment_rejected`, `support_case_created`, `support_case_status_updated`, `support_case_note_added`, `review_dispute_flagged`, and `trust_case_updated`.
+  - Client-side demonstration log labeled for academic evaluation in INSY 3331.
+
+---
+
+## 16. Stage 3 Phase 4: Final End-to-End Testing, Browser Verification & Presentation Polish
+- **Mandatory Browser Initialization & Strict ES Module Parsing:**
+  - Verified with strict ES6 module parser (macOS WebKit/JavaScriptCore `jsc -m`).
+  - Zero duplicate identifier declarations across all script files (resolved duplicate `flagReviewDispute`).
+  - Zero unhandled module exceptions on application startup.
+  - Clean client-side rendering verified across all 8 Admin tabs, Pro View, and Customer View.
+- **Complete Customer-to-Admin-to-Pro Marketplace Lifecycle (Scenarios A–H):**
+  - **Scenario A (Booking Creation):** Customer Sarah Jenkins books 2 movers for 3 hours at Uptown Dallas 75204. Demonstrates transparent customer pricing ($240 labor + $10 platform fee = $250 total) while strictly concealing individual worker payouts ($75/worker).
+  - **Scenario B (First Worker Acceptance):** Marcus Davis accepts slot 1. Booking transitions to `partially_filled`. Marcus pending balance increases by exactly $75.00 once. Solo work progression (`traveling`, `arrived`, `in_progress`, `completed`) is strictly blocked until full crew is confirmed.
+  - **Scenario C (Admin Dispatch):** Administrator inspects candidates. Elena and Carlos disqualified for missing moving credential; Marcus disqualified for duplicate assignment; Jamar Washington confirmed eligible. Admin assigns Jamar with documented reason. Booking transitions to `fully_confirmed`. Jamar pending balance credited $75.00. Customer message feed announces assignment without leaking payouts or internal administrative notes. Audit trail records `worker_assigned`.
+  - **Scenario D (Job Lifecycle):** Both workers transition through required sequential states (`assigned` -> `traveling` -> `arrived` -> `in_progress` -> `completed`). Upon each worker completion, pending balance decreases, available balance increases, lifetime earned increases, and an `earnings_credit` transaction is appended to the worker's ledger. Booking completes only when both workers finish.
+  - **Scenario E (Individual Reviews):** Customer submits separate reviews: Marcus (5 stars), Jamar (3 stars). Stored in `booking.workerReviews[]` with distinct worker attribution. Average ratings update accurately via weighted historical average (`(rating * count + stars) / (count + 1)`). Ratings do not bleed across workers. Duplicate reviews for the same assignment slot are blocked.
+  - **Scenario F (Trust & Safety Dispute):** Administrator flags Jamar's review with documented reason. Unified Trust & Safety case created in `state.supportCases` (`CASE-TS-201`). Review marked `under_investigation`. Star rating (3★), worker average rating (4.63), and review count (15) strictly preserved. Marcus review remains undisputed. Audit trail records `review_dispute_flagged`.
+  - **Scenario G (Customer Support):** Support case created, transitioned (Open -> Under Review -> Resolved), and internal dispatcher notes appended. Notes persist across reloads and remain strictly quarantined from customer messages.
+  - **Scenario H (Financial Operations):** Admin financial summary calculates GBV ($315 completed), platform gross margin ($130 completed), and platform fees ($50). Ten consecutive recalculations verify ZERO mutations to wallet balances or transaction ledgers. Gross margin explicitly distinguished from commercial net profit.
+- **Simulated Cash-Out Verification:**
+  - Standard withdrawal ($0 fee): available balance decreases, net delivered equals requested amount, lifetime earned remains invariant.
+  - Instant withdrawal ($1.50 fee): available balance decreases, net delivered equals amount minus $1.50 fee, lifetime earned remains invariant.
+  - Partial withdrawals supported.
+  - Insufficient funds strictly rejected.
+  - Instant withdrawals <= $1.50 fee strictly rejected.
+  - Idempotency with stable `requestId` prevents double withdrawals.
+  - All cash-out cards, modals, and receipts explicitly labeled: `⚠️ SIMULATED TRANSACTION — NO REAL MONEY TRANSFERRED`.
+- **Presentation Readiness & Academic Pilot Polish:**
+  - Updated landing hero badges to state: `⚡ Dallas Pilot Demonstration — INSY 3331 Academic Simulation`, `✓ Pre-Screened Dallas Pro Profiles (Pilot Demo)`, and `✓ Transparent Demonstration Pricing Assumptions`.
+  - Clarified that client-side role switcher is for academic demonstration, not production authentication.
+  - Ensured no claims of live commercial operations, real background checks, active GPS tracking, or autonomous AI dispatch.
+- **Responsive Layout Verification:**
+  - Verified across Desktop (1440px), Tablet (768px), and Mobile (390px).
+  - Refined `.header-container`, `.role-switcher-container`, `.role-pill-btn`, `.modal-dialog`, `.admin-subnav-container`, and `.pro-earnings-grid` with touch-friendly spacing and horizontal overflow scrolling for tables.
+- **Portable Test Runner in `tests/`:**
+  - `tests/test_es_module_startup.js` (23 assertions)
+  - `tests/test_phase1_overview.py` (41 assertions)
+  - `tests/test_phase2_dispatch.py` (72 assertions)
+  - `tests/test_phase3_operations.py` (81 assertions)
+  - `tests/test_phase4_e2e_marketplace.js` (140 assertions)
+  - Master executable: `tests/run_all_tests.sh` executes all 357 assertions cleanly (100% pass rate).
+
+---
+
+## 17. Stage 3.5: Admin Booking Cancellation & Verified Job Completion
+- **Operational Scope & Capabilities:**
+  - Adds two human-controlled dispatch capabilities to the Crewly Admin Center:
+    1. **Administrative All-or-Nothing Booking Cancellation**
+    2. **Administrative Affirmative Job Completion Verification**
+  - Fully integrated with multi-worker assignments, financial ledger integrity, simulated payouts, customer notification privacy, and administrative audit logging.
+- **All-or-Nothing Booking Cancellation Rules (Product Lead Adjustment 2):**
+  - **Eligibility:** Permitted only when a booking is in pre-work status (`waiting_for_pros`, `partially_filled`, `fully_confirmed`).
+  - **Pre-Validation:** Pre-validates the entire booking and every assigned worker's attributable pending balance in integer cents *before* any state mutation. Rejects the operation entirely if any discrepancy is detected.
+  - **Financial Reversal:** Reverses pending payouts in integer cents only for assigned positions where earnings are actively recorded as pending.
+  - **Financial Invariance:** Completed earnings, available balances, lifetime earnings, and historical cash-outs are never modified by cancellation.
+  - **Idempotency:** Cancelling an already-cancelled booking is strictly rejected without duplicate audit logs or state churn.
+  - **Audit Snapshot:** Retains full cancellation history on the booking object:
+    `cancellationSnapshot: { formerWorkers: [...], totalPayoutCentsReversed, previousStatus, cancelledAt, cancelledBy, reason, cancellationRequestId }`.
+  - **Status & Exclusion:** Booking `overallStatus` transitions to `'cancelled'`. Cancelled bookings are permanently excluded from the Pro Job Board and cannot be claimed by workers.
+  - **Refund Disclosure:** Customer refund status is marked *"Pending Manual Review — No Refund Processed"*. No automated simulated credit card refunds occur.
+- **Protection of Active Work & Support Routing (Product Lead Adjustments 2 & 4):**
+  - If any assigned worker has begun traveling, arrived on-site, or is currently in progress, administrative dispatch cancellation is strictly blocked.
+  - Dispatchers are advised that work is actively underway.
+  - The Admin UI renders an orange **"⚠️ Escalate to Support"** button on active bookings, opening the unified case-creation modal (`#modal-admin-create-case`) pre-populated with high priority, booking reference, and cancellation review notes for manual coordinator investigation.
+- **Single Source of Truth for Verified Job Completion (Product Lead Adjustment 1):**
+  - Does NOT implement a separate or divergent administrative payout release algorithm.
+  - Directly reuses the shared `updateProAssignmentStatus(bookingId, slotId, 'completed')` completion engine after validating administrative verification standards.
+  - Transitions assignment status to `completed`, safely moves pending earnings to available balance in integer cents, updates lifetime earnings, and appends an `earnings_credit` transaction to the worker's ledger.
+  - Automatically transitions booking `overallStatus` to `completed` when all required positions are finished.
+  - Financial discrepancy guard: strictly rejects completion if the worker's pending balance is less than the slot payout amount, preventing silent balance clamping.
+  - Eligibility validation: blocks completion of unassigned positions, pre-work positions (`assigned`, `traveling`, `arrived`), and already completed positions.
+- **Affirmative Verification Standards & Audit Trail (Product Lead Adjustments 3, 4, 5):**
+  - Requires documented affirmative verification source clearly labeled as demonstration simulation:
+    - `"Customer Direct Phone Confirmation (Demo Simulation)"`
+    - `"On-Site Dispatcher Field Check (Demo Simulation)"`
+    - `"Customer Support Ticket Verification (Demo Simulation)"`
+  - Requires documented dispatcher notes/explanation and an explicit confirmation checkbox.
+  - Appends immutable audit records to `state.adminAuditLog`:
+    - `booking_canceled`: captures bookingId, previousStatus, newStatus (`cancelled`), reason, adminName, totalPayoutCentsReversed, and former worker count.
+    - `admin_completion_verified`: captures bookingId, slotId, proId, previousStatus (`in_progress`), newStatus (`completed`), reason, adminName, and `verificationSource`.
+    - `admin_lifecycle_action_rejected`: captures attempted cancellations of active work or invalid completion attempts.
+- **Customer Privacy & Notification Sanitization (Product Lead Adjustment 4):**
+  - Customer messages and status badges strictly conceal individual worker payouts, internal administrative notes, and operational rationale.
+  - Customer feed displays sanitized notifications regarding cancellation or completion without financial data leaks.
+- **Automated Verification & Master Runner:**
+  - Dedicated test suite `tests/test_stage3_5_admin_cancel_complete.js` covering Tests A through J (73 assertions, 100% pass).
+  - Dedicated bug regression suite `tests/test_chrome_issues_verification.js` covering modal checkbox verification and booking-to-worker status synchronization (34 assertions, 100% pass).
+  - Master suite `tests/run_all_tests.sh` executes 7 suites covering 464 assertions with 100% pass rate.
+- **Chrome Bug Fixes & Refinements:**
+  - **Issue 1 (Modal Checkbox Recognition):** `handleConfirmAdminVerify()` in `app.js` now explicitly sets `confirmed: isConfirmed` inside the `verificationData` payload passed to `adminVerifyAndCompleteAssignment()`, ensuring the business logic recognizes affirmative user confirmation. Modal close/reset logic safely clears confirmation state on modal dismissal.
+  - **Issue 2 (Lifecycle Status Synchronization):** `recalculateBookingStatus()` dynamically synchronizes booking `overallStatus` as workers advance through `traveling`, `arrived`, and `in_progress`. Bookings cannot transition to `completed` until every required worker completes. Admin dispatch card headers render distinct visual badges for active states (`⚡ In Progress`, `🚗 En Route / Traveling`, `📍 Arrived On Site`, `✓ Fully Confirmed`).
+
+
+
+
 
