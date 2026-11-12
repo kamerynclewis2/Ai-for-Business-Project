@@ -8,6 +8,18 @@ from urllib.parse import urlparse
 BIND_HOST = "127.0.0.1"
 BIND_PORT = 8787
 
+DEFAULT_AI_PROVIDER = "openai"
+ALLOWED_AI_PROVIDERS = ("openai", "gemini")
+
+OPENAI_RESPONSES_API_URL = "https://api.openai.com/v1/responses"
+DEFAULT_OPENAI_MODEL = "gpt-6-luna"
+ALLOWED_OPENAI_MODELS = (
+    "gpt-6-luna",
+    "gpt-6.1-sol",
+)
+OPENAI_MAX_OUTPUT_TOKENS = 1600
+OPENAI_DEFAULT_REASONING_EFFORT = "low"
+
 # Verified against official Google Gemini Developer API models documentation:
 # gemini-3.5-flash-lite is the stable low-cost, low-latency Flash-Lite tier supporting
 # responseJsonSchema structured outputs and thinkingLevel="minimal".
@@ -86,6 +98,22 @@ def _read_env_local_var(var_name, env_file_path=None):
     return ""
 
 
+def resolve_ai_provider(env_file_path=None):
+    """Returns server-configured AI provider validated against explicit allowlist."""
+    configured = (_read_env_local_var("CREWLY_AI_PROVIDER", env_file_path=env_file_path) or DEFAULT_AI_PROVIDER).strip().lower()
+    if configured in ALLOWED_AI_PROVIDERS:
+        return configured
+    return DEFAULT_AI_PROVIDER
+
+
+def resolve_openai_model(env_file_path=None):
+    """Returns server-configured OpenAI model validated against an explicit allowlist."""
+    configured = _read_env_local_var("CREWLY_OPENAI_MODEL", env_file_path=env_file_path) or DEFAULT_OPENAI_MODEL
+    if configured in ALLOWED_OPENAI_MODELS:
+        return configured
+    return DEFAULT_OPENAI_MODEL
+
+
 def resolve_gemini_model(env_file_path=None):
     """Returns server-configured Flash model validated against an explicit allowlist."""
     configured = _read_env_local_var("CREWLY_GEMINI_MODEL", env_file_path=env_file_path) or DEFAULT_GEMINI_MODEL
@@ -121,9 +149,30 @@ def get_allowed_origins():
     return tuple(origins) if origins else DEFAULT_ALLOWED_ORIGINS
 
 
+def load_openai_api_key(env_file_path=None):
+    """Reads OPENAI_API_KEY safely from process env or gitignored local .env file."""
+    return _read_env_local_var("OPENAI_API_KEY", env_file_path=env_file_path)
+
+
 def load_gemini_api_key(env_file_path=None):
     """Reads GEMINI_API_KEY safely from process env or gitignored local .env file."""
     return _read_env_local_var("GEMINI_API_KEY", env_file_path=env_file_path)
+
+
+def resolve_provider_model(provider=None, env_file_path=None):
+    """Resolves the active server-configured model ID for the selected AI provider."""
+    active_provider = provider if provider in ALLOWED_AI_PROVIDERS else resolve_ai_provider(env_file_path=env_file_path)
+    if active_provider == "gemini":
+        return resolve_gemini_model(env_file_path=env_file_path)
+    return resolve_openai_model(env_file_path=env_file_path)
+
+
+def resolve_provider_api_key(provider=None, env_file_path=None):
+    """Loads the API key for the active server-configured AI provider."""
+    active_provider = provider if provider in ALLOWED_AI_PROVIDERS else resolve_ai_provider(env_file_path=env_file_path)
+    if active_provider == "gemini":
+        return load_gemini_api_key(env_file_path=env_file_path)
+    return load_openai_api_key(env_file_path=env_file_path)
 
 
 def is_api_key_configured(api_key):
@@ -131,7 +180,12 @@ def is_api_key_configured(api_key):
     if not api_key or len(api_key.strip()) < 10:
         return False
     upper = api_key.strip().upper()
-    if upper.startswith("REPLACE_WITH_") or "YOUR_GOOGLE_AI_STUDIO_KEY" in upper or "DUMMY_PLACEHOLDER" in upper:
+    if (
+        upper.startswith("REPLACE_WITH_")
+        or "YOUR_GOOGLE_AI_STUDIO_KEY" in upper
+        or "YOUR_OPENAI_API_KEY" in upper
+        or "DUMMY_PLACEHOLDER" in upper
+    ):
         return False
     return True
 
@@ -142,6 +196,7 @@ def redact_secrets(text, api_key=None):
     if api_key and len(api_key.strip()) >= 6:
         clean = clean.replace(api_key.strip(), "[REDACTED_KEY]")
     clean = re.sub(r"AIza[0-9A-Za-z_-]{16,}", "[REDACTED_KEY]", clean)
+    clean = re.sub(r"\bsk-(?:proj-|svcacct-|admin-)?[0-9A-Za-z_-]{16,}\b", "[REDACTED_KEY]", clean)
     clean = re.sub(r"(?i)(x-goog-api-key\s*[:=]\s*)([^\s,;'\"]+)", r"\1[REDACTED_KEY]", clean)
     clean = re.sub(r"(?i)([?&]key=)([^&\s'\"]+)", r"\1[REDACTED_KEY]", clean)
     clean = re.sub(r"(?i)\bBearer\s+[0-9A-Za-z._-]{12,}\b", "Bearer [REDACTED_TOKEN]", clean)
@@ -238,3 +293,6 @@ def build_gemini_response_json_schema():
             },
         },
     }
+
+
+build_dispatch_response_json_schema = build_gemini_response_json_schema

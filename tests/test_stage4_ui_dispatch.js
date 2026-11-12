@@ -740,6 +740,123 @@ var finalCrossBooking = loadState().bookings.find(function(b) { return b.id === 
 assert(finalCrossBooking.workerAssignments[0].assignedProId === 'pro_marcus', "Stale modal guard prevents double-assigning over slot already accepted elsewhere");
 assert(loadState().adminAuditLog.some(function(a) { return a.actionType === 'ai_dispatch_recommendation_rejected' && a.bookingId === modalStaleId; }), "Logs ai_dispatch_recommendation_rejected when stale modal approval is blocked");
 
+// ---------------------------------------------------------------------------
+// 7. Stage 4.5 OpenAI (gpt-6-luna) Provenance, Mock Separation & Live Label UI
+// ---------------------------------------------------------------------------
+print("\n[Stage 4.5: OpenAI gpt-6-luna UI Provenance & Mock Test Separation]");
+var resOpenAiBooking = createBooking({
+  customerId: 'cust_sarah',
+  address: '4400 Lomo Alto Dr, Dallas, TX 75219',
+  zipCode: '75219',
+  serviceCategory: 'tv_mounting',
+  timingType: 'scheduled',
+  scheduledDate: getDynamicFutureBusinessDateStr(8),
+  scheduledTime: '14:00',
+  intakeDetails: { tvSize: '55 inch' }
+});
+var openAiBookingId = resOpenAiBooking.id;
+
+var openAiSamplePayload = {
+  ok: true,
+  provider: 'openai',
+  inferenceSource: 'live_openai_ai',
+  isSimulatedTestMode: false,
+  liveAiAttempted: true,
+  model: 'gpt-6-luna',
+  recommendation: {
+    bookingId: openAiBookingId,
+    slotRecommendations: [
+      {
+        slotId: 'slot_1',
+        draftAdminReason: 'Elena is verified for TV mounting and clear at 14:00.',
+        rankedCandidates: [
+          {
+            proId: 'pro_elena',
+            fitSummary: 'Platinum specialist verified for TV mounting.',
+            rationaleBullets: ['Platinum reliability tier', 'Available at 14:00'],
+            cautionNote: ''
+          }
+        ]
+      }
+    ],
+    operationalRisks: [
+      { severity: 'low', code: 'pilot_zone_check', message: 'Pilot zone label check only; no GPS routing.' }
+    ],
+    shortageAssessment: 'sufficient_supply',
+    recommendedNextAction: 'approve_top_candidate'
+  }
+};
+
+// Case A: Injected fetchFn must STILL stay Mock Test Mode even if payload says live_openai_ai
+var resOpenAiMocked = await triggerAdminAiDispatchAdvice(openAiBookingId, {
+  fetchFn: async function() {
+    return {
+      ok: true,
+      status: 200,
+      json: async function() { return openAiSamplePayload; }
+    };
+  }
+});
+assert(
+  resOpenAiMocked.ok === true &&
+  resOpenAiMocked.recommendation.provenance.source === 'mock_ai_test_mode' &&
+  resOpenAiMocked.recommendation.provenance.model === 'gpt-6-luna' &&
+  document.getElementById('admin-dispatch-bookings-list').innerHTML.includes('Mock AI Response — Test Mode (gpt-6-luna)') &&
+  !document.getElementById('admin-dispatch-bookings-list').innerHTML.includes('Live OpenAI AI — gpt-6-luna'),
+  "Injected fetchFn keeps OpenAI test response in Mock AI Response — Test Mode (gpt-6-luna)"
+);
+
+// Case B: Non-injected real transport response verified by backend renders exact 'Live OpenAI AI — gpt-6-luna'
+var origGlobalFetch = globalThis.fetch;
+globalThis.fetch = async function() {
+  return {
+    ok: true,
+    status: 200,
+    json: async function() { return openAiSamplePayload; }
+  };
+};
+try {
+  var resOpenAiLive = await triggerAdminAiDispatchAdvice(openAiBookingId, { skipLoadingRender: true });
+  assert(
+    resOpenAiLive.ok === true &&
+    resOpenAiLive.recommendation.provenance.source === 'live_openai_ai' &&
+    resOpenAiLive.recommendation.provenance.provider === 'openai' &&
+    resOpenAiLive.recommendation.provenance.model === 'gpt-6-luna' &&
+    resOpenAiLive.recommendation.provenance.isLiveAi === true &&
+    resOpenAiLive.recommendation.provenance.isMockTestMode === false,
+    "Backend-verified OpenAI response resolves genuine live_openai_ai provenance with gpt-6-luna"
+  );
+} finally {
+  globalThis.fetch = origGlobalFetch;
+}
+
+var liveOpenAiListHtml = document.getElementById('admin-dispatch-bookings-list').innerHTML;
+assert(
+  liveOpenAiListHtml.includes('Live OpenAI AI — gpt-6-luna') &&
+  liveOpenAiListHtml.includes('data-provenance="live_ai"'),
+  "Admin UI badge displays exact 'Live OpenAI AI — gpt-6-luna' label for genuine OpenAI inference"
+);
+var liveOpenAiAudit = loadState().adminAuditLog.find(function(a) {
+  return a.actionType === 'ai_dispatch_recommended' && a.bookingId === openAiBookingId && String(a.verificationSource || '').includes('Live OpenAI AI');
+});
+assert(
+  liveOpenAiAudit && liveOpenAiAudit.verificationSource === 'Live OpenAI AI — gpt-6-luna',
+  "Audit log records exact verificationSource 'Live OpenAI AI — gpt-6-luna'"
+);
+
+// Apply button opens modal cleanly without auto-assigning
+var openAiApplyBtn = document.getElementById('admin-dispatch-bookings-list').querySelectorAll('.btn-ai-apply-suggestion').find(function(b) {
+  return b.getAttribute('data-booking-id') === openAiBookingId && b.getAttribute('data-slot-id') === 'slot_1';
+});
+assert(!!openAiApplyBtn, "Apply Suggestion button rendered on Live OpenAI AI card");
+openAiApplyBtn.click();
+assert(
+  document.getElementById('admin-assign-ai-banner').innerHTML.includes('Live OpenAI Suggestion Loaded') &&
+  document.getElementById('check-admin-assign-confirm').checked === false,
+  "Modal banner reflects Live OpenAI suggestion while keeping confirmation checkbox unchecked"
+);
+document.getElementById('btn-cancel-admin-assign').dispatchEvent('click');
+
 print("\n==================================================================");
 print("FINAL RESULTS: " + passed + " of " + (passed + failed) + " assertions passed (" + Math.round((passed / (passed + failed)) * 100) + "%).");
 print("==================================================================");

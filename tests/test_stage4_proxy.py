@@ -281,6 +281,7 @@ def run_tests():
 
     ctx = create_proxy_context(
         api_key_loader=lambda: mock_state["api_key"],
+        provider_resolver=lambda: "gemini",
         rate_limiter=limiter,
         transport_fn=mock_transport,
         log_fn=lambda msg: mock_state["logs"].append(msg),
@@ -298,7 +299,7 @@ def run_tests():
     check(DUMMY_TEST_KEY not in raw, "Health response never leaks API key")
 
     # Verify real default-transport proxy context reports genuine live_gemini_ai inferenceMode on /health (zero live API calls made)
-    live_cfg_ctx = create_proxy_context(api_key_loader=lambda: DUMMY_TEST_KEY, transport_fn=None)
+    live_cfg_ctx = create_proxy_context(api_key_loader=lambda: DUMMY_TEST_KEY, provider_resolver=lambda: "gemini", transport_fn=None)
     st_live_h, _, _, js_live_h = send_http(live_cfg_ctx, "GET", "/health", headers={"Origin": "http://localhost:8000"})
     check(st_live_h == 200 and js_live_h["inferenceMode"] == "live_gemini_ai" and js_live_h["isSimulatedTestMode"] is False,
           "Real proxy context (default HTTPS transport) distinguishes inferenceMode='live_gemini_ai'")

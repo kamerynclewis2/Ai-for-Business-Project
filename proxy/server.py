@@ -1,4 +1,4 @@
-"""Crewly Stage 4 Phase 4.3 Local-Only Python 3 HTTP Proxy for Gemini Dispatch Advice."""
+"""Crewly Stage 4 Local-Only Python 3 HTTP Proxy for AI Dispatch Advice (OpenAI default, Gemini optional)."""
 
 import json
 import sys
@@ -7,18 +7,22 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
 from proxy.config import (
+    ALLOWED_AI_PROVIDERS,
     BIND_HOST,
     BIND_PORT,
+    DEFAULT_AI_PROVIDER,
     LOCAL_TRUST_LIMITATION,
     MAX_REQUEST_BODY_BYTES,
     UPSTREAM_TIMEOUT_SECONDS,
     get_allowed_origins,
     is_api_key_configured,
-    load_gemini_api_key,
     redact_secrets,
-    resolve_gemini_model,
+    resolve_ai_provider,
+    resolve_provider_api_key,
+    resolve_provider_model,
 )
 from proxy.gemini_client import GeminiClientError, request_gemini_recommendation
+from proxy.openai_client import OpenAIClientError, request_openai_recommendation
 from proxy.rate_limit import LocalDispatchRateLimiter
 from proxy.validator import (
     build_prompt_payload_for_gemini,
@@ -158,16 +162,21 @@ def handle_proxy_http_request(context, method, path, headers, raw_body_bytes=b""
                 cors_origin=cors_origin,
                 log_code="not_found",
             )
+        provider = context["provider_resolver"]()
+        if provider not in ALLOWED_AI_PROVIDERS:
+            provider = DEFAULT_AI_PROVIDER
         api_key = context["api_key_loader"]()
         key_ready = is_api_key_configured(api_key)
         is_mock_transport = context["transport_fn"] is not None
-        inference_mode = "mock_ai_test_mode" if is_mock_transport else "live_gemini_ai"
+        live_mode = "live_gemini_ai" if provider == "gemini" else "live_openai_ai"
+        inference_mode = "mock_ai_test_mode" if is_mock_transport else live_mode
         return _build_json_response(
             context, upper_method, path, 200,
             {
                 "ok": True,
                 "status": "ok" if key_ready else "disabled_no_key",
                 "keyConfigured": key_ready,
+                "provider": provider,
                 "model": context["model_resolver"](),
                 "bind": f"{context['host']}:{context['port']}",
                 "proxyMode": "local_python_demo_only",
@@ -322,6 +331,7 @@ def handle_proxy_http_request(context, method, path, headers, raw_body_bytes=b""
                 "ok": True,
                 "liveAiAttempted": False,
                 "shortCircuitedZeroEligible": True,
+                "provider": None,
                 "model": None,
                 "bookingId": ctx["bookingId"],
                 "recommendation": short_rec,
@@ -332,15 +342,21 @@ def handle_proxy_http_request(context, method, path, headers, raw_body_bytes=b""
             log_code="zero_eligible_short_circuit",
         )
 
+    provider = context["provider_resolver"]()
+    if provider not in ALLOWED_AI_PROVIDERS:
+        provider = DEFAULT_AI_PROVIDER
+
     api_key = context["api_key_loader"]()
     if not is_api_key_configured(api_key):
+        key_env_name = "GEMINI_API_KEY" if provider == "gemini" else "OPENAI_API_KEY"
         return _build_json_response(
             context, upper_method, path, 503,
             {
                 "ok": False,
                 "code": "proxy_not_configured",
+                "provider": provider,
                 "error": (
-                    "Local proxy disabled: GEMINI_API_KEY is not configured. "
+                    f"Local proxy disabled: {key_env_name} is not configured. "
                     "Continue using Crewly rules-based fallback."
                 ),
                 "fallbackRecommended": True,
@@ -371,28 +387,38 @@ def handle_proxy_http_request(context, method, path, headers, raw_body_bytes=b""
     model = context["model_resolver"]()
     started = time.monotonic()
     try:
-        raw_gemini = request_gemini_recommendation(
-            prompt_payload=prompt_payload,
-            api_key=api_key,
-            model=model,
-            timeout_seconds=context["upstream_timeout_seconds"],
-            transport_fn=context["transport_fn"],
-        )
-    except GeminiClientError as g_err:
+        if provider == "gemini":
+            raw_ai_output = request_gemini_recommendation(
+                prompt_payload=prompt_payload,
+                api_key=api_key,
+                model=model,
+                timeout_seconds=context["upstream_timeout_seconds"],
+                transport_fn=context["transport_fn"],
+            )
+        else:
+            raw_ai_output = request_openai_recommendation(
+                prompt_payload=prompt_payload,
+                api_key=api_key,
+                model=model,
+                timeout_seconds=context["upstream_timeout_seconds"],
+                transport_fn=context["transport_fn"],
+            )
+    except (OpenAIClientError, GeminiClientError) as ai_err:
         return _build_json_response(
-            context, upper_method, path, g_err.http_status,
+            context, upper_method, path, ai_err.http_status,
             {
                 "ok": False,
-                "code": g_err.code,
-                "error": redact_secrets(g_err.message, api_key=api_key),
+                "code": ai_err.code,
+                "provider": provider,
+                "error": redact_secrets(ai_err.message, api_key=api_key),
                 "fallbackRecommended": True,
             },
             cors_origin=cors_origin,
-            log_code=g_err.code,
+            log_code=ai_err.code,
         )
 
     ok_out, out_code, normalized_or_err, val_report = validate_and_normalize_gemini_output(
-        raw_gemini,
+        raw_ai_output,
         validated_req,
         api_key=api_key,
     )
@@ -402,6 +428,7 @@ def handle_proxy_http_request(context, method, path, headers, raw_body_bytes=b""
             {
                 "ok": False,
                 "code": out_code,
+                "provider": provider,
                 "error": normalized_or_err,
                 "proxyValidation": val_report,
                 "fallbackRecommended": True,
@@ -412,11 +439,13 @@ def handle_proxy_http_request(context, method, path, headers, raw_body_bytes=b""
 
     elapsed_ms = int((time.monotonic() - started) * 1000)
     is_mock_transport = context["transport_fn"] is not None
-    inference_source = "mock_ai_test_mode" if is_mock_transport else "live_gemini_ai"
+    live_source = "live_gemini_ai" if provider == "gemini" else "live_openai_ai"
+    inference_source = "mock_ai_test_mode" if is_mock_transport else live_source
     return _build_json_response(
         context, upper_method, path, 200,
         {
             "ok": True,
+            "provider": provider,
             "inferenceSource": inference_source,
             "isSimulatedTestMode": is_mock_transport,
             "liveAiAttempted": not is_mock_transport,
@@ -429,7 +458,7 @@ def handle_proxy_http_request(context, method, path, headers, raw_body_bytes=b""
             "limitations": LOCAL_TRUST_LIMITATION,
         },
         cors_origin=cors_origin,
-        log_code="gemini_recommendation_ok" if not is_mock_transport else "mock_ai_test_mode_ok",
+        log_code=f"{provider}_recommendation_ok" if not is_mock_transport else "mock_ai_test_mode_ok",
     )
 
 
@@ -438,6 +467,7 @@ def create_proxy_context(
     port=BIND_PORT,
     api_key_loader=None,
     model_resolver=None,
+    provider_resolver=None,
     allowed_origins=None,
     rate_limiter=None,
     transport_fn=None,
@@ -449,11 +479,13 @@ def create_proxy_context(
     if host != "127.0.0.1":
         raise ValueError("Crewly local proxy must bind strictly to 127.0.0.1.")
 
+    active_provider_resolver = provider_resolver or resolve_ai_provider
     return {
         "host": host,
         "port": port,
-        "api_key_loader": api_key_loader or load_gemini_api_key,
-        "model_resolver": model_resolver or resolve_gemini_model,
+        "provider_resolver": active_provider_resolver,
+        "api_key_loader": api_key_loader or (lambda: resolve_provider_api_key(active_provider_resolver())),
+        "model_resolver": model_resolver or (lambda: resolve_provider_model(active_provider_resolver())),
         "allowed_origins": tuple(allowed_origins) if allowed_origins is not None else get_allowed_origins(),
         "rate_limiter": rate_limiter or LocalDispatchRateLimiter(),
         "transport_fn": transport_fn,
@@ -532,6 +564,7 @@ def create_proxy_server(
     port=BIND_PORT,
     api_key_loader=None,
     model_resolver=None,
+    provider_resolver=None,
     allowed_origins=None,
     rate_limiter=None,
     transport_fn=None,
@@ -545,6 +578,7 @@ def create_proxy_server(
         port=port,
         api_key_loader=api_key_loader,
         model_resolver=model_resolver,
+        provider_resolver=provider_resolver,
         allowed_origins=allowed_origins,
         rate_limiter=rate_limiter,
         transport_fn=transport_fn,
@@ -560,10 +594,12 @@ def create_proxy_server(
 
 def main():
     server = create_proxy_server()
-    api_key = load_gemini_api_key()
+    provider = resolve_ai_provider()
+    api_key = resolve_provider_api_key(provider)
+    key_env_name = "GEMINI_API_KEY" if provider == "gemini" else "OPENAI_API_KEY"
     key_status = "CONFIGURED" if is_api_key_configured(api_key) else "NOT SET (fallback/disabled mode)"
     print(f"Crewly Local Dispatch Proxy listening on http://{BIND_HOST}:{BIND_PORT}")
-    print(f"Model: {resolve_gemini_model()} | GEMINI_API_KEY: {key_status}")
+    print(f"Provider: {provider} | Model: {resolve_provider_model(provider)} | {key_env_name}: {key_status}")
     print("Allowed Origins:", ", ".join(get_allowed_origins()))
     print("Press Ctrl+C to stop.")
     try:

@@ -4024,23 +4024,35 @@ export function validateAndNormalizeAiRecommendation(rawAiResponse, bookingId, o
     recommendedNextAction = chooseRecommendedNextAction(bookingContext, staffingFeasibility, operationalRisks);
   }
 
-  const modelName = (options && typeof options.model === 'string' && options.model.trim())
-    ? sanitizeAiText(options.model, 64)
-    : 'gemini-api-validated';
-
   const isMockTestMode = Boolean(
     options && (
       options.isSimulatedTestMode === true ||
       options.inferenceSource === 'mock_ai_test_mode'
     )
   );
-  const provenanceSource = isMockTestMode ? 'mock_ai_test_mode' : 'live_gemini_ai';
+  const explicitSource = options && typeof options.inferenceSource === 'string'
+    ? options.inferenceSource.trim()
+    : '';
+  const providerName = (options && options.provider === 'openai') || explicitSource === 'live_openai_ai'
+    ? 'openai'
+    : ((options && options.provider === 'gemini') || explicitSource === 'live_gemini_ai' ? 'gemini' : null);
+  const defaultModel = providerName === 'openai' ? 'gpt-6-luna' : 'ai-api-validated';
+  const modelName = (options && typeof options.model === 'string' && options.model.trim())
+    ? sanitizeAiText(options.model, 64)
+    : defaultModel;
+
+  const provenanceSource = isMockTestMode
+    ? 'mock_ai_test_mode'
+    : (providerName === 'openai' ? 'live_openai_ai' : 'live_gemini_ai');
+  const resolvedProvider = providerName || (provenanceSource === 'live_openai_ai' ? 'openai' : 'gemini');
   const provenanceLabel = isMockTestMode
     ? AI_DISPATCH_CONFIG.PROVENANCE_LABELS.MOCK_TEST_MODE
-    : AI_DISPATCH_CONFIG.PROVENANCE_LABELS.LIVE_AI;
+    : (resolvedProvider === 'openai'
+      ? AI_DISPATCH_CONFIG.PROVENANCE_LABELS.LIVE_OPENAI_AI
+      : AI_DISPATCH_CONFIG.PROVENANCE_LABELS.LIVE_GEMINI_AI);
   const provenanceDisclaimer = isMockTestMode
-    ? `Simulated AI test response re-verified by deterministic Crewly eligibility rules (No live Gemini API call). ${AI_DISPATCH_CONFIG.NEIGHBORHOOD_LIMITATION_NOTE} Human Admin approval required.`
-    : `Advisory AI ranking re-verified by deterministic Crewly eligibility rules. ${AI_DISPATCH_CONFIG.NEIGHBORHOOD_LIMITATION_NOTE} Human Admin approval required.`;
+    ? `Simulated AI test response re-verified by deterministic Crewly eligibility rules (No live AI API call). ${AI_DISPATCH_CONFIG.NEIGHBORHOOD_LIMITATION_NOTE} Human Admin approval required.`
+    : `Advisory ${resolvedProvider === 'openai' ? 'OpenAI' : 'Gemini'} AI ranking re-verified by deterministic Crewly eligibility rules. ${AI_DISPATCH_CONFIG.NEIGHBORHOOD_LIMITATION_NOTE} Human Admin approval required.`;
 
   return {
     ok: true,
@@ -4050,6 +4062,7 @@ export function validateAndNormalizeAiRecommendation(rawAiResponse, bookingId, o
     generatedAt: new Date().toISOString(),
     provenance: {
       source: provenanceSource,
+      provider: isMockTestMode ? (providerName || 'mock') : resolvedProvider,
       isLiveAi: !isMockTestMode,
       isMockTestMode,
       label: provenanceLabel,
@@ -4123,6 +4136,7 @@ export function verifyRecommendationFreshness(recommendation, bookingId, options
 function redactSensitivePatterns(text) {
   return String(text || '')
     .replace(/\bAIza[0-9A-Za-z_-]{20,}\b/g, '[redacted-key]')
+    .replace(/\bsk-(?:proj-|svcacct-|admin-)?[0-9A-Za-z_-]{16,}\b/g, '[redacted-key]')
     .replace(/\bBearer\s+[0-9A-Za-z._-]{16,}\b/gi, '[redacted-token]')
     .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[redacted-email]')
     .replace(/\b(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b/g, '[redacted-phone]');
@@ -4360,12 +4374,12 @@ export async function requestAiDispatchAdvice(bookingId, options = {}) {
     if (!response.ok || !parsedBody || parsedBody.ok !== true) {
       const code = sanitizeAiText((parsedBody && parsedBody.code) || `proxy_http_${response.status}`, 48);
       const friendlyNotice = code === 'proxy_not_configured'
-        ? 'Local Gemini proxy disabled (no API key configured); showing Crewly rules-based fallback.'
+        ? 'Local AI proxy disabled (no API key configured); showing Crewly rules-based fallback.'
         : (code === 'rate_limit_exceeded' || code === 'duplicate_request_throttled' || code === 'upstream_rate_limited')
-          ? 'Rate limit active on local Gemini proxy; showing Crewly rules-based fallback.'
+          ? 'Rate limit active on local AI proxy; showing Crewly rules-based fallback.'
           : (code === 'upstream_timeout')
-            ? 'Upstream Gemini request timed out; showing Crewly rules-based fallback.'
-            : `Local Gemini proxy unavailable (${code}); showing Crewly rules-based fallback.`;
+            ? 'Upstream AI request timed out; showing Crewly rules-based fallback.'
+            : `Local AI proxy unavailable (${code}); showing Crewly rules-based fallback.`;
       return buildFallbackDispatchEnvelope(bookingId, code, friendlyNotice, prepared, options);
     }
 
@@ -4376,8 +4390,8 @@ export async function requestAiDispatchAdvice(bookingId, options = {}) {
       bookingId,
       isTimeout ? 'proxy_timeout' : 'proxy_unreachable',
       isTimeout
-        ? 'Local Gemini proxy request timed out; showing offline Crewly rules-based fallback.'
-        : 'Local Gemini proxy not reachable at 127.0.0.1:8787; showing offline Crewly rules-based fallback.',
+        ? 'Local AI proxy request timed out; showing offline Crewly rules-based fallback.'
+        : 'Local AI proxy not reachable at 127.0.0.1:8787; showing offline Crewly rules-based fallback.',
       prepared,
       options
     );
@@ -4424,20 +4438,28 @@ export async function requestAiDispatchAdvice(bookingId, options = {}) {
   }
 
   // Only real fetch responses explicitly marked by the local proxy as genuine live inference
-  // (isSimulatedTestMode === false && inferenceSource === 'live_gemini_ai' && liveAiAttempted === true)
-  // may display Live Gemini AI provenance; test mocks and injected fetchFn always map to Mock Test Mode.
+  // (isSimulatedTestMode === false && inferenceSource in ['live_openai_ai', 'live_gemini_ai'] && liveAiAttempted === true)
+  // may display Live AI provenance; test mocks and injected fetchFn always map to Mock Test Mode.
   const usesInjectedMockFetch = Boolean(options && typeof options.fetchFn === 'function');
+  const isVerifiedLiveOpenAI = proxyJson.inferenceSource === 'live_openai_ai' && proxyJson.provider === 'openai';
+  const isVerifiedLiveGemini = proxyJson.inferenceSource === 'live_gemini_ai';
   const backendVerifiedLive = (
     !usesInjectedMockFetch &&
-    proxyJson.inferenceSource === 'live_gemini_ai' &&
+    (isVerifiedLiveOpenAI || isVerifiedLiveGemini) &&
     proxyJson.isSimulatedTestMode === false &&
     proxyJson.liveAiAttempted === true
   );
-  const resolvedInferenceSource = backendVerifiedLive ? 'live_gemini_ai' : 'mock_ai_test_mode';
+  const resolvedProvider = (proxyJson.provider === 'openai' || proxyJson.provider === 'gemini')
+    ? proxyJson.provider
+    : (isVerifiedLiveOpenAI ? 'openai' : 'gemini');
+  const resolvedInferenceSource = backendVerifiedLive
+    ? (isVerifiedLiveOpenAI ? 'live_openai_ai' : 'live_gemini_ai')
+    : 'mock_ai_test_mode';
 
   const normalized = validateAndNormalizeAiRecommendation(proxyJson.recommendation, bookingId, {
     ...options,
     expectedFingerprint: prepared.fingerprint,
+    provider: resolvedProvider,
     model: proxyJson.model,
     inferenceSource: resolvedInferenceSource,
     isSimulatedTestMode: !backendVerifiedLive
@@ -4467,16 +4489,23 @@ export async function requestAiDispatchAdvice(bookingId, options = {}) {
   if (normalized.provenance && (normalized.provenance.isLiveAi || normalized.provenance.isMockTestMode)) {
     const rejectedCount = normalized.validationReport ? normalized.validationReport.rejectedCandidateCount : 0;
     const isMockMode = Boolean(normalized.provenance.isMockTestMode && !normalized.provenance.isLiveAi);
+    const isOpenAiLive = !isMockMode && (
+      normalized.provenance.source === 'live_openai_ai' || normalized.provenance.provider === 'openai'
+    );
+    const liveAuditLabel = isOpenAiLive
+      ? `Live OpenAI AI — ${normalized.provenance.model}`
+      : `Live Gemini AI (${normalized.provenance.model})`;
+    const sourceNoun = isMockMode ? 'simulated Mock AI test-mode' : (isOpenAiLive ? 'live OpenAI' : 'live Gemini');
     if (!options.skipAuditLog) {
       logAiDispatchAuditEvent({
         actionType: 'ai_dispatch_recommended',
         bookingId,
         verificationSource: isMockMode
           ? `Mock AI Response — Test Mode (${normalized.provenance.model})`
-          : `Live Gemini AI (${normalized.provenance.model})`,
+          : liveAuditLabel,
         reason: rejectedCount > 0
-          ? `Presented ${isMockMode ? 'simulated Mock AI test-mode' : 'live Gemini'} advisory ranking; stripped ${rejectedCount} ineligible/unknown suggestion(s).`
-          : `Presented ${isMockMode ? 'simulated Mock AI test-mode' : 'live Gemini'} advisory ranking (all candidates verified by Crewly rules).`
+          ? `Presented ${sourceNoun} advisory ranking; stripped ${rejectedCount} ineligible/unknown suggestion(s).`
+          : `Presented ${sourceNoun} advisory ranking (all candidates verified by Crewly rules).`
       });
     }
     return {
@@ -4487,7 +4516,7 @@ export async function requestAiDispatchAdvice(bookingId, options = {}) {
       startFingerprint: prepared.fingerprint,
       recommendation: normalized,
       fallbackNotice: rejectedCount > 0
-        ? `Crewly rules removed ${rejectedCount} unverified/ineligible ${isMockMode ? 'simulated AI' : 'Gemini'} suggestion(s) automatically.`
+        ? `Crewly rules removed ${rejectedCount} unverified/ineligible ${isMockMode ? 'simulated AI' : 'AI'} suggestion(s) automatically.`
         : null
     };
   }
@@ -4497,7 +4526,7 @@ export async function requestAiDispatchAdvice(bookingId, options = {}) {
     logAiDispatchAuditEvent({
       actionType: 'ai_dispatch_fallback_used',
       bookingId,
-      reason: `Gemini output rejected by Crewly Trust Boundary (${fallbackCode}); rules-based fallback displayed.`
+      reason: `AI output rejected by Crewly Trust Boundary (${fallbackCode}); rules-based fallback displayed.`
     });
   }
   return {
@@ -4507,6 +4536,6 @@ export async function requestAiDispatchAdvice(bookingId, options = {}) {
     staleDetected: false,
     startFingerprint: prepared.fingerprint,
     recommendation: normalized,
-    fallbackNotice: 'Gemini response did not pass Crewly eligibility verification; showing deterministic rules-based fallback.'
+    fallbackNotice: 'AI response did not pass Crewly eligibility verification; showing deterministic rules-based fallback.'
   };
 }

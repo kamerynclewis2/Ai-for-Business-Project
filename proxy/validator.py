@@ -121,6 +121,11 @@ FORBIDDEN_PII_OR_SECRET_KEYS = {
     "cancellationsnapshot",
     "apikey",
     "gemini_api_key",
+    "openai_api_key",
+    "provider",
+    "aiprovider",
+    "reasoning",
+    "instructions",
     "secret",
     "password",
     "token",
@@ -173,7 +178,7 @@ def _contains_secret_or_pii_literal(payload):
         serialized = json.dumps(payload, ensure_ascii=True)
     except Exception:
         return "Unserializable request payload."
-    if re.search(r"AIza[0-9A-Za-z_-]{16,}", serialized):
+    if re.search(r"(?:AIza[0-9A-Za-z_-]{16,}|\bsk-(?:proj-|svcacct-|admin-)?[0-9A-Za-z_-]{16,}\b)", serialized):
         return "Request body must not contain API keys."
     if re.search(r"\b(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b", serialized):
         return "Request body must not contain phone numbers."

@@ -662,8 +662,10 @@ export const AI_DISPATCH_CONFIG = {
     'ai_dispatch_recommendation_rejected'
   ],
   PROVENANCE_LABELS: {
-    LIVE_AI: 'Live Gemini AI Recommendation (Advisory Only — Admin Approval Required)',
-    MOCK_TEST_MODE: 'Mock AI Response — Test Mode (Simulated Inference — No Live Gemini Call)',
+    LIVE_OPENAI_AI: 'Live OpenAI AI Recommendation (Advisory Only — Admin Approval Required)',
+    LIVE_GEMINI_AI: 'Live Gemini AI Recommendation (Advisory Only — Admin Approval Required)',
+    LIVE_AI: 'Live AI Recommendation (Advisory Only — Admin Approval Required)',
+    MOCK_TEST_MODE: 'Mock AI Response — Test Mode (Simulated Inference — No Live API Call)',
     FALLBACK: 'Deterministic Rules-Based Ranking (Offline Fallback — No LLM Called)',
     ZERO_ELIGIBLE: 'Deterministic Rules Engine — Zero Eligible Pros Available (No LLM Called)'
   },

@@ -1937,7 +1937,7 @@ function renderAiDispatchPanelHtml(booking, aiEntry, state) {
   const isLiveAi = !!(
     rec.provenance &&
     rec.provenance.isLiveAi === true &&
-    rec.provenance.source === 'live_gemini_ai' &&
+    (rec.provenance.source === 'live_openai_ai' || rec.provenance.source === 'live_gemini_ai') &&
     !rec.provenance.isMockTestMode
   );
   const isMockAi = !!(
@@ -1948,13 +1948,17 @@ function renderAiDispatchPanelHtml(booking, aiEntry, state) {
   const isZero = rec.provenance && rec.provenance.source === 'zero_eligible_short_circuit';
   const panelClass = isLiveAi ? 'live' : (isMockAi ? 'mock' : 'fallback');
   const provenanceAttr = isLiveAi ? 'live_ai' : (isMockAi ? 'mock_test_mode' : 'rules_fallback');
+  const isOpenAiLive = isLiveAi && (rec.provenance.source === 'live_openai_ai' || rec.provenance.provider === 'openai');
+  const liveBadgeText = isOpenAiLive
+    ? `🤖 Live OpenAI AI — ${escapeHtml(sanitizeAiText(rec.provenance.model || 'gpt-6-luna', 48))}`
+    : `🤖 Live Gemini AI (${escapeHtml(sanitizeAiText(rec.provenance.model || 'gemini', 48))})`;
   const badgeHtml = isLiveAi
-    ? `<span class="ai-provenance-badge live">🤖 Live Gemini AI (${escapeHtml(sanitizeAiText(rec.provenance.model || 'gemini', 48))})</span>`
+    ? `<span class="ai-provenance-badge live">${liveBadgeText}</span>`
     : (isMockAi
       ? `<span class="ai-provenance-badge mock">🧪 Mock AI Response — Test Mode (${escapeHtml(sanitizeAiText(rec.provenance.model || 'mock', 48))})</span>`
       : (isZero
-        ? `<span class="ai-provenance-badge zero">⚠️ Rules Engine: 0 Eligible Pros (No Gemini Call)</span>`
-        : `<span class="ai-provenance-badge fallback">⚙️ Rules-Based Fallback (Offline — No Gemini Call)</span>`));
+        ? `<span class="ai-provenance-badge zero">⚠️ Rules Engine: 0 Eligible Pros (No External AI Call)</span>`
+        : `<span class="ai-provenance-badge fallback">⚙️ Rules-Based Fallback (Offline — No External AI Call)</span>`));
 
   const noticeText = aiEntry.notice || (rec.provenance ? rec.provenance.disclaimer : '');
   const shortageWarningHtml = (rec.staffingFeasibility && !rec.staffingFeasibility.fullCrewFeasible)
@@ -2119,7 +2123,11 @@ function handleApplyAiSuggestionToModal(bookingId, slotId, proId) {
   const state = loadState();
   const pro = (state.pros || []).find(p => p.id === proId);
   const prov = entry.recommendation.provenance || {};
-  const isLiveDraft = !!(prov.isLiveAi === true && prov.source === 'live_gemini_ai' && !prov.isMockTestMode);
+  const isLiveDraft = !!(
+    prov.isLiveAi === true &&
+    (prov.source === 'live_openai_ai' || prov.source === 'live_gemini_ai') &&
+    !prov.isMockTestMode
+  );
   const isMockDraft = !!(prov.isMockTestMode === true || prov.source === 'mock_ai_test_mode');
   const sourceTag = isLiveDraft
     ? '[AI Advisory Draft]'
@@ -2587,13 +2595,18 @@ function openAdminAssignModal(bookingId, slotId, aiPrefill = null) {
   if (aiBanner) {
     if (preselectedApplied && aiPrefill) {
       const prov = (aiPrefill.recommendation && aiPrefill.recommendation.provenance) || {};
-      const isLive = !!(prov.isLiveAi === true && prov.source === 'live_gemini_ai' && !prov.isMockTestMode);
+      const isLive = !!(
+        prov.isLiveAi === true &&
+        (prov.source === 'live_openai_ai' || prov.source === 'live_gemini_ai') &&
+        !prov.isMockTestMode
+      );
+      const isOpenAi = isLive && (prov.source === 'live_openai_ai' || prov.provider === 'openai');
       const isMock = !!(prov.isMockTestMode === true || prov.source === 'mock_ai_test_mode');
       aiBanner.style.display = 'block';
       aiBanner.innerHTML = isLive
-        ? '<strong>🤖 Live Gemini Suggestion Loaded (Advisory Only):</strong> Eligible Pro preselected and reason drafted below. Edit reason if needed and check the confirmation box before approving.'
+        ? `<strong>🤖 Live ${isOpenAi ? 'OpenAI' : 'Gemini'} Suggestion Loaded (Advisory Only):</strong> Eligible Pro preselected and reason drafted below. Edit reason if needed and check the confirmation box before approving.`
         : (isMock
-          ? '<strong>🧪 Mock AI Response — Test Mode Loaded (Advisory Only):</strong> Simulated suggestion preselected (no live Gemini call). Edit reason if needed and check the confirmation box before approving.'
+          ? '<strong>🧪 Mock AI Response — Test Mode Loaded (Advisory Only):</strong> Simulated suggestion preselected (no live AI API call). Edit reason if needed and check the confirmation box before approving.'
           : '<strong>⚙️ Rules Fallback Suggestion Loaded (Advisory Only):</strong> Eligible Pro preselected from deterministic ranking. Review details and check the confirmation box before approving.');
     } else {
       aiBanner.style.display = 'none';
