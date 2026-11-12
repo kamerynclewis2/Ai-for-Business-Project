@@ -638,3 +638,53 @@ export const INITIAL_AUDIT_LOG = [
     reason: 'Advance moving booking initial crew assignment (Fictional demonstration seed)'
   }
 ];
+
+// ---------------------------------------------------------------------------
+// Stage 4 Phase 4.2: AI-Assisted Dispatch Configuration (Offline Safe / No Credentials)
+// ---------------------------------------------------------------------------
+export const AI_DISPATCH_CONFIG = {
+  // Phase 4.2 global default keeps live proxy off for hosted GitHub Pages / file:// safety.
+  // Phase 4.4 activates the local loopback proxy ONLY on approved local development origins.
+  PROXY_ENABLED: false,
+  PROXY_ENDPOINT: null,
+  LOCAL_PROXY_ENDPOINT: 'http://127.0.0.1:8787/api/dispatch/recommend',
+  LOCAL_PROXY_ALLOWED_ORIGINS: ['http://localhost:8000', 'http://127.0.0.1:8000'],
+  REQUEST_TIMEOUT_MS: 10000,
+  MAX_OPEN_SLOTS_IN_PROMPT: 4,
+  MAX_ELIGIBLE_CANDIDATES_IN_PROMPT: 10,
+  MAX_RECOMMENDATIONS_PER_SLOT: 3,
+  MAX_COMBINATION_PLANS: 3,
+  REASON_MAX_CHARS: 240,
+  BULLET_MAX_CHARS: 140,
+  ALLOWED_AUDIT_ACTIONS: [
+    'ai_dispatch_recommended',
+    'ai_dispatch_fallback_used',
+    'ai_dispatch_recommendation_rejected'
+  ],
+  PROVENANCE_LABELS: {
+    LIVE_AI: 'Live Gemini AI Recommendation (Advisory Only — Admin Approval Required)',
+    MOCK_TEST_MODE: 'Mock AI Response — Test Mode (Simulated Inference — No Live Gemini Call)',
+    FALLBACK: 'Deterministic Rules-Based Ranking (Offline Fallback — No LLM Called)',
+    ZERO_ELIGIBLE: 'Deterministic Rules Engine — Zero Eligible Pros Available (No LLM Called)'
+  },
+  NEIGHBORHOOD_LIMITATION_NOTE:
+    'Neighborhood matching compares Dallas pilot zone labels only and does not measure GPS proximity, real-time traffic, or driving ETAs.',
+  TRUST_LIMITATIONS_DISCLOSURE:
+    'Demonstration Limitation: Current marketplace state and eligibility rules reside in browser localStorage. Future server proxies must treat client-supplied eligibility as untrusted hints rather than production authority and must enforce authentication before any public deployment.',
+  // Transparent, adjustable rules-based fallback scoring model (Adjustment 5).
+  // Eligibility via canProAcceptSlot() ALWAYS takes strict priority over scoring weights.
+  FALLBACK_SCORING_WEIGHTS: {
+    SAME_NEIGHBORHOOD_POINTS: 20,
+    TIER_POINTS: {
+      Platinum: 14,
+      Gold: 11,
+      Silver: 7,
+      Bronze: 4
+    },
+    RELIABILITY_MULTIPLIER: 0.35,
+    RATING_MULTIPLIER: 8,
+    COMPLETED_JOB_POINT_RATE: 0.5,
+    COMPLETED_JOB_BONUS_CAP: 15,
+    ACTIVE_WORKLOAD_PENALTY: 6
+  }
+};

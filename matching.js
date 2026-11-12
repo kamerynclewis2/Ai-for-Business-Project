@@ -12,6 +12,7 @@ import {
   ASAP_MATCHING_WINDOW_MINUTES,
   ASAP_DISPATCH_BUFFER_MINUTES,
   WALLET_CONFIG,
+  AI_DISPATCH_CONFIG,
   INITIAL_PROS,
   INITIAL_CUSTOMERS,
   INITIAL_BOOKINGS,
@@ -2825,4 +2826,1687 @@ export function updateTrustCaseResolution(caseId, resolutionStatus, investigatio
 
   saveState(state);
   return { success: true, case: trustCase };
+}
+
+// ---------------------------------------------------------------------------
+// Stage 4 Phase 4.2: Offline AI-Assisted Dispatch Privacy, Trust & Fallback Engine
+// ---------------------------------------------------------------------------
+
+const DAY_NAMES_SUNDAY_FIRST = [
+  'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
+];
+
+const ALLOWED_SCOPE_STRING_FIELDS = [
+  'truckOption', 'stairsOption', 'stairsElevator', 'tvSize',
+  'wallType', 'bracket', 'yardSize', 'gateAccess', 'lotSize'
+];
+
+const ALLOWED_RISK_CODES = new Set([
+  'thin_candidate_pool',
+  'asap_urgency',
+  'multi_worker_coordination',
+  'neighborhood_travel',
+  'reliability_watch',
+  'zero_eligible_slot',
+  'insufficient_multiworker_supply',
+  'availability_boundary'
+]);
+
+const ALLOWED_RISK_SEVERITIES = new Set(['low', 'medium', 'high']);
+
+const ALLOWED_NEXT_ACTIONS = new Set([
+  'approve_top_candidate',
+  'review_risks_before_assign',
+  'extend_asap_window',
+  'escalate_support_case'
+]);
+
+/**
+ * Removes script tags, markup delimiters, inline event handlers, and control
+ * characters from external/AI strings before storing or displaying text.
+ */
+export function sanitizeAiText(text, maxLen = 240) {
+  if (text === null || text === undefined) return '';
+  let clean = String(text);
+  clean = clean.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, ' ');
+  clean = clean.replace(/<[^>]*>/g, ' ');
+  clean = clean.replace(/[<>]/g, '');
+  clean = clean.replace(/javascript\s*:/gi, '');
+  clean = clean.replace(/\bon[a-z]{2,18}\s*=/gi, '');
+  clean = clean.replace(/[\u0000-\u001F\u007F]/g, ' ');
+  clean = clean.replace(/\s+/g, ' ').trim();
+  if (clean.length > maxLen) {
+    clean = clean.slice(0, Math.max(0, maxLen - 3)).trimEnd() + '...';
+  }
+  return clean;
+}
+
+function fnv1aDigest(input) {
+  const str = String(input || '');
+  let h1 = 0x811c9dc5;
+  let h2 = 0x050c5d1f;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    h1 ^= c;
+    h1 = Math.imul(h1, 0x01000193) >>> 0;
+    h2 ^= (c + (i & 0xff));
+    h2 = Math.imul(h2, 0x01000193) >>> 0;
+  }
+  return 'fp_' + h1.toString(36).padStart(7, '0') + '_' + h2.toString(36).padStart(7, '0');
+}
+
+function getBookingTargetWeekday(booking) {
+  if (booking && booking.scheduledDate) {
+    const dt = new Date(booking.scheduledDate + 'T12:00:00');
+    if (!isNaN(dt.getTime())) {
+      return DAY_NAMES_SUNDAY_FIRST[dt.getDay()];
+    }
+  }
+  const dallasNow = getDallasLocalNow();
+  return DAY_NAMES_SUNDAY_FIRST[dallasNow.fullDate.getDay()];
+}
+
+function isMatchingNeighborhood(proNeighborhood, booking) {
+  if (!proNeighborhood || !booking) return false;
+  const a = String(proNeighborhood).trim().toLowerCase();
+  const bookingName = String(booking.neighborhoodName || '').trim().toLowerCase();
+  if (bookingName && a === bookingName) return true;
+
+  if (booking.neighborhoodId) {
+    const targetZone = (DALLAS_NEIGHBORHOODS || []).find(n => n.id === booking.neighborhoodId);
+    if (targetZone && targetZone.name.toLowerCase() === a) {
+      return true;
+    }
+  }
+
+  const knownZone = (DALLAS_NEIGHBORHOODS || []).find(n =>
+    n.name.toLowerCase() === a || (bookingName && n.name.toLowerCase() === bookingName)
+  );
+  if (!knownZone || !bookingName) return false;
+  const token = knownZone.name.toLowerCase().split(/[\s/]+/)[0];
+  return a.includes(token) && bookingName.includes(token);
+}
+
+/**
+ * Evaluates whether a booking is currently open for administrative dispatch advice.
+ * Mirrors Rule 0 (expiration), terminal status exclusions, and active-work protection.
+ */
+function evaluateBookingDispatchStatus(booking, options = {}) {
+  if (!booking) {
+    return { dispatchable: false, openSlots: [], reason: 'Booking not found.' };
+  }
+  if (booking.overallStatus === 'cancelled') {
+    return { dispatchable: false, openSlots: [], reason: 'Cancelled bookings cannot receive dispatch assignments.' };
+  }
+  if (booking.overallStatus === 'completed') {
+    return { dispatchable: false, openSlots: [], reason: 'Completed bookings are already finalized.' };
+  }
+
+  const currentMs = (options && typeof options.currentTimeMs === 'number')
+    ? options.currentTimeMs
+    : Date.now();
+  const dallasNow = getDallasLocalNow();
+
+  if (booking.timingType === 'asap') {
+    if (isAsapExpired(booking, currentMs)) {
+      return {
+        dispatchable: false,
+        openSlots: [],
+        reason: 'ASAP matching window has expired. Extend the ASAP window or escalate before assigning workers.'
+      };
+    }
+  } else if (booking.scheduledDate) {
+    if (booking.scheduledDate < dallasNow.dateStr) {
+      return {
+        dispatchable: false,
+        openSlots: [],
+        reason: `Scheduled appointment date (${booking.scheduledDate}) has already passed.`
+      };
+    }
+    if (
+      booking.scheduledDate === dallasNow.dateStr &&
+      booking.scheduledTime &&
+      booking.scheduledTime.includes(':') &&
+      booking.scheduledTime < dallasNow.timeStr
+    ) {
+      return {
+        dispatchable: false,
+        openSlots: [],
+        reason: `Scheduled appointment time (${booking.scheduledTime}) has already passed today.`
+      };
+    }
+  }
+
+  const slots = Array.isArray(booking.workerAssignments) ? booking.workerAssignments : [];
+  const activeWorkSlot = slots.find(s => ['traveling', 'arrived', 'in_progress'].includes(s.status));
+  if (activeWorkSlot) {
+    return {
+      dispatchable: false,
+      openSlots: [],
+      reason: `Active field work (${activeWorkSlot.status}) is already underway on this booking.`
+    };
+  }
+
+  const openSlots = slots
+    .filter(s => s.status === 'unassigned')
+    .slice()
+    .sort((a, b) => String(a.slotId).localeCompare(String(b.slotId)));
+
+  if (openSlots.length === 0) {
+    return {
+      dispatchable: false,
+      openSlots: [],
+      reason: 'All worker positions on this booking are already assigned.'
+    };
+  }
+
+  return {
+    dispatchable: true,
+    openSlots,
+    reason: 'Booking is open for dispatch evaluation.'
+  };
+}
+
+function classifyDisqualificationBucket(reasonStr) {
+  const lower = String(reasonStr || '').toLowerCase();
+  if (lower.includes('already assigned')) return 'alreadyAssignedOnBooking';
+  if (lower.includes('already filled')) return 'slotAlreadyFilled';
+  if (lower.includes('verified skill')) return 'missingCredential';
+  if (lower.includes('equipment') || lower.includes('mower')) return 'missingEquipment';
+  if (lower.includes('schedule conflict')) return 'scheduleConflict';
+  if (lower.includes('weekly schedule') || lower.includes('unavailable')) return 'outsideAvailability';
+  if (lower.includes('expired') || lower.includes('passed')) return 'expiredWindow';
+  return 'other';
+}
+
+function buildAllowedScopeSummary(booking) {
+  const details = (booking && booking.serviceDetails && typeof booking.serviceDetails === 'object')
+    ? booking.serviceDetails
+    : {};
+  const summary = {
+    workersRequired: Math.max(1, parseInt(booking.workersNeeded || details.workersNeeded || 1, 10)),
+    estimatedDurationHours: Number(booking.estimatedDurationHours || details.hours || 1)
+  };
+  if (typeof details.truckNeeded === 'boolean') {
+    summary.truckNeeded = details.truckNeeded;
+  }
+  if (typeof details.edgeTrimming === 'boolean') {
+    summary.edgeTrimming = details.edgeTrimming;
+  }
+  ALLOWED_SCOPE_STRING_FIELDS.forEach(key => {
+    if (details[key] !== undefined && details[key] !== null && String(details[key]).trim() !== '') {
+      summary[key] = sanitizeAiText(details[key], 64);
+    }
+  });
+  if (Array.isArray(details.requiredEquipment) && details.requiredEquipment.length > 0) {
+    summary.requiredEquipment = details.requiredEquipment
+      .slice(0, 6)
+      .map(item => sanitizeAiText(item, 40));
+  }
+  // Explicitly omit customer notes (serviceDetails.notes) to prevent free-text PII leakage.
+  return summary;
+}
+
+function computeProWorkloadCounts(proId, state) {
+  let activeAssignmentsCount = 0;
+  let completedJobsCount = 0;
+  (state.bookings || []).forEach(b => {
+    const isTerminal = b.overallStatus === 'completed' || b.overallStatus === 'cancelled';
+    (b.workerAssignments || []).forEach(slot => {
+      if (slot.assignedProId !== proId) return;
+      if (slot.status === 'completed') {
+        completedJobsCount++;
+      } else if (!isTerminal && slot.status !== 'unassigned') {
+        activeAssignmentsCount++;
+      }
+    });
+  });
+  return { activeAssignmentsCount, completedJobsCount };
+}
+
+/**
+ * Computes a deterministic state fingerprint for a dispatch recommendation.
+ * Detects changes to the booking itself, all open slot statuses, worker skills/equipment/
+ * weekly availability for the target day, and active schedule conflicts across other bookings.
+ */
+export function computeBookingDispatchFingerprint(bookingId, options = {}) {
+  const state = loadState();
+  const booking = (state.bookings || []).find(b => b.id === bookingId);
+  const statusCheck = evaluateBookingDispatchStatus(booking, options);
+
+  if (!booking) {
+    return {
+      valid: false,
+      dispatchable: false,
+      bookingId: bookingId || null,
+      bookingStatus: null,
+      openSlotIds: [],
+      fingerprint: null,
+      reason: statusCheck.reason
+    };
+  }
+
+  const currentMs = (options && typeof options.currentTimeMs === 'number')
+    ? options.currentTimeMs
+    : Date.now();
+  const weekday = getBookingTargetWeekday(booking);
+
+  const canonicalSlots = (booking.workerAssignments || [])
+    .slice()
+    .sort((a, b) => String(a.slotId).localeCompare(String(b.slotId)))
+    .map(s => ({
+      slotId: s.slotId,
+      roleTitle: s.roleTitle,
+      status: s.status,
+      assignedProId: s.assignedProId || null
+    }));
+
+  const canonicalPros = (state.pros || [])
+    .slice()
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+    .map(pro => {
+      const avail = pro.weeklyAvailability ? pro.weeklyAvailability[weekday] : null;
+      return {
+        id: pro.id,
+        tier: pro.tier || 'Bronze',
+        rating: pro.rating || 0,
+        reliabilityScore: pro.reliabilityScore || 0,
+        homeNeighborhood: pro.homeNeighborhood || '',
+        verifiedSkills: (pro.verifiedSkills || []).slice().sort(),
+        verifiedEquipment: (pro.verifiedEquipment || []).slice().sort(),
+        dayAvailability: avail ? { enabled: !!avail.enabled, start: avail.start || '', end: avail.end || '' } : null
+      };
+    });
+
+  // Track active assignments across ALL bookings so any schedule overlap change invalidates cache.
+  const canonicalScheduleState = (state.bookings || [])
+    .filter(b => b.overallStatus !== 'cancelled' && b.overallStatus !== 'completed')
+    .slice()
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+    .map(b => ({
+      id: b.id,
+      overallStatus: b.overallStatus,
+      scheduledDate: b.scheduledDate || '',
+      scheduledTime: b.scheduledTime || '',
+      estimatedDurationHours: b.estimatedDurationHours || 1,
+      activePros: (b.workerAssignments || [])
+        .filter(s => s.assignedProId && s.status !== 'completed' && s.status !== 'unassigned')
+        .sort((a, b2) => String(a.slotId).localeCompare(String(b2.slotId)))
+        .map(s => `${s.slotId}:${s.assignedProId}:${s.status}`)
+    }))
+    .filter(entry => entry.activePros.length > 0);
+
+  const liveSlotMatrix = statusCheck.openSlots.map(slot => ({
+    slotId: slot.slotId,
+    allowedPros: (state.pros || [])
+      .slice()
+      .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+      .filter(p => canProAcceptSlot(p.id, booking.id, slot.slotId, options).allowed)
+      .map(p => p.id)
+  }));
+
+  const snapshot = {
+    booking: {
+      id: booking.id,
+      overallStatus: booking.overallStatus,
+      timingType: booking.timingType,
+      scheduledDate: booking.scheduledDate || null,
+      scheduledTime: booking.scheduledTime || null,
+      estimatedDurationHours: booking.estimatedDurationHours || 1,
+      asapExpiresAt: booking.asapExpiresAt || null,
+      asapExpired: booking.timingType === 'asap' ? isAsapExpired(booking, currentMs) : false,
+      serviceCategory: booking.serviceCategory,
+      neighborhoodId: booking.neighborhoodId || null
+    },
+    weekday,
+    canonicalSlots,
+    canonicalPros,
+    canonicalScheduleState,
+    liveSlotMatrix
+  };
+
+  return {
+    valid: true,
+    dispatchable: statusCheck.dispatchable,
+    bookingId: booking.id,
+    bookingStatus: booking.overallStatus,
+    openSlotIds: statusCheck.openSlots.map(s => s.slotId),
+    fingerprint: fnv1aDigest(JSON.stringify(snapshot)),
+    reason: statusCheck.reason
+  };
+}
+
+/**
+ * Evaluates feasible non-overlapping crew assignments across open slots.
+ * Maximizes distinct slots covered first, then summed candidate score,
+ * ensuring one Pro can NEVER be assigned to multiple positions on the same booking.
+ */
+function findFeasibleCrewCombinations(openSlots, scoredBySlotMap, maxPlans = 3) {
+  const slots = Array.isArray(openSlots) ? openSlots : [];
+  if (slots.length === 0) {
+    return { plans: [], maxFillableOpenSlots: 0 };
+  }
+
+  const perSlotLists = slots.map(slot => {
+    const candidates = (scoredBySlotMap.get(slot.slotId) || []).slice(0, 8);
+    // Append null option so backtracking handles slots that must remain unfilled when supply is tight.
+    return [...candidates, null];
+  });
+
+  const collected = [];
+  const usedPros = new Set();
+  const currentAssign = [];
+
+  function backtrack(idx, filledCount, scoreSum) {
+    if (idx === slots.length) {
+      if (filledCount > 0) {
+        collected.push({
+          filledSlotCount: filledCount,
+          combinedScore: Math.round(scoreSum * 100) / 100,
+          assignments: currentAssign.filter(a => a.proId !== null)
+        });
+      }
+      return;
+    }
+
+    const slot = slots[idx];
+    const choices = perSlotLists[idx];
+    for (let i = 0; i < choices.length; i++) {
+      const candidate = choices[i];
+      if (candidate === null) {
+        currentAssign.push({ slotId: slot.slotId, roleTitle: slot.roleTitle, proId: null, displayName: null });
+        backtrack(idx + 1, filledCount, scoreSum);
+        currentAssign.pop();
+        continue;
+      }
+
+      if (usedPros.has(candidate.proId)) {
+        continue; // Enforce strict distinctness: one worker cannot hold 2 slots on same booking.
+      }
+
+      usedPros.add(candidate.proId);
+      currentAssign.push({
+        slotId: slot.slotId,
+        roleTitle: slot.roleTitle,
+        proId: candidate.proId,
+        displayName: candidate.displayName,
+        score: candidate.preferenceScore !== undefined ? candidate.preferenceScore : candidate.deterministicScore
+      });
+      const stepScore = candidate.preferenceScore !== undefined ? candidate.preferenceScore : (candidate.deterministicScore || 0);
+      backtrack(idx + 1, filledCount + 1, scoreSum + stepScore);
+      currentAssign.pop();
+      usedPros.delete(candidate.proId);
+    }
+  }
+
+  backtrack(0, 0, 0);
+
+  if (collected.length === 0) {
+    return { plans: [], maxFillableOpenSlots: 0 };
+  }
+
+  collected.sort((a, b) => {
+    if (b.filledSlotCount !== a.filledSlotCount) return b.filledSlotCount - a.filledSlotCount;
+    return b.combinedScore - a.combinedScore;
+  });
+
+  const maxFillableOpenSlots = collected[0].filledSlotCount;
+  const seenKeys = new Set();
+  const topPlans = [];
+
+  for (let i = 0; i < collected.length && topPlans.length < maxPlans; i++) {
+    const plan = collected[i];
+    const sig = plan.assignments.map(a => `${a.slotId}=${a.proId}`).join('|');
+    if (seenKeys.has(sig)) continue;
+    seenKeys.add(sig);
+
+    const namesSummary = plan.assignments
+      .map(a => `${a.displayName} -> ${a.roleTitle}`)
+      .join('; ');
+
+    topPlans.push({
+      planRank: topPlans.length + 1,
+      filledSlotCount: plan.filledSlotCount,
+      totalOpenSlots: slots.length,
+      fullCrewCovered: plan.filledSlotCount === slots.length,
+      combinedScore: plan.combinedScore,
+      assignments: plan.assignments.map(({ slotId, roleTitle, proId, displayName }) => ({
+        slotId, roleTitle, proId, displayName
+      })),
+      summary: `${namesSummary} (${plan.filledSlotCount} of ${slots.length} open position${slots.length === 1 ? '' : 's'} covered).`
+    });
+  }
+
+  return { plans: topPlans, maxFillableOpenSlots };
+}
+
+function buildStaffingFeasibility(openSlots, slotSupply, maxFillableOpenSlots) {
+  const openSlotCount = openSlots.length;
+  const zeroEligibleSlotIds = slotSupply.filter(s => s.eligibleCount === 0).map(s => s.slotId);
+  const slotsWithCandidatesCount = openSlotCount - zeroEligibleSlotIds.length;
+  const fullCrewFeasible = openSlotCount > 0 && maxFillableOpenSlots === openSlotCount;
+
+  let shortageStatus = 'sufficient_supply';
+  let cannotCompletelyStaffReason = null;
+
+  if (maxFillableOpenSlots === 0) {
+    shortageStatus = 'zero_eligible';
+    cannotCompletelyStaffReason =
+      'Zero verified and available Dallas Pros satisfy Crewly eligibility rules for any open position on this booking.';
+  } else if (!fullCrewFeasible) {
+    shortageStatus = 'insufficient_supply';
+    if (zeroEligibleSlotIds.length > 0) {
+      cannotCompletelyStaffReason =
+        `Insufficient supply: open position(s) ${zeroEligibleSlotIds.join(', ')} have 0 eligible Pros; AI cannot invent candidates.`;
+    } else {
+      cannotCompletelyStaffReason =
+        `Insufficient unique workers: only ${maxFillableOpenSlots} of ${openSlotCount} open positions can be staffed simultaneously because one Pro cannot fill multiple slots on the same booking.`;
+    }
+  } else {
+    const minSlotCount = Math.min(...slotSupply.map(s => s.eligibleCount));
+    if (minSlotCount <= 1 || (openSlotCount > 1 && new Set(slotSupply.flatMap(s => s.eligibleProIds)).size <= openSlotCount)) {
+      shortageStatus = 'tight_supply';
+    }
+  }
+
+  return {
+    openSlotCount,
+    slotsWithCandidatesCount,
+    zeroEligibleSlotIds,
+    maxFillableOpenSlots,
+    fullCrewFeasible,
+    shortageStatus,
+    cannotCompletelyStaffReason
+  };
+}
+
+/**
+ * Builds a strict field-allowlisted, privacy-preserving dispatch request payload.
+ * Never mutates state. Runs deterministic canProAcceptSlot() prefiltering per open slot.
+ * Strips all customer PII, street addresses, pricing/payout figures, Pro phone/earnings,
+ * private notes, support cases, audit logs, and credentials.
+ */
+export function buildSanitizedAiDispatchPayload(bookingId, options = {}) {
+  const state = loadState();
+  const booking = (state.bookings || []).find(b => b.id === bookingId);
+  const statusCheck = evaluateBookingDispatchStatus(booking, options);
+  const fpInfo = computeBookingDispatchFingerprint(bookingId, options);
+
+  if (!statusCheck.dispatchable) {
+    return {
+      ok: false,
+      dispatchable: false,
+      bookingId: bookingId || null,
+      fingerprint: fpInfo.fingerprint,
+      error: statusCheck.reason,
+      limitationsDisclosure: AI_DISPATCH_CONFIG.TRUST_LIMITATIONS_DISCLOSURE
+    };
+  }
+
+  const currentMs = (options && typeof options.currentTimeMs === 'number')
+    ? options.currentTimeMs
+    : Date.now();
+  const weekday = getBookingTargetWeekday(booking);
+  const openSlots = statusCheck.openSlots.slice(0, AI_DISPATCH_CONFIG.MAX_OPEN_SLOTS_IN_PROMPT);
+
+  const disqualificationBuckets = {
+    alreadyAssignedOnBooking: 0,
+    slotAlreadyFilled: 0,
+    missingCredential: 0,
+    missingEquipment: 0,
+    scheduleConflict: 0,
+    outsideAvailability: 0,
+    expiredWindow: 0,
+    other: 0
+  };
+
+  const candidateEligibleSlots = new Map();
+  const slotSupply = [];
+  const crewSlotCandidateStubs = new Map();
+
+  openSlots.forEach(slot => {
+    const candidates = getProCandidatesForSlot(booking.id, slot.slotId, options);
+    const eligibleIds = [];
+
+    candidates.forEach(entry => {
+      if (entry.eligible) {
+        eligibleIds.push(entry.pro.id);
+        if (!candidateEligibleSlots.has(entry.pro.id)) {
+          candidateEligibleSlots.set(entry.pro.id, []);
+        }
+        candidateEligibleSlots.get(entry.pro.id).push(slot.slotId);
+      } else {
+        const bucket = classifyDisqualificationBucket(entry.reason);
+        disqualificationBuckets[bucket] = (disqualificationBuckets[bucket] || 0) + 1;
+      }
+    });
+
+    slotSupply.push({
+      slotId: slot.slotId,
+      roleTitle: sanitizeAiText(slot.roleTitle, 64),
+      eligibleProIds: eligibleIds,
+      eligibleCount: eligibleIds.length,
+      zeroEligible: eligibleIds.length === 0
+    });
+
+    crewSlotCandidateStubs.set(
+      slot.slotId,
+      eligibleIds.map(proId => ({ proId, displayName: proId, deterministicScore: 1 }))
+    );
+  });
+
+  // Strict allowlist mapping for eligible workers ONLY.
+  const eligibleCandidates = Array.from(candidateEligibleSlots.keys())
+    .sort()
+    .slice(0, AI_DISPATCH_CONFIG.MAX_ELIGIBLE_CANDIDATES_IN_PROMPT)
+    .map(proId => {
+      const pro = (state.pros || []).find(p => p.id === proId);
+      const dayAvail = pro.weeklyAvailability ? pro.weeklyAvailability[weekday] : null;
+      const workload = computeProWorkloadCounts(pro.id, state);
+      const neighborhoodLabel = sanitizeAiText(pro.homeNeighborhood || 'Dallas Pilot', 48);
+
+      return {
+        proId: pro.id,
+        displayName: sanitizeAiText(pro.name, 64),
+        tier: pro.tier || 'Bronze',
+        rating: Number(pro.rating || 0),
+        reviewCount: Number(pro.reviewCount || 0),
+        reliabilityScore: Number(pro.reliabilityScore || 0),
+        homeNeighborhood: neighborhoodLabel,
+        sameNeighborhoodAsBooking: isMatchingNeighborhood(pro.homeNeighborhood, booking),
+        verifiedSkills: Array.isArray(pro.verifiedSkills) ? [...pro.verifiedSkills].slice(0, 12) : [],
+        verifiedEquipment: Array.isArray(pro.verifiedEquipment) ? [...pro.verifiedEquipment].slice(0, 12) : [],
+        dayAvailabilityWindow: dayAvail && dayAvail.enabled
+          ? `${dayAvail.start}-${dayAvail.end}`
+          : null,
+        activeAssignmentsCount: workload.activeAssignmentsCount,
+        completedJobsCount: workload.completedJobsCount,
+        eligibleForSlotIds: candidateEligibleSlots.get(pro.id)
+      };
+    });
+
+  const feasibleCheck = findFeasibleCrewCombinations(openSlots, crewSlotCandidateStubs, 1);
+  const staffingFeasibility = buildStaffingFeasibility(
+    openSlots,
+    slotSupply,
+    feasibleCheck.maxFillableOpenSlots
+  );
+
+  const filledPositionsCount = (booking.workerAssignments || [])
+    .filter(s => s.status !== 'unassigned')
+    .length;
+
+  const bookingContext = {
+    bookingId: booking.id,
+    serviceCategory: booking.serviceCategory,
+    serviceTitle: sanitizeAiText(booking.serviceTitle, 80),
+    neighborhoodName: sanitizeAiText(booking.neighborhoodName || 'Dallas Pilot', 64),
+    timingType: booking.timingType || 'scheduled',
+    scheduledDate: booking.scheduledDate || null,
+    scheduledTime: booking.scheduledTime || null,
+    targetWeekday: weekday,
+    estimatedDurationHours: Number(booking.estimatedDurationHours || 1),
+    asapRemainingMinutes: booking.timingType === 'asap'
+      ? getAsapRemainingMinutes(booking, currentMs)
+      : null,
+    scopeSummary: buildAllowedScopeSummary(booking),
+    alreadyAssignedCount: filledPositionsCount,
+    totalSlotsCount: (booking.workerAssignments || []).length,
+    openSlots: openSlots.map(s => ({
+      slotId: s.slotId,
+      roleTitle: sanitizeAiText(s.roleTitle, 64)
+    }))
+  };
+
+  return {
+    ok: true,
+    dispatchable: true,
+    bookingId: booking.id,
+    fingerprint: fpInfo.fingerprint,
+    zeroEligibleOverall: staffingFeasibility.maxFillableOpenSlots === 0,
+    staffingFeasibility,
+    payload: {
+      schemaVersion: 'crewly_ai_dispatch_request_v1',
+      bookingContext,
+      eligibleCandidates,
+      slotSupply,
+      disqualifiedSummary: {
+        totalDisqualificationChecksFailed: Object.values(disqualificationBuckets).reduce((a, b) => a + b, 0),
+        reasonsCount: disqualificationBuckets
+      },
+      constraints: {
+        neighborhoodNote: AI_DISPATCH_CONFIG.NEIGHBORHOOD_LIMITATION_NOTE,
+        advisoryOnly: true,
+        distinctProPerBookingRequired: true
+      }
+    },
+    limitationsDisclosure: AI_DISPATCH_CONFIG.TRUST_LIMITATIONS_DISCLOSURE
+  };
+}
+
+function scoreCandidateDeterministically(candidate, weights) {
+  const tierMap = weights.TIER_POINTS || {};
+  const sameNeighborhoodPoints = candidate.sameNeighborhoodAsBooking
+    ? Number(weights.SAME_NEIGHBORHOOD_POINTS || 0)
+    : 0;
+  const tierPoints = Number(tierMap[candidate.tier] || 0);
+  const reliabilityPoints = Math.round(candidate.reliabilityScore * Number(weights.RELIABILITY_MULTIPLIER || 0) * 100) / 100;
+  const ratingPoints = Math.round(candidate.rating * Number(weights.RATING_MULTIPLIER || 0) * 100) / 100;
+  const completedJobsBonus = Math.min(
+    Number(weights.COMPLETED_JOB_BONUS_CAP || 0),
+    Math.round(candidate.completedJobsCount * Number(weights.COMPLETED_JOB_POINT_RATE || 0) * 100) / 100
+  );
+  const activeWorkloadPenalty = Math.round(
+    candidate.activeAssignmentsCount * Number(weights.ACTIVE_WORKLOAD_PENALTY || 0) * 100
+  ) / 100;
+
+  const totalScore = Math.round(
+    (sameNeighborhoodPoints + tierPoints + reliabilityPoints + ratingPoints + completedJobsBonus - activeWorkloadPenalty) * 100
+  ) / 100;
+
+  return {
+    totalScore,
+    scoreBreakdown: {
+      sameNeighborhoodPoints,
+      tierPoints,
+      reliabilityPoints,
+      ratingPoints,
+      completedJobsBonus,
+      activeWorkloadPenalty
+    }
+  };
+}
+
+function buildCandidateRationaleLines(candidate, bookingContext, scored) {
+  const bullets = [
+    `Verified qualification & conflict check passed for ${bookingContext.serviceTitle}.`
+  ];
+  if (candidate.sameNeighborhoodAsBooking) {
+    bullets.push(`Same Dallas pilot neighborhood label (${candidate.homeNeighborhood}) — zone match only, not live GPS or driving ETA.`);
+  } else {
+    bullets.push(`Home Dallas pilot zone: ${candidate.homeNeighborhood} (cross-zone label only; no live driving ETA calculated).`);
+  }
+  bullets.push(
+    `Supporting context: ${candidate.tier} tier, ${candidate.rating} rating (${candidate.reviewCount} reviews), ${candidate.reliabilityScore}% reliability, ${candidate.completedJobsCount} completed jobs.`
+  );
+
+  let cautionNote = '';
+  if (candidate.activeAssignmentsCount > 0) {
+    cautionNote = `Currently holding ${candidate.activeAssignmentsCount} other active assignment(s); confirm non-overlapping transit window.`;
+  } else if (bookingContext.timingType === 'asap' && typeof bookingContext.asapRemainingMinutes === 'number' && bookingContext.asapRemainingMinutes <= 15) {
+    cautionNote = `ASAP window has ~${bookingContext.asapRemainingMinutes} min remaining; confirm rapid readiness before assigning.`;
+  }
+
+  const fitSummary = sanitizeAiText(
+    `Rules score ${scored.totalScore}: verified for ${bookingContext.serviceTitle}; ${candidate.reliabilityScore}% reliability (${candidate.tier} supporting context).`,
+    140
+  );
+
+  return { bullets, cautionNote, fitSummary };
+}
+
+function deriveOperationalRisks(bookingContext, staffingFeasibility, fallbackModeRisks = []) {
+  const risks = [...fallbackModeRisks];
+  const addRisk = (severity, code, message) => {
+    if (risks.length < 5 && !risks.some(r => r.code === code && r.message === message)) {
+      risks.push({ severity, code, message: sanitizeAiText(message, 160) });
+    }
+  };
+
+  if (staffingFeasibility.zeroEligibleSlotIds.length > 0) {
+    addRisk(
+      'high',
+      'zero_eligible_slot',
+      `Zero verified available candidates for slot(s): ${staffingFeasibility.zeroEligibleSlotIds.join(', ')}. Manual outreach or Support escalation needed.`
+    );
+  }
+  if (!staffingFeasibility.fullCrewFeasible && staffingFeasibility.maxFillableOpenSlots > 0) {
+    addRisk(
+      'high',
+      'insufficient_multiworker_supply',
+      staffingFeasibility.cannotCompletelyStaffReason || 'Insufficient unique workers to staff all open positions.'
+    );
+  } else if (staffingFeasibility.shortageStatus === 'tight_supply') {
+    addRisk(
+      'medium',
+      'thin_candidate_pool',
+      'Tight Dallas supply: only 1 eligible candidate available for at least one open position.'
+    );
+  }
+
+  if (bookingContext.timingType === 'asap' && typeof bookingContext.asapRemainingMinutes === 'number') {
+    if (bookingContext.asapRemainingMinutes <= 15) {
+      addRisk(
+        'high',
+        'asap_urgency',
+        `ASAP dispatch window expiring soon (~${bookingContext.asapRemainingMinutes} min left).`
+      );
+    } else if (bookingContext.asapRemainingMinutes <= 30) {
+      addRisk(
+        'medium',
+        'asap_urgency',
+        `ASAP request with ~${bookingContext.asapRemainingMinutes} min matching time remaining.`
+      );
+    }
+  }
+
+  if (bookingContext.totalSlotsCount > 1) {
+    addRisk(
+      'low',
+      'multi_worker_coordination',
+      `Multi-worker booking (${bookingContext.alreadyAssignedCount} filled, ${staffingFeasibility.openSlotCount} open): workers remain in coordinated crew staging until full crew confirmation.`
+    );
+  }
+
+  return risks;
+}
+
+function chooseRecommendedNextAction(bookingContext, staffingFeasibility, risks) {
+  if (staffingFeasibility.maxFillableOpenSlots === 0) {
+    if (bookingContext.timingType === 'asap' && (bookingContext.asapRemainingMinutes || 0) <= 15) {
+      return 'extend_asap_window';
+    }
+    return 'escalate_support_case';
+  }
+  if (!staffingFeasibility.fullCrewFeasible) {
+    if (bookingContext.timingType === 'asap') return 'extend_asap_window';
+    return 'escalate_support_case';
+  }
+  if (risks.some(r => r.severity === 'high' || r.severity === 'medium')) {
+    return 'review_risks_before_assign';
+  }
+  return 'approve_top_candidate';
+}
+
+/**
+ * Computes a deterministic, transparent rules-based dispatch ranking without invoking any LLM.
+ * Explicitly labels provenance as offline/fallback and uses configurable scoring weights.
+ */
+export function computeDeterministicFallbackRanking(
+  bookingId,
+  fallbackReason = 'offline_rules_fallback',
+  options = {}
+) {
+  const prepared = buildSanitizedAiDispatchPayload(bookingId, options);
+  if (!prepared.dispatchable) {
+    return {
+      ok: false,
+      dispatchable: false,
+      bookingId: bookingId || null,
+      fingerprint: prepared.fingerprint,
+      error: prepared.error,
+      provenance: {
+        source: 'deterministic_rules_fallback',
+        isLiveAi: false,
+        isMockTestMode: false,
+        label: AI_DISPATCH_CONFIG.PROVENANCE_LABELS.FALLBACK,
+        fallbackReason: sanitizeAiText(fallbackReason, 64),
+        model: null,
+        disclaimer: `Advisory only — booking is not currently dispatchable. ${AI_DISPATCH_CONFIG.NEIGHBORHOOD_LIMITATION_NOTE}`
+      },
+      limitationsDisclosure: prepared.limitationsDisclosure
+    };
+  }
+
+  const weights = AI_DISPATCH_CONFIG.FALLBACK_SCORING_WEIGHTS;
+  const { bookingContext, eligibleCandidates, slotSupply } = prepared.payload;
+  const candidateMap = new Map(eligibleCandidates.map(c => [c.proId, c]));
+  const scoredBySlotMap = new Map();
+
+  slotSupply.forEach(supply => {
+    const scoredCandidates = supply.eligibleProIds
+      .map(proId => candidateMap.get(proId))
+      .filter(Boolean)
+      .map(candidate => {
+        const scored = scoreCandidateDeterministically(candidate, weights);
+        const textLines = buildCandidateRationaleLines(candidate, bookingContext, scored);
+        return {
+          proId: candidate.proId,
+          displayName: candidate.displayName,
+          tier: candidate.tier,
+          rating: candidate.rating,
+          reviewCount: candidate.reviewCount,
+          reliabilityScore: candidate.reliabilityScore,
+          homeNeighborhood: candidate.homeNeighborhood,
+          sameNeighborhoodAsBooking: candidate.sameNeighborhoodAsBooking,
+          deterministicScore: scored.totalScore,
+          scoreBreakdown: scored.scoreBreakdown,
+          fitSummary: textLines.fitSummary,
+          rationaleBullets: textLines.bullets,
+          cautionNote: textLines.cautionNote
+        };
+      })
+      .sort((a, b) => {
+        if (b.deterministicScore !== a.deterministicScore) return b.deterministicScore - a.deterministicScore;
+        return String(a.proId).localeCompare(String(b.proId));
+      })
+      .slice(0, AI_DISPATCH_CONFIG.MAX_RECOMMENDATIONS_PER_SLOT)
+      .map((item, idx) => ({ rank: idx + 1, ...item }));
+
+    scoredBySlotMap.set(supply.slotId, scoredCandidates);
+  });
+
+  const crewComboResult = findFeasibleCrewCombinations(
+    bookingContext.openSlots,
+    scoredBySlotMap,
+    AI_DISPATCH_CONFIG.MAX_COMBINATION_PLANS
+  );
+  const topPlan = crewComboResult.plans[0] || null;
+  const primaryBySlot = new Map(
+    topPlan ? topPlan.assignments.map(a => [a.slotId, a.proId]) : []
+  );
+
+  const slotRecommendations = slotSupply.map(supply => {
+    const ranked = scoredBySlotMap.get(supply.slotId) || [];
+    const primaryProId = primaryBySlot.get(supply.slotId) || null;
+    const primaryObj = ranked.find(c => c.proId === primaryProId) || ranked[0] || null;
+    const draftReason = primaryObj
+      ? sanitizeAiText(
+          `[Rules-Based Ranking] Suggesting ${primaryObj.displayName} for ${supply.roleTitle} (${bookingContext.bookingId}) based on verified skills, ${primaryObj.reliabilityScore}% reliability, and pilot zone context.`,
+          AI_DISPATCH_CONFIG.REASON_MAX_CHARS
+        )
+      : '';
+
+    return {
+      slotId: supply.slotId,
+      roleTitle: supply.roleTitle,
+      supplyStatus: supply.eligibleCount === 0 ? 'zero_eligible' : 'candidates_available',
+      eligibleCount: supply.eligibleCount,
+      recommendedPrimaryProId: primaryProId,
+      rankedCandidates: ranked,
+      draftAdminReason: draftReason
+    };
+  });
+
+  const staffingFeasibility = buildStaffingFeasibility(
+    bookingContext.openSlots,
+    slotSupply,
+    crewComboResult.maxFillableOpenSlots
+  );
+  const operationalRisks = deriveOperationalRisks(bookingContext, staffingFeasibility);
+  const recommendedNextAction = chooseRecommendedNextAction(bookingContext, staffingFeasibility, operationalRisks);
+  const cleanFallbackReason = sanitizeAiText(fallbackReason, 64) || 'offline_rules_fallback';
+
+  return {
+    ok: true,
+    dispatchable: true,
+    bookingId: bookingContext.bookingId,
+    fingerprint: prepared.fingerprint,
+    generatedAt: new Date().toISOString(),
+    provenance: {
+      source: prepared.zeroEligibleOverall ? 'zero_eligible_short_circuit' : 'deterministic_rules_fallback',
+      isLiveAi: false,
+      isMockTestMode: false,
+      label: prepared.zeroEligibleOverall
+        ? AI_DISPATCH_CONFIG.PROVENANCE_LABELS.ZERO_ELIGIBLE
+        : AI_DISPATCH_CONFIG.PROVENANCE_LABELS.FALLBACK,
+      fallbackReason: cleanFallbackReason,
+      model: null,
+      scoringWeightsUsed: weights,
+      disclaimer: `Deterministic fallback ranking only (no LLM called). ${AI_DISPATCH_CONFIG.NEIGHBORHOOD_LIMITATION_NOTE} Admin approval required.`
+    },
+    staffingFeasibility,
+    slotRecommendations,
+    recommendedCrewPlans: crewComboResult.plans,
+    operationalRisks,
+    recommendedNextAction,
+    validationReport: {
+      rejectedCandidateCount: 0,
+      rejectedDetails: [],
+      staleDetected: false,
+      revalidatedAgainstFreshState: true
+    },
+    limitationsDisclosure: prepared.limitationsDisclosure
+  };
+}
+
+/**
+ * Explicit Trust Boundary for external Gemini responses.
+ * Treats AI output as untrusted JSON: validates schema shape, booking/slot identity,
+ * freshness fingerprint, XSS sanitization, multi-worker distinctness, and live
+ * canProAcceptSlot() eligibility before returning normalized advice or falling back.
+ */
+export function validateAndNormalizeAiRecommendation(rawAiResponse, bookingId, options = {}) {
+  const prepared = buildSanitizedAiDispatchPayload(bookingId, options);
+  if (!prepared.dispatchable) {
+    return {
+      ok: false,
+      dispatchable: false,
+      bookingId: bookingId || null,
+      fingerprint: prepared.fingerprint,
+      error: prepared.error,
+      provenance: {
+        source: 'rejected_booking_not_dispatchable',
+        isLiveAi: false,
+        isMockTestMode: false,
+        label: AI_DISPATCH_CONFIG.PROVENANCE_LABELS.FALLBACK,
+        fallbackReason: 'booking_not_dispatchable',
+        model: null,
+        disclaimer: prepared.error
+      },
+      validationReport: {
+        rejectedCandidateCount: 0,
+        rejectedDetails: [prepared.error],
+        staleDetected: false,
+        revalidatedAgainstFreshState: true
+      }
+    };
+  }
+
+  // Freshness fingerprint guard detects booking, worker availability, and conflict shifts.
+  if (options && options.expectedFingerprint && options.expectedFingerprint !== prepared.fingerprint) {
+    const fallback = computeDeterministicFallbackRanking(bookingId, 'stale_state_fingerprint_mismatch', options);
+    fallback.validationReport.staleDetected = true;
+    fallback.validationReport.rejectedDetails.push(
+      'Recommendation rejected: booking status, worker availability, or schedule conflict state changed.'
+    );
+    return fallback;
+  }
+
+  // Zero eligible candidates deterministically -> never promote AI hallucinations over empty supply.
+  if (prepared.zeroEligibleOverall) {
+    const zeroResult = computeDeterministicFallbackRanking(bookingId, 'zero_eligible_workers_in_state', options);
+    zeroResult.validationReport.rejectedDetails.push(
+      'Deterministic prefilter found 0 eligible Pros; AI suggestions cannot bypass eligibility rules.'
+    );
+    return zeroResult;
+  }
+
+  let parsed = rawAiResponse;
+  if (typeof rawAiResponse === 'string') {
+    try {
+      parsed = JSON.parse(rawAiResponse);
+    } catch (e) {
+      const fallback = computeDeterministicFallbackRanking(bookingId, 'invalid_ai_json', options);
+      fallback.validationReport.rejectedDetails.push('Malformed JSON returned by AI service.');
+      return fallback;
+    }
+  }
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+    const fallback = computeDeterministicFallbackRanking(bookingId, 'invalid_ai_structure', options);
+    fallback.validationReport.rejectedDetails.push('AI response root must be a JSON object.');
+    return fallback;
+  }
+
+  if (parsed.bookingId !== bookingId || !Array.isArray(parsed.slotRecommendations)) {
+    const fallback = computeDeterministicFallbackRanking(bookingId, 'ai_booking_mismatch_or_missing_slots', options);
+    fallback.validationReport.rejectedDetails.push(
+      `AI response bookingId mismatch or missing slotRecommendations for ${bookingId}.`
+    );
+    return fallback;
+  }
+
+  const state = loadState();
+  const { bookingContext, eligibleCandidates, slotSupply } = prepared.payload;
+  const weights = AI_DISPATCH_CONFIG.FALLBACK_SCORING_WEIGHTS;
+  const safeCandidateMap = new Map(eligibleCandidates.map(c => [c.proId, c]));
+  const openSlotIdSet = new Set(bookingContext.openSlots.map(s => s.slotId));
+
+  const rejectedDetails = [];
+  let rejectedCandidateCount = 0;
+
+  // Map AI slot entries cleanly by valid open slotId; record bogus/filled slots as rejected.
+  const aiSlotEntryMap = new Map();
+  parsed.slotRecommendations.forEach(entry => {
+    if (!entry || typeof entry !== 'object' || typeof entry.slotId !== 'string') {
+      rejectedDetails.push('Ignored malformed slotRecommendation item.');
+      return;
+    }
+    if (!openSlotIdSet.has(entry.slotId)) {
+      rejectedDetails.push(`Ignored non-open or unknown slot "${sanitizeAiText(entry.slotId, 32)}".`);
+      return;
+    }
+    if (!aiSlotEntryMap.has(entry.slotId)) {
+      aiSlotEntryMap.set(entry.slotId, entry);
+    }
+  });
+
+  const validatedBySlotMap = new Map();
+
+  slotSupply.forEach(supply => {
+    const aiSlot = aiSlotEntryMap.get(supply.slotId);
+    const seenPros = new Set();
+    const verifiedList = [];
+
+    if (aiSlot && Array.isArray(aiSlot.rankedCandidates)) {
+      aiSlot.rankedCandidates.forEach((cand, idx) => {
+        if (!cand || typeof cand !== 'object' || typeof cand.proId !== 'string') {
+          rejectedCandidateCount++;
+          rejectedDetails.push(`Slot ${supply.slotId}: malformed candidate item at index ${idx}.`);
+          return;
+        }
+        const proId = sanitizeAiText(cand.proId, 48);
+        if (seenPros.has(proId)) {
+          rejectedCandidateCount++;
+          rejectedDetails.push(`Slot ${supply.slotId}: duplicate candidate "${proId}" skipped.`);
+          return;
+        }
+
+        const pro = (state.pros || []).find(p => p.id === proId);
+        if (!pro) {
+          rejectedCandidateCount++;
+          rejectedDetails.push(`Slot ${supply.slotId}: hallucinated unknown Pro "${proId}" rejected.`);
+          return;
+        }
+
+        // Re-verify live deterministic eligibility against current state!
+        const liveCheck = canProAcceptSlot(proId, bookingId, supply.slotId, options);
+        if (!liveCheck.allowed) {
+          rejectedCandidateCount++;
+          rejectedDetails.push(`Slot ${supply.slotId}: Pro "${proId}" failed live eligibility check (${liveCheck.reason}).`);
+          return;
+        }
+
+        const safeCandidate = safeCandidateMap.get(proId);
+        if (!safeCandidate) {
+          rejectedCandidateCount++;
+          rejectedDetails.push(`Slot ${supply.slotId}: Pro "${proId}" excluded outside sanitized allowlist.`);
+          return;
+        }
+
+        seenPros.add(proId);
+        const detScored = scoreCandidateDeterministically(safeCandidate, weights);
+        const aiOrderRank = verifiedList.length + 1;
+        // Weight AI rank ordering gently on top of deterministic score while respecting combination distinctness.
+        const preferenceScore = ((AI_DISPATCH_CONFIG.MAX_RECOMMENDATIONS_PER_SLOT + 2 - aiOrderRank) * 1000) + detScored.totalScore;
+
+        const cleanBullets = Array.isArray(cand.rationaleBullets)
+          ? cand.rationaleBullets.slice(0, 3).map(b => sanitizeAiText(b, AI_DISPATCH_CONFIG.BULLET_MAX_CHARS)).filter(Boolean)
+          : [];
+        if (cleanBullets.length === 0) {
+          cleanBullets.push(`Verified eligible for ${supply.roleTitle} via Crewly qualification rules.`);
+        }
+
+        if (verifiedList.length < AI_DISPATCH_CONFIG.MAX_RECOMMENDATIONS_PER_SLOT) {
+          verifiedList.push({
+            rank: aiOrderRank,
+            proId: safeCandidate.proId,
+            displayName: safeCandidate.displayName,
+            tier: safeCandidate.tier,
+            rating: safeCandidate.rating,
+            reviewCount: safeCandidate.reviewCount,
+            reliabilityScore: safeCandidate.reliabilityScore,
+            homeNeighborhood: safeCandidate.homeNeighborhood,
+            sameNeighborhoodAsBooking: safeCandidate.sameNeighborhoodAsBooking,
+            deterministicScore: detScored.totalScore,
+            preferenceScore,
+            fitSummary: sanitizeAiText(cand.fitSummary, 140) || `Verified fit for ${supply.roleTitle}.`,
+            rationaleBullets: cleanBullets,
+            cautionNote: sanitizeAiText(cand.cautionNote, 120)
+          });
+        }
+      });
+    }
+
+    validatedBySlotMap.set(supply.slotId, verifiedList);
+  });
+
+  const crewComboResult = findFeasibleCrewCombinations(
+    bookingContext.openSlots,
+    validatedBySlotMap,
+    AI_DISPATCH_CONFIG.MAX_COMBINATION_PLANS
+  );
+
+  // If all AI selections were rejected or cover fewer open slots jointly than verified supply allows,
+  // reject the incomplete AI subset and fall back cleanly to the deterministic crew solver.
+  if (crewComboResult.maxFillableOpenSlots < prepared.staffingFeasibility.maxFillableOpenSlots) {
+    const reasonCode = crewComboResult.maxFillableOpenSlots === 0
+      ? 'ai_candidates_rejected_by_rules'
+      : 'ai_incomplete_crew_combination';
+    const fallback = computeDeterministicFallbackRanking(bookingId, reasonCode, options);
+    fallback.validationReport.rejectedCandidateCount = rejectedCandidateCount;
+    fallback.validationReport.rejectedDetails = [
+      ...rejectedDetails,
+      `AI selection covered only ${crewComboResult.maxFillableOpenSlots} of ${prepared.staffingFeasibility.maxFillableOpenSlots} feasible open slots; restored deterministic crew ranking.`
+    ];
+    return fallback;
+  }
+
+  const topPlan = crewComboResult.plans[0] || null;
+  const primaryBySlot = new Map(
+    topPlan ? topPlan.assignments.map(a => [a.slotId, a.proId]) : []
+  );
+
+  const staffingFeasibility = buildStaffingFeasibility(
+    bookingContext.openSlots,
+    slotSupply,
+    crewComboResult.maxFillableOpenSlots
+  );
+
+  const slotRecommendations = slotSupply.map(supply => {
+    const ranked = (validatedBySlotMap.get(supply.slotId) || []).map(({ preferenceScore, ...rest }) => rest);
+    const primaryProId = primaryBySlot.get(supply.slotId) || null;
+    const aiSlot = aiSlotEntryMap.get(supply.slotId);
+    const rawFirstAiProId = (aiSlot && Array.isArray(aiSlot.rankedCandidates) && aiSlot.rankedCandidates[0])
+      ? aiSlot.rankedCandidates[0].proId
+      : null;
+    const rawDraft = (aiSlot && rawFirstAiProId === primaryProId)
+      ? sanitizeAiText(aiSlot.draftAdminReason, AI_DISPATCH_CONFIG.REASON_MAX_CHARS)
+      : '';
+    const primaryObj = ranked.find(c => c.proId === primaryProId) || null;
+
+    const draftAdminReason = primaryObj
+      ? (rawDraft || sanitizeAiText(
+          `[AI Advisory Draft] Recommended ${primaryObj.displayName} for ${supply.roleTitle} (${bookingId}). Verified eligible via Crewly rules.`,
+          AI_DISPATCH_CONFIG.REASON_MAX_CHARS
+        ))
+      : '';
+
+    return {
+      slotId: supply.slotId,
+      roleTitle: supply.roleTitle,
+      supplyStatus: supply.eligibleCount === 0 ? 'zero_eligible' : 'candidates_available',
+      eligibleCount: supply.eligibleCount,
+      recommendedPrimaryProId: primaryProId,
+      rankedCandidates: ranked,
+      draftAdminReason
+    };
+  });
+
+  const sanitizedAiRisks = Array.isArray(parsed.operationalRisks)
+    ? parsed.operationalRisks
+        .slice(0, 4)
+        .filter(r => r && typeof r === 'object' && r.message)
+        .map(r => ({
+          severity: ALLOWED_RISK_SEVERITIES.has(r.severity) ? r.severity : 'medium',
+          code: ALLOWED_RISK_CODES.has(r.code) ? r.code : 'reliability_watch',
+          message: sanitizeAiText(r.message, 160)
+        }))
+    : [];
+
+  // Authoritative staffing & ASAP urgency checks always supplement/override AI risk notes.
+  const operationalRisks = deriveOperationalRisks(bookingContext, staffingFeasibility, sanitizedAiRisks);
+  let recommendedNextAction = ALLOWED_NEXT_ACTIONS.has(parsed.recommendedNextAction)
+    ? parsed.recommendedNextAction
+    : chooseRecommendedNextAction(bookingContext, staffingFeasibility, operationalRisks);
+  if (!staffingFeasibility.fullCrewFeasible) {
+    recommendedNextAction = chooseRecommendedNextAction(bookingContext, staffingFeasibility, operationalRisks);
+  }
+
+  const modelName = (options && typeof options.model === 'string' && options.model.trim())
+    ? sanitizeAiText(options.model, 64)
+    : 'gemini-api-validated';
+
+  const isMockTestMode = Boolean(
+    options && (
+      options.isSimulatedTestMode === true ||
+      options.inferenceSource === 'mock_ai_test_mode'
+    )
+  );
+  const provenanceSource = isMockTestMode ? 'mock_ai_test_mode' : 'live_gemini_ai';
+  const provenanceLabel = isMockTestMode
+    ? AI_DISPATCH_CONFIG.PROVENANCE_LABELS.MOCK_TEST_MODE
+    : AI_DISPATCH_CONFIG.PROVENANCE_LABELS.LIVE_AI;
+  const provenanceDisclaimer = isMockTestMode
+    ? `Simulated AI test response re-verified by deterministic Crewly eligibility rules (No live Gemini API call). ${AI_DISPATCH_CONFIG.NEIGHBORHOOD_LIMITATION_NOTE} Human Admin approval required.`
+    : `Advisory AI ranking re-verified by deterministic Crewly eligibility rules. ${AI_DISPATCH_CONFIG.NEIGHBORHOOD_LIMITATION_NOTE} Human Admin approval required.`;
+
+  return {
+    ok: true,
+    dispatchable: true,
+    bookingId: bookingContext.bookingId,
+    fingerprint: prepared.fingerprint,
+    generatedAt: new Date().toISOString(),
+    provenance: {
+      source: provenanceSource,
+      isLiveAi: !isMockTestMode,
+      isMockTestMode,
+      label: provenanceLabel,
+      fallbackReason: null,
+      model: modelName,
+      disclaimer: provenanceDisclaimer
+    },
+    staffingFeasibility,
+    slotRecommendations,
+    recommendedCrewPlans: crewComboResult.plans,
+    operationalRisks,
+    recommendedNextAction,
+    validationReport: {
+      rejectedCandidateCount,
+      rejectedDetails,
+      staleDetected: false,
+      revalidatedAgainstFreshState: true
+    },
+    limitationsDisclosure: prepared.limitationsDisclosure
+  };
+}
+
+/**
+ * Revalidates a previously generated recommendation envelope against fresh marketplace state
+ * before displaying to an Admin AND again immediately prior to Admin assignment approval.
+ * Read-only: zero state mutations.
+ */
+export function verifyRecommendationFreshness(recommendation, bookingId, options = {}) {
+  const current = computeBookingDispatchFingerprint(bookingId, options);
+  const staleReasons = [];
+
+  if (!recommendation || typeof recommendation !== 'object') {
+    staleReasons.push('No recommendation object provided.');
+  } else if (recommendation.bookingId !== bookingId) {
+    staleReasons.push(`Booking mismatch: expected ${bookingId}, got ${recommendation.bookingId || 'none'}.`);
+  }
+
+  if (!current.valid || !current.dispatchable) {
+    staleReasons.push(current.reason || 'Booking is no longer eligible for dispatch.');
+  }
+
+  if (recommendation && recommendation.fingerprint && current.fingerprint && recommendation.fingerprint !== current.fingerprint) {
+    staleReasons.push(
+      'Marketplace state changed since recommendation was generated (booking, worker schedule, or schedule conflicts modified).'
+    );
+  }
+
+  let targetSlotAllowed = true;
+  if (options && options.slotId && options.proId) {
+    const check = canProAcceptSlot(options.proId, bookingId, options.slotId, options);
+    if (!check.allowed) {
+      targetSlotAllowed = false;
+      staleReasons.push(`Candidate ${options.proId} is no longer eligible for ${options.slotId}: ${check.reason}`);
+    }
+  }
+
+  const fresh = staleReasons.length === 0;
+  return {
+    fresh,
+    allowedForApproval: fresh && targetSlotAllowed && current.dispatchable,
+    bookingId: bookingId || null,
+    currentFingerprint: current.fingerprint,
+    openSlotIds: current.openSlotIds,
+    staleReasons,
+    reason: fresh
+      ? 'Recommendation matches live booking and worker availability state.'
+      : staleReasons[0]
+  };
+}
+
+function redactSensitivePatterns(text) {
+  return String(text || '')
+    .replace(/\bAIza[0-9A-Za-z_-]{20,}\b/g, '[redacted-key]')
+    .replace(/\bBearer\s+[0-9A-Za-z._-]{16,}\b/gi, '[redacted-token]')
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[redacted-email]')
+    .replace(/\b(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b/g, '[redacted-phone]');
+}
+
+/**
+ * Append-only sanitized audit logging helper for Stage 4 AI dispatch advisory events.
+ * Strictly prohibits persisting PII, street addresses, phone numbers, balances, or keys.
+ */
+export function logAiDispatchAuditEvent(entry = {}) {
+  const allowedActions = AI_DISPATCH_CONFIG.ALLOWED_AUDIT_ACTIONS || [];
+  if (!entry || !allowedActions.includes(entry.actionType)) {
+    return {
+      success: false,
+      error: `Invalid AI audit actionType "${entry ? entry.actionType : ''}". Must be one of: ${allowedActions.join(', ')}.`
+    };
+  }
+
+  const state = loadState();
+  const isFallback = entry.actionType === 'ai_dispatch_fallback_used';
+  const isRejected = entry.actionType === 'ai_dispatch_recommendation_rejected';
+  const verificationSource = sanitizeAiText(
+    entry.verificationSource ||
+      (isFallback
+        ? 'Deterministic Rules Fallback (Offline)'
+        : isRejected
+          ? 'AI Trust Boundary Re-Validation'
+          : 'Live Gemini AI Advisory (No Autonomous Action)'),
+    96
+  );
+
+  const rawReason = entry.reason || 'AI advisory evaluation logged.';
+  const cleanReason = sanitizeAiText(
+    redactSensitivePatterns(rawReason),
+    AI_DISPATCH_CONFIG.REASON_MAX_CHARS
+  );
+
+  const auditRecord = logAdminAudit(state, {
+    actionType: entry.actionType,
+    bookingId: entry.bookingId ? sanitizeAiText(entry.bookingId, 32) : null,
+    slotId: entry.slotId ? sanitizeAiText(entry.slotId, 32) : null,
+    proId: entry.proId ? sanitizeAiText(entry.proId, 48) : null,
+    adminName: sanitizeAiText(entry.adminName || 'Dallas Dispatch Lead (Demo)', 64),
+    previousValue: sanitizeAiText(entry.previousValue || 'advisory_requested', 64),
+    newValue: sanitizeAiText(entry.newValue || (isFallback ? 'rules_fallback_shown' : 'advisory_presented'), 64),
+    reason: cleanReason,
+    verificationSource,
+    status: isRejected ? 'failed' : 'success'
+  });
+
+  saveState(state);
+  return { success: true, auditRecord };
+}
+
+// ---------------------------------------------------------------------------
+// Stage 4 Phase 4.4: Local Proxy Transport & Eligibility Orchestration
+// ---------------------------------------------------------------------------
+
+/**
+ * Evaluates whether a booking is currently dispatchable for AI/fallback advice.
+ * Delegates strictly to Stage 4.2 evaluateBookingDispatchStatus() rules.
+ */
+export function getBookingAiDispatchEligibility(bookingId, options = {}) {
+  const state = loadState();
+  const booking = (state.bookings || []).find(b => b.id === bookingId);
+  return evaluateBookingDispatchStatus(booking, options);
+}
+
+/**
+ * Determines whether the browser is running in an approved local development origin
+ * where calling Crewly's local loopback proxy (127.0.0.1:8787) is permitted.
+ * Hosted deployments (e.g. GitHub Pages) and file:// origins remain safely offline.
+ */
+export function resolveAiDispatchProxyConfig(options = {}) {
+  const allowedOrigins = Array.isArray(AI_DISPATCH_CONFIG.LOCAL_PROXY_ALLOWED_ORIGINS)
+    ? AI_DISPATCH_CONFIG.LOCAL_PROXY_ALLOWED_ORIGINS
+    : ['http://localhost:8000', 'http://127.0.0.1:8000'];
+
+  if (options && options.forceOffline === true) {
+    return {
+      enabled: false,
+      endpoint: null,
+      origin: null,
+      mode: 'offline_fallback_only',
+      reason: 'Offline fallback mode selected; local Gemini proxy skipped.'
+    };
+  }
+
+  let currentOrigin = '';
+  if (options && typeof options.locationOrigin === 'string') {
+    currentOrigin = options.locationOrigin.trim();
+  } else if (typeof window !== 'undefined' && window.location && typeof window.location.origin === 'string') {
+    currentOrigin = window.location.origin.trim();
+  }
+
+  const endpointCandidate = (options && typeof options.proxyEndpoint === 'string' && options.proxyEndpoint.trim())
+    ? options.proxyEndpoint.trim()
+    : AI_DISPATCH_CONFIG.LOCAL_PROXY_ENDPOINT;
+
+  const isLocalEndpoint = typeof endpointCandidate === 'string' && (
+    endpointCandidate.startsWith('http://127.0.0.1:') ||
+    endpointCandidate.startsWith('http://localhost:')
+  );
+
+  if (!currentOrigin || !allowedOrigins.includes(currentOrigin) || !isLocalEndpoint) {
+    return {
+      enabled: false,
+      endpoint: null,
+      origin: currentOrigin || null,
+      mode: 'offline_fallback_only',
+      reason: 'Running outside approved local dev server (http://localhost:8000); using offline Crewly rules fallback.'
+    };
+  }
+
+  return {
+    enabled: true,
+    endpoint: endpointCandidate,
+    origin: currentOrigin,
+    mode: 'local_proxy_ready',
+    reason: 'Local loopback proxy endpoint enabled for development.'
+  };
+}
+
+function buildFallbackDispatchEnvelope(bookingId, reasonCode, noticeText, prepared, options = {}) {
+  const rec = computeDeterministicFallbackRanking(bookingId, reasonCode, options);
+  if (!options.skipAuditLog) {
+    logAiDispatchAuditEvent({
+      actionType: 'ai_dispatch_fallback_used',
+      bookingId,
+      reason: sanitizeAiText(
+        redactSensitivePatterns(`${noticeText} (${reasonCode})`),
+        AI_DISPATCH_CONFIG.REASON_MAX_CHARS
+      )
+    });
+  }
+  return {
+    ok: !!(rec && rec.ok),
+    dispatchable: !!(rec && rec.dispatchable),
+    bookingId: bookingId || null,
+    staleDetected: false,
+    startFingerprint: prepared ? prepared.fingerprint : null,
+    recommendation: rec,
+    fallbackNotice: sanitizeAiText(redactSensitivePatterns(noticeText), 180)
+  };
+}
+
+/**
+ * Coordinates Stage 4.2 sanitization, local loopback proxy invocation (when running on
+ * approved local dev origins), freshness revalidation, and deterministic fallback.
+ * Never embeds API credentials and never executes autonomous assignments.
+ */
+export async function requestAiDispatchAdvice(bookingId, options = {}) {
+  const prepared = buildSanitizedAiDispatchPayload(bookingId, options);
+  if (!prepared.dispatchable) {
+    return {
+      ok: false,
+      dispatchable: false,
+      bookingId: bookingId || null,
+      staleDetected: false,
+      startFingerprint: prepared.fingerprint,
+      error: prepared.error,
+      recommendation: null,
+      fallbackNotice: prepared.error
+    };
+  }
+
+  if (prepared.zeroEligibleOverall) {
+    return buildFallbackDispatchEnvelope(
+      bookingId,
+      'zero_eligible_workers_in_state',
+      'Zero eligible Pros passed Crewly rules; skipped Gemini proxy.',
+      prepared,
+      options
+    );
+  }
+
+  const proxyCfg = resolveAiDispatchProxyConfig(options);
+  if (!proxyCfg.enabled) {
+    return buildFallbackDispatchEnvelope(
+      bookingId,
+      'local_proxy_disabled_origin',
+      proxyCfg.reason,
+      prepared,
+      options
+    );
+  }
+
+  const fetchFn = (options && typeof options.fetchFn === 'function')
+    ? options.fetchFn
+    : (typeof fetch === 'function' ? fetch : null);
+
+  if (!fetchFn) {
+    return buildFallbackDispatchEnvelope(
+      bookingId,
+      'fetch_unavailable',
+      'Fetch API unavailable in this environment; showing offline rules-based ranking.',
+      prepared,
+      options
+    );
+  }
+
+  const timeoutMs = (options && typeof options.timeoutMs === 'number' && options.timeoutMs > 0)
+    ? options.timeoutMs
+    : (AI_DISPATCH_CONFIG.REQUEST_TIMEOUT_MS || 10000);
+
+  let abortCtrl = null;
+  let timeoutId = null;
+  let proxyJson = null;
+
+  try {
+    if (typeof AbortController !== 'undefined') {
+      abortCtrl = new AbortController();
+      if (typeof setTimeout === 'function') {
+        timeoutId = setTimeout(() => {
+          try { abortCtrl.abort(); } catch (e) {}
+        }, timeoutMs);
+      }
+    }
+
+    const fetchOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(prepared.payload)
+    };
+    if (abortCtrl) fetchOptions.signal = abortCtrl.signal;
+
+    const response = await fetchFn(proxyCfg.endpoint, fetchOptions);
+    let parsedBody = null;
+    try {
+      parsedBody = await response.json();
+    } catch (jsonErr) {
+      parsedBody = null;
+    }
+
+    if (!response.ok || !parsedBody || parsedBody.ok !== true) {
+      const code = sanitizeAiText((parsedBody && parsedBody.code) || `proxy_http_${response.status}`, 48);
+      const friendlyNotice = code === 'proxy_not_configured'
+        ? 'Local Gemini proxy disabled (no API key configured); showing Crewly rules-based fallback.'
+        : (code === 'rate_limit_exceeded' || code === 'duplicate_request_throttled' || code === 'upstream_rate_limited')
+          ? 'Rate limit active on local Gemini proxy; showing Crewly rules-based fallback.'
+          : (code === 'upstream_timeout')
+            ? 'Upstream Gemini request timed out; showing Crewly rules-based fallback.'
+            : `Local Gemini proxy unavailable (${code}); showing Crewly rules-based fallback.`;
+      return buildFallbackDispatchEnvelope(bookingId, code, friendlyNotice, prepared, options);
+    }
+
+    proxyJson = parsedBody;
+  } catch (err) {
+    const isTimeout = err && (err.name === 'AbortError' || String(err.message || '').toLowerCase().includes('timeout'));
+    return buildFallbackDispatchEnvelope(
+      bookingId,
+      isTimeout ? 'proxy_timeout' : 'proxy_unreachable',
+      isTimeout
+        ? 'Local Gemini proxy request timed out; showing offline Crewly rules-based fallback.'
+        : 'Local Gemini proxy not reachable at 127.0.0.1:8787; showing offline Crewly rules-based fallback.',
+      prepared,
+      options
+    );
+  } finally {
+    if (timeoutId !== null && typeof clearTimeout === 'function') {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  // Revalidate booking & candidate state before normalizing to catch cross-tab shifts mid-request.
+  const freshAfterFetch = computeBookingDispatchFingerprint(bookingId, options);
+  if (!freshAfterFetch.valid || !freshAfterFetch.dispatchable || freshAfterFetch.fingerprint !== prepared.fingerprint) {
+    if (!options.skipAuditLog) {
+      logAiDispatchAuditEvent({
+        actionType: 'ai_dispatch_recommendation_rejected',
+        bookingId,
+        previousValue: prepared.fingerprint,
+        newValue: freshAfterFetch.fingerprint || 'not_dispatchable',
+        reason: 'Discarded in-flight AI dispatch advice because booking or worker availability changed.'
+      });
+    }
+    return {
+      ok: false,
+      dispatchable: !!freshAfterFetch.dispatchable,
+      bookingId: prepared.bookingId,
+      staleDetected: true,
+      startFingerprint: prepared.fingerprint,
+      currentFingerprint: freshAfterFetch.fingerprint,
+      recommendation: null,
+      error: freshAfterFetch.dispatchable
+        ? 'Booking or worker availability changed while advice was loading; stale advice discarded.'
+        : (freshAfterFetch.reason || 'Booking is no longer eligible for dispatch; stale advice discarded.')
+    };
+  }
+
+  if (proxyJson.shortCircuitedZeroEligible) {
+    return buildFallbackDispatchEnvelope(
+      bookingId,
+      'zero_eligible_workers_in_state',
+      'Zero eligible candidates reported; using Crewly deterministic rules.',
+      prepared,
+      options
+    );
+  }
+
+  // Only real fetch responses explicitly marked by the local proxy as genuine live inference
+  // (isSimulatedTestMode === false && inferenceSource === 'live_gemini_ai' && liveAiAttempted === true)
+  // may display Live Gemini AI provenance; test mocks and injected fetchFn always map to Mock Test Mode.
+  const usesInjectedMockFetch = Boolean(options && typeof options.fetchFn === 'function');
+  const backendVerifiedLive = (
+    !usesInjectedMockFetch &&
+    proxyJson.inferenceSource === 'live_gemini_ai' &&
+    proxyJson.isSimulatedTestMode === false &&
+    proxyJson.liveAiAttempted === true
+  );
+  const resolvedInferenceSource = backendVerifiedLive ? 'live_gemini_ai' : 'mock_ai_test_mode';
+
+  const normalized = validateAndNormalizeAiRecommendation(proxyJson.recommendation, bookingId, {
+    ...options,
+    expectedFingerprint: prepared.fingerprint,
+    model: proxyJson.model,
+    inferenceSource: resolvedInferenceSource,
+    isSimulatedTestMode: !backendVerifiedLive
+  });
+
+  if (normalized.validationReport && normalized.validationReport.staleDetected) {
+    if (!options.skipAuditLog) {
+      logAiDispatchAuditEvent({
+        actionType: 'ai_dispatch_recommendation_rejected',
+        bookingId,
+        previousValue: prepared.fingerprint,
+        newValue: normalized.fingerprint || 'stale',
+        reason: 'AI response rejected due to state fingerprint change.'
+      });
+    }
+    return {
+      ok: false,
+      dispatchable: true,
+      bookingId: prepared.bookingId,
+      staleDetected: true,
+      startFingerprint: prepared.fingerprint,
+      recommendation: null,
+      error: 'Booking or worker state changed before AI advice could be displayed.'
+    };
+  }
+
+  if (normalized.provenance && (normalized.provenance.isLiveAi || normalized.provenance.isMockTestMode)) {
+    const rejectedCount = normalized.validationReport ? normalized.validationReport.rejectedCandidateCount : 0;
+    const isMockMode = Boolean(normalized.provenance.isMockTestMode && !normalized.provenance.isLiveAi);
+    if (!options.skipAuditLog) {
+      logAiDispatchAuditEvent({
+        actionType: 'ai_dispatch_recommended',
+        bookingId,
+        verificationSource: isMockMode
+          ? `Mock AI Response — Test Mode (${normalized.provenance.model})`
+          : `Live Gemini AI (${normalized.provenance.model})`,
+        reason: rejectedCount > 0
+          ? `Presented ${isMockMode ? 'simulated Mock AI test-mode' : 'live Gemini'} advisory ranking; stripped ${rejectedCount} ineligible/unknown suggestion(s).`
+          : `Presented ${isMockMode ? 'simulated Mock AI test-mode' : 'live Gemini'} advisory ranking (all candidates verified by Crewly rules).`
+      });
+    }
+    return {
+      ok: true,
+      dispatchable: true,
+      bookingId: prepared.bookingId,
+      staleDetected: false,
+      startFingerprint: prepared.fingerprint,
+      recommendation: normalized,
+      fallbackNotice: rejectedCount > 0
+        ? `Crewly rules removed ${rejectedCount} unverified/ineligible ${isMockMode ? 'simulated AI' : 'Gemini'} suggestion(s) automatically.`
+        : null
+    };
+  }
+
+  const fallbackCode = (normalized.provenance && normalized.provenance.fallbackReason) || 'ai_validation_fallback';
+  if (!options.skipAuditLog) {
+    logAiDispatchAuditEvent({
+      actionType: 'ai_dispatch_fallback_used',
+      bookingId,
+      reason: `Gemini output rejected by Crewly Trust Boundary (${fallbackCode}); rules-based fallback displayed.`
+    });
+  }
+  return {
+    ok: true,
+    dispatchable: true,
+    bookingId: prepared.bookingId,
+    staleDetected: false,
+    startFingerprint: prepared.fingerprint,
+    recommendation: normalized,
+    fallbackNotice: 'Gemini response did not pass Crewly eligibility verification; showing deterministic rules-based fallback.'
+  };
 }

@@ -1092,6 +1092,20 @@ body {
     padding-bottom: 6px;
     gap: 6px;
   }
+  .dispatch-booking-card {
+    padding: 14px;
+  }
+  .ai-candidate-header,
+  .ai-slot-header,
+  .ai-panel-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .btn-ai-apply-suggestion,
+  .btn-ai-dispatch {
+    width: 100%;
+    justify-content: center;
+  }
   .admin-subnav-btn {
     padding: 6px 12px;
     font-size: 0.78rem;
@@ -2137,4 +2151,304 @@ body {
   color: #059669;
   border: 1px solid #A7F3D0;
 }
+
+/* ==========================================================================
+   Stage 4 Phase 4.4: Admin AI-Assisted Dispatch Panel & Badges
+   ========================================================================== */
+
+.ai-connection-banner {
+  background: #F8FAFC;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-connection-banner.local-ready {
+  background: #EEF2FF;
+  border-color: #C7D2FE;
+  color: #312E81;
+}
+
+.btn-ai-dispatch {
+  background: #0F766E;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-ai-dispatch:hover:not(:disabled) {
+  background: #115E59;
+}
+
+.btn-ai-dispatch:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.ai-recommendation-panel {
+  margin-top: 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid #CBD5E1;
+  background: #F8FAFC;
+  padding: 16px;
+}
+
+.ai-recommendation-panel.live {
+  border-color: #A5B4FC;
+  background: #F5F7FF;
+}
+
+.ai-recommendation-panel.mock {
+  border: 1px dashed #8B5CF6;
+  background: #F5F3FF;
+}
+
+.ai-recommendation-panel.fallback {
+  border-color: #CBD5E1;
+  background: #F8FAFC;
+}
+
+.ai-recommendation-panel.stale,
+.ai-recommendation-panel.error {
+  border-color: #FCD34D;
+  background: #FFFBEB;
+}
+
+.ai-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ai-provenance-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.ai-provenance-badge.live {
+  background: #4338CA;
+  color: white;
+}
+
+.ai-provenance-badge.mock {
+  background: #EDE9FE;
+  color: #5B21B6;
+  border: 1px dashed #8B5CF6;
+}
+
+.ai-provenance-badge.fallback {
+  background: #E2E8F0;
+  color: #1E293B;
+}
+
+.ai-provenance-badge.zero {
+  background: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FCD34D;
+}
+
+.ai-notice-banner {
+  background: white;
+  border-left: 4px solid #64748B;
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.ai-notice-banner.shortage {
+  background: #FEF2F2;
+  border-left-color: #DC2626;
+  color: #991B1B;
+}
+
+.ai-slot-section {
+  background: white;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-top: 10px;
+}
+
+.ai-slot-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.ai-candidate-card {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-top: 8px;
+  background: #FFFFFF;
+}
+
+.ai-candidate-card.primary {
+  border-color: #A7F3D0;
+  background: #F0FDF4;
+}
+
+.ai-candidate-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-candidate-bullets {
+  margin: 6px 0 8px 18px;
+  padding: 0;
+  font-size: 0.79rem;
+  color: var(--text-secondary);
+}
+
+.ai-candidate-bullets li {
+  margin-bottom: 3px;
+}
+
+.btn-ai-apply-suggestion {
+  background: #4338CA;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-ai-apply-suggestion:hover {
+  background: #3730A3;
+}
+
+.btn-ai-secondary {
+  background: white;
+  color: var(--primary-navy);
+  border: 1px solid var(--border-light);
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-ai-secondary:hover {
+  background: #F1F5F9;
+}
+
+.ai-risks-list {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ai-risk-item {
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: white;
+  border: 1px solid var(--border-light);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.ai-risk-sev {
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 0.68rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.ai-risk-sev.high {
+  background: #FEE2E2;
+  color: #DC2626;
+}
+
+.ai-risk-sev.medium {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+.ai-risk-sev.low {
+  background: #E0F2FE;
+  color: #0369A1;
+}
+
+.ai-panel-footer {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.ai-modal-advisory-banner {
+  background: #EEF2FF;
+  border: 1px solid #C7D2FE;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  font-size: 0.8rem;
+  color: #312E81;
+}
+
+.audit-badge.ai_dispatch_recommended {
+  background: #EEF2FF;
+  color: #4338CA;
+}
+
+.audit-badge.ai_dispatch_fallback_used {
+  background: #F1F5F9;
+  color: #334155;
+}
+
+.audit-badge.ai_dispatch_recommendation_rejected {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
 

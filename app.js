@@ -11,7 +11,8 @@ import {
   lookupDallasZip,
   WALLET_CONFIG,
   INITIAL_PROS,
-  INITIAL_CUSTOMERS
+  INITIAL_CUSTOMERS,
+  AI_DISPATCH_CONFIG
 } from './data.js';
 
 import {
@@ -54,7 +55,14 @@ import {
   adminCancelBooking,
   canSlotBeAdminCompleted,
   adminVerifyAndCompleteAssignment,
-  recalculateBookingStatus
+  recalculateBookingStatus,
+  sanitizeAiText,
+  computeBookingDispatchFingerprint,
+  verifyRecommendationFreshness,
+  logAiDispatchAuditEvent,
+  getBookingAiDispatchEligibility,
+  requestAiDispatchAdvice,
+  resolveAiDispatchProxyConfig
 } from './matching.js';
 
 // Global UI State
@@ -84,6 +92,11 @@ let pendingAdminUnassignBookingId = null;
 let pendingAdminUnassignSlotId = null;
 let pendingAdminUnassignProId = null;
 let pendingAdminUnassignProName = null;
+
+// Stage 4 Phase 4.4: AI-Assisted Dispatch UI State
+const aiDispatchUiMap = {};
+let aiDispatchRequestCounter = 0;
+let pendingAdminAssignAiContext = null;
 
 // ---------------------------------------------------------------------------
 // Timing Formatting Utility (Separates human labels from valid ISO/time values)
@@ -1719,9 +1732,425 @@ function renderAdminDashboard() {
 }
 
 // ---------------------------------------------------------------------------
+// Stage 4 Phase 4.4: AI-Assisted Dispatch UI Helpers & Controllers
+// ---------------------------------------------------------------------------
+function renderAdminAiConnectionBanner() {
+  const banner = document.getElementById('admin-ai-connection-status');
+  if (!banner) return;
+
+  const cfg = resolveAiDispatchProxyConfig();
+  if (cfg.enabled) {
+    banner.className = 'ai-connection-banner local-ready';
+    banner.innerHTML = `
+      <span>
+        <strong>🤖 Local AI Proxy Ready (<code>127.0.0.1:8787</code>):</strong>
+        Advisory dispatch assistant available from <code>${escapeHtml(cfg.origin)}</code>. Human Admin confirmation remains strictly required.
+      </span>
+      <span style="font-weight: 700; font-size: 0.74rem;">Auto-fallback enabled if proxy offline</span>
+    `;
+  } else {
+    banner.className = 'ai-connection-banner';
+    banner.innerHTML = `
+      <span>
+        <strong>⚙️ Offline Rules-Based AI Fallback Mode:</strong>
+        Running on <code>${escapeHtml(cfg.origin || 'file://')}</code> (local proxy disabled outside local dev origin). Zero credentials or external AI calls made.
+      </span>
+      <span style="font-weight: 700; font-size: 0.74rem;">Crewly Deterministic Rules Active</span>
+    `;
+  }
+}
+
+function syncAiDispatchCacheWithState(bookingId) {
+  const entry = aiDispatchUiMap[bookingId];
+  if (!entry || entry.status !== 'ready' || !entry.recommendation) return entry;
+
+  const fresh = verifyRecommendationFreshness(entry.recommendation, bookingId);
+  if (!fresh.fresh) {
+    aiDispatchUiMap[bookingId] = {
+      status: 'stale_discarded',
+      inFlightSeq: entry.inFlightSeq || 0,
+      startFingerprint: entry.startFingerprint || null,
+      recommendation: null,
+      notice: fresh.reason || 'Booking or worker availability changed; previous AI advice was discarded.'
+    };
+  }
+  return aiDispatchUiMap[bookingId];
+}
+
+function formatAiNextActionLabel(actionCode) {
+  const map = {
+    approve_top_candidate: 'Review & approve top eligible candidate',
+    review_risks_before_assign: 'Review flagged operational risks before assigning',
+    extend_asap_window: 'Extend ASAP dispatch window before assigning',
+    escalate_support_case: 'Escalate staffing shortage to Support Queue'
+  };
+  return map[actionCode] || 'Review Crewly eligibility & assign manually';
+}
+
+function renderAiCandidateRowHtml(booking, slotRec, cand, idx, isPrimary, state) {
+  const pro = (state.pros || []).find(p => p.id === cand.proId);
+  const liveEligibility = canProAcceptSlot(cand.proId, booking.id, slotRec.slotId);
+
+  // Never display an AI-recommended candidate as eligible without live deterministic proof.
+  if (!pro || !liveEligibility.allowed) {
+    return `
+      <div class="ai-candidate-card">
+        <div style="font-size: 0.8rem; color: #DC2626; font-weight: 700;">
+          ⚠️ Suggestion rejected by live Crewly rules: ${escapeHtml(sanitizeAiText(cand.displayName || cand.proId, 64))} (${escapeHtml(liveEligibility.reason || 'Not eligible')})
+        </div>
+      </div>
+    `;
+  }
+
+  const safeName = escapeHtml(pro.name);
+  const safeTier = escapeHtml(pro.tier || 'Bronze');
+  const safeZone = escapeHtml(pro.homeNeighborhood || 'Dallas Pilot');
+  const safeSkills = (pro.verifiedSkills || []).slice(0, 4).map(s => escapeHtml(s)).join(', ') || 'None';
+  const safeSummary = escapeHtml(sanitizeAiText(cand.fitSummary, 160));
+  const safeCaution = cand.cautionNote ? escapeHtml(sanitizeAiText(cand.cautionNote, 140)) : '';
+  const bullets = Array.isArray(cand.rationaleBullets) ? cand.rationaleBullets.slice(0, 3) : [];
+  const bulletsHtml = bullets.map(b => `<li>${escapeHtml(sanitizeAiText(b, 140))}</li>`).join('');
+
+  return `
+    <div class="ai-candidate-card ${isPrimary ? 'primary' : ''}">
+      <div class="ai-candidate-header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <strong style="color: var(--primary-navy); font-size: 0.88rem;">#${idx + 1} ${safeName}</strong>
+            <span class="tier-badge ${String(pro.tier || 'bronze').toLowerCase()}">${safeTier}</span>
+            ${isPrimary ? '<span style="font-size: 0.7rem; background: #059669; color: white; padding: 2px 7px; border-radius: 999px; font-weight: 800;">★ Primary Suggestion</span>' : ''}
+            <span style="font-size: 0.7rem; background: #ECFDF5; color: #047857; padding: 2px 7px; border-radius: 999px; font-weight: 700;">✓ Verified by Crewly Rules</span>
+          </div>
+          <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 4px;">
+            ⭐ ${Number(pro.rating || 0)} (${Number(pro.reviewCount || 0)} reviews) •
+            Reliability: <strong>${Number(pro.reliabilityScore || 0)}%</strong> •
+            📍 ${safeZone} (Pilot Zone) •
+            Skills: ${safeSkills}
+          </div>
+        </div>
+        <button type="button"
+          class="btn-ai-apply-suggestion"
+          data-booking-id="${escapeHtml(booking.id)}"
+          data-slot-id="${escapeHtml(slotRec.slotId)}"
+          data-pro-id="${escapeHtml(pro.id)}">
+          Review & Apply in Assign Modal
+        </button>
+      </div>
+      ${safeSummary ? `<div style="font-size: 0.8rem; color: var(--text-primary); margin-top: 6px; font-weight: 600;">${safeSummary}</div>` : ''}
+      ${bulletsHtml ? `<ul class="ai-candidate-bullets">${bulletsHtml}</ul>` : ''}
+      ${safeCaution ? `<div style="font-size: 0.75rem; color: #B45309; background: #FFFBEB; padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid #FDE68A;">⚠️ ${safeCaution}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderAiSlotSectionHtml(booking, slotRec, state) {
+  const candidates = Array.isArray(slotRec.rankedCandidates) ? slotRec.rankedCandidates.slice(0, 3) : [];
+  const supplyLabel = slotRec.eligibleCount === 0
+    ? '<span style="color: #DC2626; font-weight: 800;">0 Eligible Pros</span>'
+    : `<span style="color: #059669; font-weight: 700;">${Number(slotRec.eligibleCount)} Verified Eligible</span>`;
+
+  const bodyHtml = candidates.length > 0
+    ? candidates.map((cand, idx) => renderAiCandidateRowHtml(
+        booking,
+        slotRec,
+        cand,
+        idx,
+        cand.proId === slotRec.recommendedPrimaryProId,
+        state
+      )).join('')
+    : `
+      <div style="background: #FEF2F2; border: 1px solid #FECACA; border-radius: var(--radius-sm); padding: 10px 12px; font-size: 0.8rem; color: #991B1B;">
+        <strong>Insufficient Available Workers:</strong> Zero Dallas Pros currently satisfy verified skill, equipment, availability, and conflict checks for <strong>${escapeHtml(slotRec.roleTitle)}</strong>.
+        Use <strong>Manual Assign</strong> to inspect disqualification details, check Worker Directory, or escalate to Support.
+      </div>
+    `;
+
+  return `
+    <div class="ai-slot-section">
+      <div class="ai-slot-header">
+        <div>
+          <strong style="font-size: 0.85rem; color: var(--primary-navy);">${escapeHtml(slotRec.roleTitle || slotRec.slotId)}</strong>
+          <span style="font-size: 0.76rem; color: var(--text-muted); margin-left: 6px;">(${escapeHtml(slotRec.slotId)} • ${supplyLabel})</span>
+        </div>
+        <button type="button"
+          class="btn-ai-secondary btn-ai-manual-assign"
+          data-booking-id="${escapeHtml(booking.id)}"
+          data-slot-id="${escapeHtml(slotRec.slotId)}">
+          🔍 Manual Assign Alternative
+        </button>
+      </div>
+      ${bodyHtml}
+    </div>
+  `;
+}
+
+function renderAiDispatchPanelHtml(booking, aiEntry, state) {
+  if (!aiEntry || aiEntry.status === 'idle') return '';
+
+  if (aiEntry.status === 'loading') {
+    return `
+      <div class="ai-recommendation-panel" id="ai-panel-${escapeHtml(booking.id)}" data-ai-status="loading">
+        <div class="ai-panel-header">
+          <span class="ai-provenance-badge fallback">⏳ Generating Dispatch Advice...</span>
+        </div>
+        <div style="font-size: 0.82rem; color: var(--text-secondary);">
+          Evaluating live Crewly eligibility rules, checking schedule overlaps, and querying local assistant (no autonomous worker assignment will occur).
+        </div>
+      </div>
+    `;
+  }
+
+  if (aiEntry.status === 'stale_discarded') {
+    return `
+      <div class="ai-recommendation-panel stale" id="ai-panel-${escapeHtml(booking.id)}" data-ai-status="stale_discarded">
+        <div class="ai-panel-header">
+          <span class="ai-provenance-badge zero">⚠️ Stale Advice Discarded</span>
+          <div style="display: flex; gap: 6px;">
+            <button type="button" class="btn-ai-secondary btn-ai-refresh" data-booking-id="${escapeHtml(booking.id)}">↻ Get Fresh Advice</button>
+            <button type="button" class="btn-ai-secondary btn-ai-dismiss" data-booking-id="${escapeHtml(booking.id)}">Dismiss</button>
+          </div>
+        </div>
+        <div style="font-size: 0.8rem; color: #92400E;">
+          ${escapeHtml(sanitizeAiText(aiEntry.notice || 'Booking or worker availability changed; previous recommendation was discarded.', 240))}
+        </div>
+      </div>
+    `;
+  }
+
+  if (aiEntry.status === 'error') {
+    return `
+      <div class="ai-recommendation-panel error" id="ai-panel-${escapeHtml(booking.id)}" data-ai-status="error">
+        <div class="ai-panel-header">
+          <span class="ai-provenance-badge zero">ℹ️ Dispatch Advice Unavailable</span>
+          <button type="button" class="btn-ai-secondary btn-ai-dismiss" data-booking-id="${escapeHtml(booking.id)}">Dismiss</button>
+        </div>
+        <div style="font-size: 0.8rem; color: #92400E;">
+          ${escapeHtml(sanitizeAiText(aiEntry.errorMessage || 'This booking is not currently eligible for dispatch advice.', 240))}
+        </div>
+      </div>
+    `;
+  }
+
+  const rec = aiEntry.recommendation;
+  if (!rec) return '';
+
+  const isLiveAi = !!(
+    rec.provenance &&
+    rec.provenance.isLiveAi === true &&
+    rec.provenance.source === 'live_gemini_ai' &&
+    !rec.provenance.isMockTestMode
+  );
+  const isMockAi = !!(
+    rec.provenance &&
+    !isLiveAi &&
+    (rec.provenance.isMockTestMode === true || rec.provenance.source === 'mock_ai_test_mode')
+  );
+  const isZero = rec.provenance && rec.provenance.source === 'zero_eligible_short_circuit';
+  const panelClass = isLiveAi ? 'live' : (isMockAi ? 'mock' : 'fallback');
+  const provenanceAttr = isLiveAi ? 'live_ai' : (isMockAi ? 'mock_test_mode' : 'rules_fallback');
+  const badgeHtml = isLiveAi
+    ? `<span class="ai-provenance-badge live">🤖 Live Gemini AI (${escapeHtml(sanitizeAiText(rec.provenance.model || 'gemini', 48))})</span>`
+    : (isMockAi
+      ? `<span class="ai-provenance-badge mock">🧪 Mock AI Response — Test Mode (${escapeHtml(sanitizeAiText(rec.provenance.model || 'mock', 48))})</span>`
+      : (isZero
+        ? `<span class="ai-provenance-badge zero">⚠️ Rules Engine: 0 Eligible Pros (No Gemini Call)</span>`
+        : `<span class="ai-provenance-badge fallback">⚙️ Rules-Based Fallback (Offline — No Gemini Call)</span>`));
+
+  const noticeText = aiEntry.notice || (rec.provenance ? rec.provenance.disclaimer : '');
+  const shortageWarningHtml = (rec.staffingFeasibility && !rec.staffingFeasibility.fullCrewFeasible)
+    ? `<div class="ai-notice-banner shortage"><strong>⚠️ Multi-Worker Supply Alert:</strong> ${escapeHtml(sanitizeAiText(rec.staffingFeasibility.cannotCompletelyStaffReason || 'Insufficient unique workers to fill all open slots simultaneously.', 220))}</div>`
+    : '';
+
+  const slotsSectionHtml = (rec.slotRecommendations || []).map(slotRec =>
+    renderAiSlotSectionHtml(booking, slotRec, state)
+  ).join('');
+
+  const risks = Array.isArray(rec.operationalRisks) ? rec.operationalRisks : [];
+  const risksHtml = risks.length > 0
+    ? `
+      <div class="ai-risks-list">
+        <div style="font-size: 0.76rem; font-weight: 800; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.3px;">Operational Risks & Coordination Notes</div>
+        ${risks.map(r => `
+          <div class="ai-risk-item">
+            <span class="ai-risk-sev ${escapeHtml(r.severity || 'medium')}">${escapeHtml(r.severity || 'medium')}</span>
+            <span>${escapeHtml(sanitizeAiText(r.message, 180))}</span>
+          </div>
+        `).join('')}
+      </div>
+    `
+    : '';
+
+  return `
+    <div class="ai-recommendation-panel ${panelClass}" id="ai-panel-${escapeHtml(booking.id)}" data-ai-status="ready" data-provenance="${provenanceAttr}">
+      <div class="ai-panel-header">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          ${badgeHtml}
+          <span style="font-size: 0.74rem; color: var(--text-secondary); font-weight: 700;">Advisory Only • Admin Approval Required</span>
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button type="button" class="btn-ai-secondary btn-ai-refresh" data-booking-id="${escapeHtml(booking.id)}">↻ Refresh</button>
+          <button type="button" class="btn-ai-secondary btn-ai-dismiss" data-booking-id="${escapeHtml(booking.id)}">Dismiss</button>
+        </div>
+      </div>
+      ${noticeText ? `<div class="ai-notice-banner">${escapeHtml(sanitizeAiText(noticeText, 240))}</div>` : ''}
+      ${shortageWarningHtml}
+      ${slotsSectionHtml}
+      ${risksHtml}
+      <div class="ai-panel-footer">
+        <span><strong>Suggested Next Step:</strong> ${escapeHtml(formatAiNextActionLabel(rec.recommendedNextAction))}</span>
+        <span>📍 ${escapeHtml(AI_DISPATCH_CONFIG.NEIGHBORHOOD_LIMITATION_NOTE)}</span>
+      </div>
+    </div>
+  `;
+}
+
+export async function triggerAdminAiDispatchAdvice(bookingId, options = {}) {
+  const existing = aiDispatchUiMap[bookingId];
+  if (existing && existing.status === 'loading') {
+    return { ok: false, duplicateBlocked: true, bookingId };
+  }
+
+  const eligCheck = getBookingAiDispatchEligibility(bookingId, options);
+  const startFp = computeBookingDispatchFingerprint(bookingId, options);
+  if (!eligCheck.dispatchable || !startFp.valid || !startFp.dispatchable) {
+    aiDispatchUiMap[bookingId] = {
+      status: 'error',
+      inFlightSeq: aiDispatchRequestCounter,
+      startFingerprint: startFp.fingerprint || null,
+      recommendation: null,
+      errorMessage: eligCheck.reason || startFp.reason || 'Booking is not currently eligible for AI dispatch advice.'
+    };
+    renderAdminDispatchList();
+    return {
+      ok: false,
+      dispatchable: false,
+      bookingId,
+      error: aiDispatchUiMap[bookingId].errorMessage
+    };
+  }
+
+  const mySeq = ++aiDispatchRequestCounter;
+  aiDispatchUiMap[bookingId] = {
+    status: 'loading',
+    inFlightSeq: mySeq,
+    startFingerprint: startFp.fingerprint,
+    recommendation: null,
+    notice: null
+  };
+  renderAdminDispatchList();
+
+  const result = await requestAiDispatchAdvice(bookingId, options);
+  const currentEntry = aiDispatchUiMap[bookingId];
+  if (!currentEntry || currentEntry.inFlightSeq !== mySeq) {
+    return { ok: false, superseded: true, bookingId };
+  }
+
+  if (result.staleDetected || !result.ok || !result.recommendation) {
+    aiDispatchUiMap[bookingId] = {
+      status: result.staleDetected ? 'stale_discarded' : 'error',
+      inFlightSeq: mySeq,
+      startFingerprint: startFp.fingerprint,
+      recommendation: null,
+      notice: result.staleDetected ? (result.error || 'Marketplace state changed; stale advice discarded.') : null,
+      errorMessage: result.error || 'Unable to generate dispatch advice for this booking.'
+    };
+    renderAdminDispatchList();
+    return result;
+  }
+
+  const finalFresh = verifyRecommendationFreshness(result.recommendation, bookingId, options);
+  if (!finalFresh.fresh) {
+    aiDispatchUiMap[bookingId] = {
+      status: 'stale_discarded',
+      inFlightSeq: mySeq,
+      startFingerprint: startFp.fingerprint,
+      recommendation: null,
+      notice: finalFresh.reason || 'Marketplace state changed before recommendation could be shown.'
+    };
+    renderAdminDispatchList();
+    return {
+      ok: false,
+      staleDetected: true,
+      bookingId,
+      error: aiDispatchUiMap[bookingId].notice
+    };
+  }
+
+  aiDispatchUiMap[bookingId] = {
+    status: 'ready',
+    inFlightSeq: mySeq,
+    startFingerprint: result.recommendation.fingerprint,
+    recommendation: result.recommendation,
+    notice: result.fallbackNotice || (result.recommendation.provenance ? result.recommendation.provenance.disclaimer : null)
+  };
+  renderAdminDispatchList();
+  return result;
+}
+
+export function getAdminAiDispatchUiStateForTest() {
+  return aiDispatchUiMap;
+}
+
+function handleApplyAiSuggestionToModal(bookingId, slotId, proId) {
+  syncAiDispatchCacheWithState(bookingId);
+  const entry = aiDispatchUiMap[bookingId];
+  if (!entry || entry.status !== 'ready' || !entry.recommendation) {
+    renderAdminDispatchList();
+    showToast('AI dispatch advice expired or unavailable. Refresh advice or assign manually.', '⚠️');
+    return false;
+  }
+
+  const fresh = verifyRecommendationFreshness(entry.recommendation, bookingId, { slotId, proId });
+  if (!fresh.allowedForApproval) {
+    aiDispatchUiMap[bookingId] = {
+      status: 'stale_discarded',
+      inFlightSeq: entry.inFlightSeq || 0,
+      startFingerprint: entry.startFingerprint || null,
+      recommendation: null,
+      notice: fresh.reason || 'Marketplace state changed; previous recommendation was discarded.'
+    };
+    renderAdminDispatchList();
+    showToast(fresh.reason || 'Recommendation became stale because booking or worker state changed.', '⚠️');
+    return false;
+  }
+
+  const slotRec = (entry.recommendation.slotRecommendations || []).find(s => s.slotId === slotId);
+  const candObj = slotRec ? (slotRec.rankedCandidates || []).find(c => c.proId === proId) : null;
+  const state = loadState();
+  const pro = (state.pros || []).find(p => p.id === proId);
+  const prov = entry.recommendation.provenance || {};
+  const isLiveDraft = !!(prov.isLiveAi === true && prov.source === 'live_gemini_ai' && !prov.isMockTestMode);
+  const isMockDraft = !!(prov.isMockTestMode === true || prov.source === 'mock_ai_test_mode');
+  const sourceTag = isLiveDraft
+    ? '[AI Advisory Draft]'
+    : (isMockDraft ? '[Mock AI Test Draft]' : '[Rules Fallback Draft]');
+
+  let draftReason = '';
+  if (slotRec && slotRec.draftAdminReason && slotRec.recommendedPrimaryProId === proId) {
+    draftReason = sanitizeAiText(slotRec.draftAdminReason, AI_DISPATCH_CONFIG.REASON_MAX_CHARS);
+  } else {
+    const proName = pro ? pro.name : proId;
+    const roleTitle = slotRec ? slotRec.roleTitle : slotId;
+    const summaryHint = candObj ? candObj.fitSummary : 'Verified eligible via Crewly rules.';
+    draftReason = sanitizeAiText(
+      `${sourceTag} Selected ${proName} for ${roleTitle} (${bookingId}). ${summaryHint}`,
+      AI_DISPATCH_CONFIG.REASON_MAX_CHARS
+    );
+  }
+
+  openAdminAssignModal(bookingId, slotId, {
+    preselectProId: proId,
+    draftReason,
+    recommendation: entry.recommendation
+  });
+  return true;
+}
+
+// ---------------------------------------------------------------------------
 // Stage 3 Phase 2: Dispatch Management Console
 // ---------------------------------------------------------------------------
 function renderAdminDispatchList() {
+  renderAdminAiConnectionBanner();
   const container = document.getElementById('admin-dispatch-bookings-list');
   if (!container) return;
 
@@ -1866,6 +2295,18 @@ function renderAdminDispatchList() {
       `;
     }).join('');
 
+    const aiEntry = syncAiDispatchCacheWithState(b.id);
+    const aiElig = getBookingAiDispatchEligibility(b.id);
+    const hasUnassignedSlot = (b.workerAssignments || []).some(s => s.status === 'unassigned');
+    const isAiLoading = !!(aiEntry && aiEntry.status === 'loading');
+    let aiActionBtnHtml = '';
+    if (aiElig.dispatchable) {
+      aiActionBtnHtml = `<button type="button" class="btn-ai-dispatch" data-booking-id="${escapeHtml(b.id)}" ${isAiLoading ? 'disabled' : ''}>${isAiLoading ? '⏳ Analyzing Crew...' : '✨ Get AI Dispatch Advice'}</button>`;
+    } else if (hasUnassignedSlot && b.overallStatus !== 'cancelled' && b.overallStatus !== 'completed') {
+      aiActionBtnHtml = `<button type="button" class="btn-ai-dispatch" data-booking-id="${escapeHtml(b.id)}" title="${escapeHtml(aiElig.reason || '')}">✨ AI Advice Status</button>`;
+    }
+    const aiPanelHtml = renderAiDispatchPanelHtml(b, aiEntry, state);
+
     return `
       <div class="dispatch-booking-card" id="dispatch-card-${b.id}">
         <div class="dispatch-card-header">
@@ -1886,7 +2327,10 @@ function renderAdminDispatchList() {
               <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; text-align: right;">Customer Total</div>
               <div style="font-size: 1.15rem; font-weight: 800; color: var(--primary-navy); text-align: right;">$${(b.pricing?.customerTotal || 0).toFixed(2)}</div>
             </div>
-            ${cancelActionHtml}
+            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end;">
+              ${aiActionBtnHtml}
+              ${cancelActionHtml}
+            </div>
           </div>
         </div>
 
@@ -1896,6 +2340,7 @@ function renderAdminDispatchList() {
         <div class="dispatch-slots-container">
           ${slotsHtml}
         </div>
+        ${aiPanelHtml}
       </div>
     `;
   }).join('');
@@ -1906,6 +2351,46 @@ function renderAdminDispatchList() {
       const bookingId = e.currentTarget.getAttribute('data-booking-id');
       const slotId = e.currentTarget.getAttribute('data-slot-id');
       openAdminAssignModal(bookingId, slotId);
+    });
+  });
+
+  // Wire AI Dispatch clicks
+  container.querySelectorAll('.btn-ai-dispatch:not([disabled])').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const bookingId = e.currentTarget.getAttribute('data-booking-id');
+      triggerAdminAiDispatchAdvice(bookingId);
+    });
+  });
+
+  container.querySelectorAll('.btn-ai-refresh').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const bookingId = e.currentTarget.getAttribute('data-booking-id');
+      triggerAdminAiDispatchAdvice(bookingId, { isRefresh: true });
+    });
+  });
+
+  container.querySelectorAll('.btn-ai-dismiss').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const bookingId = e.currentTarget.getAttribute('data-booking-id');
+      delete aiDispatchUiMap[bookingId];
+      renderAdminDispatchList();
+    });
+  });
+
+  container.querySelectorAll('.btn-ai-apply-suggestion').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const bookingId = e.currentTarget.getAttribute('data-booking-id');
+      const slotId = e.currentTarget.getAttribute('data-slot-id');
+      const proId = e.currentTarget.getAttribute('data-pro-id');
+      handleApplyAiSuggestionToModal(bookingId, slotId, proId);
+    });
+  });
+
+  container.querySelectorAll('.btn-ai-manual-assign').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const bookingId = e.currentTarget.getAttribute('data-booking-id');
+      const slotId = e.currentTarget.getAttribute('data-slot-id');
+      openAdminAssignModal(bookingId, slotId, null);
     });
   });
 
@@ -2022,7 +2507,7 @@ function renderAdminAuditTable() {
 // ---------------------------------------------------------------------------
 // Stage 3 Phase 2: Administrative Modals Handlers
 // ---------------------------------------------------------------------------
-function openAdminAssignModal(bookingId, slotId) {
+function openAdminAssignModal(bookingId, slotId, aiPrefill = null) {
   const state = loadState();
   const booking = state.bookings.find(b => b.id === bookingId);
   const slot = booking ? booking.workerAssignments.find(s => s.slotId === slotId) : null;
@@ -2031,43 +2516,48 @@ function openAdminAssignModal(bookingId, slotId) {
   pendingAdminAssignBookingId = bookingId;
   pendingAdminAssignSlotId = slotId;
   selectedAdminCandidateProId = null;
+  pendingAdminAssignAiContext = null;
 
   // Booking Summary
   const summaryEl = document.getElementById('admin-assign-booking-summary');
   if (summaryEl) {
     summaryEl.innerHTML = `
-      <div><strong>Booking:</strong> ${booking.id} — ${booking.serviceTitle}</div>
-      <div><strong>Customer:</strong> ${booking.customerName} (${booking.neighborhoodName})</div>
-      <div><strong>Timing:</strong> ${booking.timingType === 'asap' ? 'ASAP (On-Demand)' : `${booking.scheduledDate} at ${booking.scheduledTime || 'TBD'}`}</div>
-      <div><strong>Position:</strong> ${slot.roleTitle} (Worker Payout: $${slot.payout.toFixed(2)})</div>
+      <div><strong>Booking:</strong> ${escapeHtml(booking.id)} — ${escapeHtml(booking.serviceTitle)}</div>
+      <div><strong>Customer:</strong> ${escapeHtml(booking.customerName)} (${escapeHtml(booking.neighborhoodName)})</div>
+      <div><strong>Timing:</strong> ${booking.timingType === 'asap' ? 'ASAP (On-Demand)' : `${escapeHtml(booking.scheduledDate)} at ${escapeHtml(booking.scheduledTime || 'TBD')}`}</div>
+      <div><strong>Position:</strong> ${escapeHtml(slot.roleTitle)} (Worker Payout: $${Number(slot.payout || 0).toFixed(2)})</div>
     `;
   }
 
-  // Candidates List
+  // Candidates List (Always grounded in deterministic getProCandidatesForSlot)
   const candidatesContainer = document.getElementById('admin-assign-candidates-list');
   const candidates = getProCandidatesForSlot(bookingId, slotId);
+  const preselectId = (aiPrefill && aiPrefill.preselectProId) ? aiPrefill.preselectProId : null;
+  let preselectedApplied = false;
 
   if (candidatesContainer) {
     candidatesContainer.innerHTML = candidates.map(c => {
       const pro = c.pro;
       const isEligible = c.eligible;
+      const isPreselected = !!(isEligible && preselectId && pro.id === preselectId);
+      if (isPreselected) preselectedApplied = true;
       return `
         <label class="candidate-pro-card ${isEligible ? 'eligible' : 'ineligible'}" style="display: flex; gap: 12px; align-items: center;">
-          <input type="radio" name="adminCandidatePro" value="${pro.id}" ${isEligible ? '' : 'disabled'}>
+          <input type="radio" name="adminCandidatePro" value="${escapeHtml(pro.id)}" ${isEligible ? (isPreselected ? 'checked' : '') : 'disabled'}>
           <div style="font-size: 1.4rem;">${pro.avatar || '👷'}</div>
           <div style="flex: 1;">
             <div style="display: flex; align-items: center; gap: 8px;">
-              <strong style="color: var(--primary-navy);">${pro.name}</strong>
-              <span class="tier-badge ${pro.tier.toLowerCase()}">${pro.tier}</span>
-              <span style="font-size: 0.78rem; color: var(--text-muted);">⭐ ${pro.rating} (${pro.reviewCount} reviews)</span>
+              <strong style="color: var(--primary-navy);">${escapeHtml(pro.name)}</strong>
+              <span class="tier-badge ${String(pro.tier || 'bronze').toLowerCase()}">${escapeHtml(pro.tier)}</span>
+              <span style="font-size: 0.78rem; color: var(--text-muted);">⭐ ${Number(pro.rating || 0)} (${Number(pro.reviewCount || 0)} reviews)</span>
             </div>
             <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">
-              📍 ${pro.homeNeighborhood} • Reliability: ${pro.reliabilityScore}%
+              📍 ${escapeHtml(pro.homeNeighborhood)} • Reliability: ${Number(pro.reliabilityScore || 0)}%
             </div>
             <div style="font-size: 0.75rem; margin-top: 4px;">
               ${isEligible
                 ? `<span style="color: #059669; font-weight: 700;">✓ Eligible and verified for this slot</span>`
-                : `<span style="color: #DC2626; font-weight: 600;">✕ Disqualified: ${c.reason}</span>`
+                : `<span style="color: #DC2626; font-weight: 600;">✕ Disqualified: ${escapeHtml(c.reason)}</span>`
               }
             </div>
           </div>
@@ -2083,9 +2573,41 @@ function openAdminAssignModal(bookingId, slotId) {
     });
   }
 
-  // Reset inputs
+  if (preselectedApplied) {
+    selectedAdminCandidateProId = preselectId;
+    pendingAdminAssignAiContext = {
+      bookingId,
+      slotId,
+      preselectProId: preselectId,
+      recommendation: aiPrefill.recommendation || null
+    };
+  }
+
+  const aiBanner = document.getElementById('admin-assign-ai-banner');
+  if (aiBanner) {
+    if (preselectedApplied && aiPrefill) {
+      const prov = (aiPrefill.recommendation && aiPrefill.recommendation.provenance) || {};
+      const isLive = !!(prov.isLiveAi === true && prov.source === 'live_gemini_ai' && !prov.isMockTestMode);
+      const isMock = !!(prov.isMockTestMode === true || prov.source === 'mock_ai_test_mode');
+      aiBanner.style.display = 'block';
+      aiBanner.innerHTML = isLive
+        ? '<strong>🤖 Live Gemini Suggestion Loaded (Advisory Only):</strong> Eligible Pro preselected and reason drafted below. Edit reason if needed and check the confirmation box before approving.'
+        : (isMock
+          ? '<strong>🧪 Mock AI Response — Test Mode Loaded (Advisory Only):</strong> Simulated suggestion preselected (no live Gemini call). Edit reason if needed and check the confirmation box before approving.'
+          : '<strong>⚙️ Rules Fallback Suggestion Loaded (Advisory Only):</strong> Eligible Pro preselected from deterministic ranking. Review details and check the confirmation box before approving.');
+    } else {
+      aiBanner.style.display = 'none';
+      aiBanner.innerHTML = '';
+    }
+  }
+
+  // Populate editable draft reason ONLY when preselected cleanly; keep confirmation checkbox UNCHECKED.
   const reasonInput = document.getElementById('input-admin-assign-reason');
-  if (reasonInput) reasonInput.value = '';
+  if (reasonInput) {
+    reasonInput.value = (preselectedApplied && aiPrefill && aiPrefill.draftReason)
+      ? sanitizeAiText(aiPrefill.draftReason, AI_DISPATCH_CONFIG.REASON_MAX_CHARS)
+      : '';
+  }
 
   const confirmCheck = document.getElementById('check-admin-assign-confirm');
   if (confirmCheck) confirmCheck.checked = false;
@@ -2110,9 +2632,14 @@ function updateAdminAssignConfirmButtonState() {
 function handleConfirmAdminAssign() {
   const reasonInput = document.getElementById('input-admin-assign-reason');
   const reason = (reasonInput ? reasonInput.value : '').trim();
+  const confirmCheck = document.getElementById('check-admin-assign-confirm');
 
   if (!selectedAdminCandidateProId) {
     showToast('Please select an eligible Pro to assign.', '⚠️');
+    return;
+  }
+  if (!confirmCheck || !confirmCheck.checked) {
+    showToast('Administrative confirmation checkbox is required before assigning a worker.', '⚠️');
     return;
   }
   if (!reason) {
@@ -2120,9 +2647,47 @@ function handleConfirmAdminAssign() {
     return;
   }
 
+  // Revalidate recommendation freshness & live worker eligibility right before confirming.
+  if (pendingAdminAssignAiContext && pendingAdminAssignAiContext.recommendation) {
+    const freshCheck = verifyRecommendationFreshness(
+      pendingAdminAssignAiContext.recommendation,
+      pendingAdminAssignBookingId,
+      { slotId: pendingAdminAssignSlotId, proId: selectedAdminCandidateProId }
+    );
+    if (!freshCheck.allowedForApproval) {
+      delete aiDispatchUiMap[pendingAdminAssignBookingId];
+      logAiDispatchAuditEvent({
+        actionType: 'ai_dispatch_recommendation_rejected',
+        bookingId: pendingAdminAssignBookingId,
+        slotId: pendingAdminAssignSlotId,
+        proId: selectedAdminCandidateProId,
+        reason: 'Blocked stale AI-prefilled assignment; booking or worker state changed before confirmation.'
+      });
+      showToast(freshCheck.reason || 'Booking or worker state changed while modal was open. Candidates refreshed.', '⚠️');
+      openAdminAssignModal(pendingAdminAssignBookingId, pendingAdminAssignSlotId, null);
+      renderAll();
+      return;
+    }
+  }
+
+  const liveEligibility = canProAcceptSlot(
+    selectedAdminCandidateProId,
+    pendingAdminAssignBookingId,
+    pendingAdminAssignSlotId
+  );
+  if (!liveEligibility.allowed) {
+    showToast(liveEligibility.reason || 'Selected worker is no longer eligible for this position.', '⚠️');
+    openAdminAssignModal(pendingAdminAssignBookingId, pendingAdminAssignSlotId, null);
+    return;
+  }
+
   const res = adminAssignPro(pendingAdminAssignBookingId, pendingAdminAssignSlotId, selectedAdminCandidateProId, reason);
   if (res.success) {
     showToast(`Successfully assigned worker to ${pendingAdminAssignSlotId}. Booking updated.`);
+    pendingAdminAssignAiContext = null;
+    pendingAdminAssignBookingId = null;
+    pendingAdminAssignSlotId = null;
+    selectedAdminCandidateProId = null;
     const modal = document.getElementById('admin-assign-modal');
     if (modal) modal.classList.remove('open');
     renderAll();
@@ -3666,6 +4231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     pendingAdminAssignBookingId = null;
     pendingAdminAssignSlotId = null;
     selectedAdminCandidateProId = null;
+    pendingAdminAssignAiContext = null;
   };
 
   document.getElementById('btn-close-admin-assign')?.addEventListener('click', closeAssignModal);
@@ -3879,6 +4445,25 @@ document.addEventListener('DOMContentLoaded', () => {
   // Listen to Storage events (Syncs across tabs in real-time without overriding active tab's role)
   window.addEventListener('storage', (e) => {
     if (e.key === 'crewly_marketplace_state_v1') {
+      if (
+        assignModal &&
+        assignModal.classList.contains('open') &&
+        pendingAdminAssignBookingId &&
+        pendingAdminAssignSlotId
+      ) {
+        if (pendingAdminAssignAiContext && pendingAdminAssignAiContext.recommendation) {
+          const crossTabFresh = verifyRecommendationFreshness(
+            pendingAdminAssignAiContext.recommendation,
+            pendingAdminAssignBookingId,
+            { slotId: pendingAdminAssignSlotId, proId: selectedAdminCandidateProId }
+          );
+          if (!crossTabFresh.allowedForApproval) {
+            delete aiDispatchUiMap[pendingAdminAssignBookingId];
+            showToast('Cross-tab update detected; assignment candidates refreshed.', '⚠️');
+            openAdminAssignModal(pendingAdminAssignBookingId, pendingAdminAssignSlotId, null);
+          }
+        }
+      }
       renderAll();
     }
   });

@@ -1,0 +1,20 @@
+# Environment & Secrets (NEVER commit real API keys or local overrides)
+.env
+.env.*
+proxy/.env
+proxy/.env.*
+!proxy/.env.example
+*.key
+*.pem
+*service-account*.json
+
+# Python bytecode & local caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.venv/
+venv/
+
+# OS metadata
+.DS_Store
