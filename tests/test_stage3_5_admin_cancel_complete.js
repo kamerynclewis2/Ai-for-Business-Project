@@ -144,7 +144,7 @@ var bookingB = createBooking({
   intakeDetails: { hours: 3, workersNeeded: 2 }
 });
 
-// Marcus accepts slot 1 ($75 payout)
+// Marcus accepts slot 1 ($90 payout)
 var marcusPrePendingB = loadState().pros.find(p => p.id === 'pro_marcus').earnings.pendingBalance;
 var marcusPreAvailB = loadState().pros.find(p => p.id === 'pro_marcus').earnings.availableBalance;
 var marcusPreLifeB = loadState().pros.find(p => p.id === 'pro_marcus').earnings.lifetimeEarned;
@@ -153,7 +153,7 @@ assignProToSlot(bookingB.id, 'slot_1', 'pro_marcus');
 
 var stateB1 = loadState();
 var marcusAfterAssignB = stateB1.pros.find(p => p.id === 'pro_marcus');
-assert(marcusAfterAssignB.earnings.pendingBalance === marcusPrePendingB + 75, "Marcus pending balance increased by $75 upon slot 1 assignment");
+assert(marcusAfterAssignB.earnings.pendingBalance === marcusPrePendingB + 90, "Marcus pending balance increased by $90 upon slot 1 assignment");
 
 var bookingBState = stateB1.bookings.find(b => b.id === bookingB.id);
 assert(bookingBState.overallStatus === 'partially_filled', "Booking B is partially_filled");
@@ -171,13 +171,13 @@ assert(cancelResB.booking.overallStatus === 'cancelled', "Booking B status trans
 
 var stateB2 = loadState();
 var marcusPostCancelB = stateB2.pros.find(p => p.id === 'pro_marcus');
-assert(marcusPostCancelB.earnings.pendingBalance === marcusPrePendingB, "Marcus pending balance reversed by exactly $75 ($" + marcusAfterAssignB.earnings.pendingBalance + " -> $" + marcusPostCancelB.earnings.pendingBalance + ")");
+assert(marcusPostCancelB.earnings.pendingBalance === marcusPrePendingB, "Marcus pending balance reversed by exactly $90 ($" + marcusAfterAssignB.earnings.pendingBalance + " -> $" + marcusPostCancelB.earnings.pendingBalance + ")");
 assert(marcusPostCancelB.earnings.availableBalance === marcusPreAvailB, "Marcus available balance completely untouched ($" + marcusPreAvailB + ")");
 assert(marcusPostCancelB.earnings.lifetimeEarned === marcusPreLifeB, "Marcus lifetime earned completely untouched ($" + marcusPreLifeB + ")");
 
 assert(cancelResB.snapshot.formerWorkers.length === 1, "Snapshot preserved 1 former assigned worker");
 assert(cancelResB.snapshot.formerWorkers[0].proId === 'pro_marcus', "Snapshot identified Marcus Davis as unassigned worker");
-assert(cancelResB.snapshot.formerWorkers[0].payoutDollarsReversed === 75, "Snapshot recorded $75.00 reversed payout");
+assert(cancelResB.snapshot.formerWorkers[0].payoutDollarsReversed === 90, "Snapshot recorded $90.00 reversed payout");
 
 // ----------------------------------------------------------------------------
 // TEST C: CANCEL A FULLY CONFIRMED BOOKING
@@ -208,8 +208,8 @@ assert(bookingCState.overallStatus === 'fully_confirmed', "Booking C is fully_co
 
 var mPendingMidC = stateC1.pros.find(p => p.id === 'pro_marcus').earnings.pendingBalance;
 var jPendingMidC = stateC1.pros.find(p => p.id === 'pro_jamar').earnings.pendingBalance;
-assert(mPendingMidC === mPendingPreC + 75, "Marcus pending balance credited $75");
-assert(jPendingMidC === jPendingPreC + 75, "Jamar pending balance credited $75");
+assert(mPendingMidC === mPendingPreC + 90, "Marcus pending balance credited $90");
+assert(jPendingMidC === jPendingPreC + 90, "Jamar pending balance credited $90");
 
 // Admin cancels fully confirmed booking before work begins
 var cancelResC = adminCancelBooking(
@@ -363,14 +363,14 @@ var stateF2 = loadState();
 var jamarPostCompleteF = stateF2.pros.find(p => p.id === 'pro_jamar');
 
 // Financial assertions for Jamar
-assert(jamarPostCompleteF.earnings.pendingBalance === jamarPrePendingF - 75, "Jamar pending balance decreased by $75.00 ($" + jamarPrePendingF + " -> $" + jamarPostCompleteF.earnings.pendingBalance + ")");
-assert(jamarPostCompleteF.earnings.availableBalance === jamarPreAvailF + 75, "Jamar available balance increased by $75.00 ($" + jamarPreAvailF + " -> $" + jamarPostCompleteF.earnings.availableBalance + ")");
-assert(jamarPostCompleteF.earnings.lifetimeEarned === jamarPreLifeF + 75, "Jamar lifetime earnings increased by $75.00 ($" + jamarPreLifeF + " -> $" + jamarPostCompleteF.earnings.lifetimeEarned + ")");
+assert(jamarPostCompleteF.earnings.pendingBalance === jamarPrePendingF - 90, "Jamar pending balance decreased by $90.00 ($" + jamarPrePendingF + " -> $" + jamarPostCompleteF.earnings.pendingBalance + ")");
+assert(jamarPostCompleteF.earnings.availableBalance === jamarPreAvailF + 90, "Jamar available balance increased by $90.00 ($" + jamarPreAvailF + " -> $" + jamarPostCompleteF.earnings.availableBalance + ")");
+assert(jamarPostCompleteF.earnings.lifetimeEarned === jamarPreLifeF + 90, "Jamar lifetime earnings increased by $90.00 ($" + jamarPreLifeF + " -> $" + jamarPostCompleteF.earnings.lifetimeEarned + ")");
 
 var jamarTxs = jamarPostCompleteF.earnings.walletTransactions || [];
 var jamarCompleteTx = jamarTxs.filter(t => t.bookingId === bookingF.id && t.slotId === 'slot_2');
 assert(jamarCompleteTx.length === 1, "Exactly one earnings_credit transaction recorded for Jamar on this booking");
-assert(jamarCompleteTx[0].amountCents === 7500, "Transaction amount is 7500 cents ($75.00)");
+assert(jamarCompleteTx[0].amountCents === 9000, "Transaction amount is 9000 cents ($90.00)");
 
 // Audit trail for admin verified completion
 var auditVerifyF = stateF2.adminAuditLog.find(l => l.bookingId === bookingF.id && l.actionType === 'admin_completion_verified');
@@ -482,9 +482,12 @@ var allCustomerMessages = [];
 });
 
 var leakedPayoutInCustomerView = allCustomerMessages.some(txt =>
+  txt.includes('$90 payout') ||
+  txt.includes('$90.00 payout') ||
   txt.includes('$75 payout') ||
   txt.includes('$75.00 payout') ||
   txt.includes('$45 payout') ||
+  txt.includes('reversed $90') ||
   txt.includes('reversed $75') ||
   txt.includes('reversed $45')
 );

@@ -102,12 +102,12 @@ var initialState = loadState();
 console.log("\n[Group 1: Scenario A — Customer Sarah Jenkins Creates Booking]");
 
 var pricingCalc = calculatePricing('moving', { hours: 3, workersNeeded: 2 });
-assert(pricingCalc.customerSubtotal === 240, "Labor subtotal is $240 (2 movers * 3 hours * $40/hr)");
+assert(pricingCalc.customerSubtotal === 300, "Labor subtotal is $300 (2 movers * 3 hours * $50/hr)");
 assert(pricingCalc.bookingFee === 10, "Standard demonstration booking fee is $10");
-assert(pricingCalc.customerTotal === 250, "Customer total charge is $250 ($240 + $10)");
-assert(pricingCalc.workerPayoutPerPerson === 75, "Worker payout per person is $75 (3 hours * $25/hr)");
-assert(pricingCalc.totalWorkerPayouts === 150, "Total worker payouts equal $150 ($75 * 2)");
-assert(pricingCalc.grossPlatformRevenue === 100, "Gross platform revenue is $100 ($250 - $150)");
+assert(pricingCalc.customerTotal === 310, "Customer total charge is $310 ($300 + $10)");
+assert(pricingCalc.workerPayoutPerPerson === 90, "Worker payout per person is $90 (3 hours * $30/hr)");
+assert(pricingCalc.totalWorkerPayouts === 180, "Total worker payouts equal $180 ($90 * 2)");
+assert(pricingCalc.grossPlatformRevenue === 130, "Gross platform revenue is $130 ($310 - $180)");
 
 // Create booking scheduled for future date
 var bookingA = createBooking({
@@ -137,7 +137,7 @@ assert(bookingA.overallStatus === 'waiting_for_pros', "Initial overall status is
 
 // Privacy check: Verify customer messages do not leak worker payouts
 var custMessagesA = bookingA.messages || [];
-var payoutLeakA = custMessagesA.some(m => (m.text && m.text.includes('$75')) || (m.text && m.text.includes('$150')));
+var payoutLeakA = custMessagesA.some(m => (m.text && m.text.includes('$90')) || (m.text && m.text.includes('$180')));
 assert(!payoutLeakA, "Customer message feed strictly conceals worker payout amounts");
 
 // ----------------------------------------------------------------------------
@@ -163,8 +163,8 @@ assert(bookingB.workerAssignments[0].status === 'assigned', "Slot 1 status is 'a
 assert(bookingB.workerAssignments[0].assignedProId === 'pro_marcus', "Slot 1 assignedProId is pro_marcus");
 assert(bookingB.workerAssignments[1].status === 'unassigned', "Slot 2 remains 'unassigned'");
 
-// Financial integrity: Pending balance increases by exactly $75 once
-assert(marcusAfter.earnings.pendingBalance === marcusPendingStart + 75, "Marcus pending earnings increased by exactly $75.00 ($" + marcusPendingStart + " -> $" + marcusAfter.earnings.pendingBalance + ")");
+// Financial integrity: Pending balance increases by exactly $90 once
+assert(marcusAfter.earnings.pendingBalance === marcusPendingStart + 90, "Marcus pending earnings increased by exactly $90.00 ($" + marcusPendingStart + " -> $" + marcusAfter.earnings.pendingBalance + ")");
 assert(marcusAfter.earnings.availableBalance === marcusAvailStart, "Marcus available balance remains unchanged ($" + marcusAvailStart + ")");
 assert(marcusAfter.earnings.lifetimeEarned === marcusLifeStart, "Marcus lifetime earnings remain unchanged ($" + marcusLifeStart + ")");
 
@@ -225,14 +225,14 @@ assert(bookingC.workerAssignments[0].assignedProId === 'pro_marcus', "Slot 1 con
 assert(bookingC.workerAssignments[1].assignedProId === 'pro_jamar', "Slot 2 confirmed for Jamar Washington");
 
 // Jamar financial update
-assert(jamarAfter.earnings.pendingBalance === jamarPendingStart + 75, "Jamar pending earnings increased by exactly $75.00 ($" + jamarPendingStart + " -> $" + jamarAfter.earnings.pendingBalance + ")");
+assert(jamarAfter.earnings.pendingBalance === jamarPendingStart + 90, "Jamar pending earnings increased by exactly $90.00 ($" + jamarPendingStart + " -> $" + jamarAfter.earnings.pendingBalance + ")");
 assert(jamarAfter.earnings.availableBalance === jamarAvailStart, "Jamar available balance unchanged ($" + jamarAvailStart + ")");
 assert(jamarAfter.earnings.lifetimeEarned === jamarLifeStart, "Jamar lifetime earnings unchanged ($" + jamarLifeStart + ")");
 
 // Customer message privacy check
 var lastMsgC = bookingC.messages[bookingC.messages.length - 1];
 assert(lastMsgC.text.indexOf('Jamar Washington has accepted') !== -1, "Customer message confirms Jamar accepted assignment");
-assert(lastMsgC.text.indexOf('$75') === -1, "Customer message strictly conceals worker payout ($75)");
+assert(lastMsgC.text.indexOf('$90') === -1, "Customer message strictly conceals worker payout ($90)");
 assert(lastMsgC.text.indexOf('Uptown with moving qualification') === -1, "Customer message conceals internal dispatcher reason");
 
 // Admin Audit Log entry
@@ -289,18 +289,18 @@ assert(bookingD1.workerAssignments[1].status === 'in_progress', "Slot 2 remains 
 assert(bookingD1.overallStatus === 'in_progress', "Booking remains active (in_progress) because Jamar has not completed");
 
 // Marcus financial release
-assert(marcusPost.earnings.pendingBalance === mPendPre - 75, "Marcus pending earnings decreased by $75.00 ($" + mPendPre + " -> $" + marcusPost.earnings.pendingBalance + ")");
-assert(marcusPost.earnings.availableBalance === mAvailPre + 75, "Marcus available earnings increased by $75.00 ($" + mAvailPre + " -> $" + marcusPost.earnings.availableBalance + ")");
-assert(marcusPost.earnings.lifetimeEarned === mLifePre + 75, "Marcus lifetime earnings increased by $75.00 ($" + mLifePre + " -> $" + marcusPost.earnings.lifetimeEarned + ")");
+assert(marcusPost.earnings.pendingBalance === mPendPre - 90, "Marcus pending earnings decreased by $90.00 ($" + mPendPre + " -> $" + marcusPost.earnings.pendingBalance + ")");
+assert(marcusPost.earnings.availableBalance === mAvailPre + 90, "Marcus available earnings increased by $90.00 ($" + mAvailPre + " -> $" + marcusPost.earnings.availableBalance + ")");
+assert(marcusPost.earnings.lifetimeEarned === mLifePre + 90, "Marcus lifetime earnings increased by $90.00 ($" + mLifePre + " -> $" + marcusPost.earnings.lifetimeEarned + ")");
 
 var marcusTxs = marcusPost.earnings.walletTransactions || [];
 var marcusJobTx = marcusTxs.find(t => t.bookingId === bookingA.id && t.slotId === 'slot_1');
 assert(marcusJobTx !== undefined, "Transaction ledger entry created for Marcus completed assignment");
 assert(marcusJobTx.type === 'earnings_credit', "Transaction type is earnings_credit");
-assert(marcusJobTx.amountCents === 7500, "Transaction amount is 7500 cents ($75.00)");
+assert(marcusJobTx.amountCents === 9000, "Transaction amount is 9000 cents ($90.00)");
 
 // Verify Jamar earnings remain completely untouched when Marcus finishes
-assert(jamarMid.earnings.pendingBalance === jamarPendingStart + 75, "Jamar pending earnings completely untouched by Marcus completion");
+assert(jamarMid.earnings.pendingBalance === jamarPendingStart + 90, "Jamar pending earnings completely untouched by Marcus completion");
 assert(jamarMid.earnings.availableBalance === jamarAvailStart, "Jamar available earnings completely untouched");
 
 // Step 2: Jamar Completes Assignment
@@ -319,13 +319,14 @@ assert(bookingD2.workerAssignments[1].status === 'completed', "Slot 2 is marked 
 assert(bookingD2.overallStatus === 'completed', "Booking overallStatus transitions to 'completed' after both workers finish");
 
 // Jamar financial release
-assert(jamarPost.earnings.pendingBalance === jPendPre - 75, "Jamar pending earnings decreased by $75.00 ($" + jPendPre + " -> $" + jamarPost.earnings.pendingBalance + ")");
-assert(jamarPost.earnings.availableBalance === jAvailPre + 75, "Jamar available earnings increased by $75.00 ($" + jAvailPre + " -> $" + jamarPost.earnings.availableBalance + ")");
-assert(jamarPost.earnings.lifetimeEarned === jLifePre + 75, "Jamar lifetime earnings increased by $75.00 ($" + jLifePre + " -> $" + jamarPost.earnings.lifetimeEarned + ")");
+assert(jamarPost.earnings.pendingBalance === jPendPre - 90, "Jamar pending earnings decreased by $90.00 ($" + jPendPre + " -> $" + jamarPost.earnings.pendingBalance + ")");
+assert(jamarPost.earnings.availableBalance === jAvailPre + 90, "Jamar available earnings increased by $90.00 ($" + jAvailPre + " -> $" + jamarPost.earnings.availableBalance + ")");
+assert(jamarPost.earnings.lifetimeEarned === jLifePre + 90, "Jamar lifetime earnings increased by $90.00 ($" + jLifePre + " -> $" + jamarPost.earnings.lifetimeEarned + ")");
 
 var jamarTxs = jamarPost.earnings.walletTransactions || [];
 var jamarJobTx = jamarTxs.find(t => t.bookingId === bookingA.id && t.slotId === 'slot_2');
 assert(jamarJobTx !== undefined, "Transaction ledger entry created for Jamar completed assignment");
+assert(jamarJobTx.amountCents === 9000, "Transaction amount is 9000 cents ($90.00)");
 
 // Attempting duplicate completion should be rejected
 var tcDuplicate = updateProAssignmentStatus(bookingA.id, 'slot_1', 'completed');
@@ -507,10 +508,10 @@ var balancesBefore = stateH.pros.map(p => ({
 var finH1 = getAdminFinancialSummary(stateH);
 assert(finH1 !== null, "Financial summary computed cleanly");
 
-// Completed GBV includes new completed booking ($250) + historical ($65) = $315
-assert(Number(finH1.completedGrossBookingValue) >= 315.00, "Completed GBV includes new completed booking ($" + finH1.completedGrossBookingValue + ")");
-// Realized gross margin includes $100 from new booking ($250 - $150) + $30 historical = $130
-assert(Number(finH1.completedGrossMargin) >= 130.00, "Completed gross margin reflects completed booking margin ($" + finH1.completedGrossMargin + ")");
+// Completed GBV includes new completed booking ($310) + historical ($65) = $375
+assert(Number(finH1.completedGrossBookingValue) >= 375.00, "Completed GBV includes new completed booking ($" + finH1.completedGrossBookingValue + ")");
+// Realized gross margin includes $130 from new booking ($310 - $180) + $30 historical = $160
+assert(Number(finH1.completedGrossMargin) >= 160.00, "Completed gross margin reflects completed booking margin ($" + finH1.completedGrossMargin + ")");
 assert(finH1.educationalProfitDisclaimer.indexOf('NOT net profit') !== -1, "Includes educational commercial profit disclaimer");
 
 // 10 consecutive recalculations to guarantee zero-mutation

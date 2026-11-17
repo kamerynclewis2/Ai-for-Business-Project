@@ -432,11 +432,12 @@ saveState(sAvailMod);
 assert(verifyRecommendationFreshness(rec1004, 'CRW-1004').fresh === true, '6A: Restored availability restores matching fingerprint');
 
 // 6B: Another booking assigns pro_jamar at overlapping time on same Sunday WITHOUT touching CRW-1004
+const crw1004SundayDate = loadState().bookings.find(b => b.id === 'CRW-1004').scheduledDate;
 const otherSunJob = createBooking({
   customerId: 'cust_david',
   serviceCategory: 'furniture_assembly',
   timingType: 'scheduled',
-  scheduledDate: '2026-11-15',
+  scheduledDate: crw1004SundayDate,
   scheduledTime: '11:30',
   zipCode: '75214',
   intakeDetails: { itemCount: 1, notes: '' }

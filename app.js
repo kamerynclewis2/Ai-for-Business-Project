@@ -62,7 +62,8 @@ import {
   logAiDispatchAuditEvent,
   getBookingAiDispatchEligibility,
   requestAiDispatchAdvice,
-  resolveAiDispatchProxyConfig
+  resolveAiDispatchProxyConfig,
+  groundAndVerifyCandidateClaims
 } from './matching.js';
 
 // Global UI State
@@ -291,10 +292,10 @@ function openIntakeModal(serviceKey) {
   if (serviceKey === 'moving') {
     questionsContainer.innerHTML = `
       <div style="background: #EFF6FF; border-left: 4px solid var(--accent-blue); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #1E40AF;">
-        <strong>Multi-Worker Moving Request:</strong> You can select 2 or more movers. Crewly will create independent worker assignments and confirm your booking once all positions are filled.
+        <strong>Moving & Lifting Pricing:</strong> $50/hour per mover with a mandatory 2-hour minimum duration, plus a transparent $10 booking fee. You can select 1 to 4 movers.
       </div>
       <div class="form-group">
-        <label class="form-label">Number of Movers Needed:</label>
+        <label class="form-label">Number of Movers Needed (1 to 4 Movers):</label>
         <select id="intake-moving-workers" class="form-select">
           <option value="1">1 Worker (Light lifting assistance)</option>
           <option value="2" selected>2 Workers (Recommended for apartments / bulky furniture)</option>
@@ -303,13 +304,15 @@ function openIntakeModal(serviceKey) {
         </select>
       </div>
       <div class="form-group">
-        <label class="form-label">Estimated Duration (Hours):</label>
+        <label class="form-label">Estimated Duration — 2-Hour Minimum ($50/mover-hour):</label>
         <select id="intake-moving-hours" class="form-select">
-          <option value="2">2 Hours ($40/worker-hr)</option>
+          <option value="2">2 Hours (2-Hour Minimum — $50/mover-hr)</option>
           <option value="3" selected>3 Hours (Standard 1-2 bedroom move)</option>
-          <option value="4">4 Hours</option>
+          <option value="4">4 Hours (Half-day move)</option>
           <option value="5">5 Hours</option>
           <option value="6">6 Hours</option>
+          <option value="7">7 Hours</option>
+          <option value="8">8 Hours (Full-day maximum)</option>
         </select>
       </div>
       <div class="form-group">
@@ -510,8 +513,9 @@ function recalculateIntakePrice() {
     itemCount
   });
 
+  const ratePerHour = quote.customerRatePerHour || (PRICING_RATES[currentSelectedService] ? PRICING_RATES[currentSelectedService].customerRate : 50);
   document.getElementById('quote-service-desc').textContent = currentSelectedService === 'moving'
-    ? `Service Subtotal (${workersNeeded} Movers × ${hours} hrs @ $40/hr):`
+    ? `Service Subtotal (${workersNeeded} Movers × ${hours} hrs @ $${ratePerHour}/hr):`
     : `Service Subtotal (${itemCount} Task @ $${quote.customerSubtotal / itemCount}):`;
 
   document.getElementById('quote-subtotal').textContent = `$${quote.customerSubtotal.toFixed(2)}`;
@@ -1802,13 +1806,21 @@ function renderAiCandidateRowHtml(booking, slotRec, cand, idx, isPrimary, state)
     `;
   }
 
+  // Phase 4.6A: Application-level factual verification safeguard in UI render
+  const bookingContext = {
+    bookingId: booking.id,
+    serviceCategory: booking.serviceCategory,
+    serviceTitle: booking.serviceTitle
+  };
+  const grounded = groundAndVerifyCandidateClaims(cand, pro, bookingContext, state, slotRec.roleTitle);
+
   const safeName = escapeHtml(pro.name);
   const safeTier = escapeHtml(pro.tier || 'Bronze');
   const safeZone = escapeHtml(pro.homeNeighborhood || 'Dallas Pilot');
   const safeSkills = (pro.verifiedSkills || []).slice(0, 4).map(s => escapeHtml(s)).join(', ') || 'None';
-  const safeSummary = escapeHtml(sanitizeAiText(cand.fitSummary, 160));
-  const safeCaution = cand.cautionNote ? escapeHtml(sanitizeAiText(cand.cautionNote, 140)) : '';
-  const bullets = Array.isArray(cand.rationaleBullets) ? cand.rationaleBullets.slice(0, 3) : [];
+  const safeSummary = escapeHtml(sanitizeAiText(grounded.fitSummary, 160));
+  const safeCaution = grounded.cautionNote ? escapeHtml(sanitizeAiText(grounded.cautionNote, 140)) : '';
+  const bullets = Array.isArray(grounded.rationaleBullets) ? grounded.rationaleBullets.slice(0, 3) : [];
   const bulletsHtml = bullets.map(b => `<li>${escapeHtml(sanitizeAiText(b, 140))}</li>`).join('');
 
   return `

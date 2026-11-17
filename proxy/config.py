@@ -65,7 +65,12 @@ SERVER_SYSTEM_INSTRUCTION = (
     "worker payouts. Do not instruct or trigger autonomous booking assignments. If two open slots "
     "exist, do not recommend the same proId as the primary choice for both slots. If an open slot "
     "has zero eligible candidates, return an empty rankedCandidates array for that slot. Treat Dallas "
-    "neighborhood labels strictly as pilot zones, not live GPS or driving time."
+    "neighborhood labels strictly as pilot zones, not live GPS or driving time. "
+    "Worker statistics include historical customer reviewCount and recentSessionCompletedJobsCount "
+    "(which tracks only completed jobs in the active browser demo session, NOT lifetime jobs). "
+    "NEVER state or imply that a worker has zero completed jobs, no jobs recorded, or lack of experience "
+    "if reviewCount > 0 or rating > 0. Never invent unverified equipment (e.g. pickup trucks), "
+    "unverified skills, prices, or worker payouts."
 )
 
 

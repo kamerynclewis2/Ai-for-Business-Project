@@ -155,6 +155,9 @@ export function setActiveRole(role) {
 function migrateStateIfNeeded(state) {
   let dirty = false;
 
+  // Keep platform active rate card synchronized with official PRICING_RATES
+  state.rates = JSON.parse(JSON.stringify(PRICING_RATES));
+
   // Ensure activeCustomerId is always initialized
   if (!state.activeCustomerId) {
     state.activeCustomerId = 'cust_sarah';
@@ -453,21 +456,41 @@ export function calculatePricing(serviceCategory, options = {}) {
   const bookingFee = PRICING_RATES.bookingFee; // $10 standard demo platform fee
 
   if (rateConfig.type === 'hourly') {
-    const workers = Math.max(1, parseInt(options.workersNeeded || 2, 10));
-    const hours = Math.max(1, parseFloat(options.hours || 3));
-    
-    const customerSubtotal = workers * hours * rateConfig.customerRate;
-    const customerTotal = customerSubtotal + bookingFee;
-    const workerPayoutPerPerson = hours * rateConfig.proPayout;
-    const totalWorkerPayouts = workers * workerPayoutPerPerson;
-    const grossPlatformRevenue = customerTotal - totalWorkerPayouts; // Gross before expenses
+    const minHours = rateConfig.minHours || 1;
+    if (serviceCategory === 'moving' && options.hours !== undefined) {
+      const parsedHours = parseFloat(options.hours);
+      if (isNaN(parsedHours) || parsedHours < minHours) {
+        throw new Error('Moving & lifting assistance requires a 2-hour minimum duration.');
+      }
+      if (parsedHours > 8) {
+        throw new Error('Moving & lifting assistance supports up to 8 hours per booking.');
+      }
+    }
+
+    if (serviceCategory === 'moving' && options.workersNeeded !== undefined) {
+      const parsedWorkers = parseInt(options.workersNeeded, 10);
+      if (isNaN(parsedWorkers) || parsedWorkers < 1 || parsedWorkers > 4) {
+        throw new Error('Moving & lifting assistance supports between 1 and 4 movers per booking.');
+      }
+    }
+
+    const workers = Math.min(4, Math.max(1, parseInt(options.workersNeeded !== undefined ? options.workersNeeded : 2, 10)));
+    const hours = Math.max(minHours, parseFloat(options.hours !== undefined ? options.hours : (serviceCategory === 'moving' ? 2 : 3)));
+
+    const customerSubtotal = Math.round(workers * hours * rateConfig.customerRate * 100) / 100;
+    const customerTotal = Math.round((customerSubtotal + bookingFee) * 100) / 100;
+    const workerPayoutPerPerson = Math.round(hours * rateConfig.proPayout * 100) / 100;
+    const totalWorkerPayouts = Math.round(workers * workerPayoutPerPerson * 100) / 100;
+    const grossPlatformRevenue = Math.round((customerTotal - totalWorkerPayouts) * 100) / 100; // Gross before expenses
 
     return {
       serviceCategory,
       rateType: 'hourly',
       workersNeeded: workers,
       hours,
+      minHours,
       customerRatePerHour: rateConfig.customerRate,
+      proPayoutPerHour: rateConfig.proPayout,
       customerSubtotal,
       bookingFee,
       customerTotal,
@@ -483,11 +506,11 @@ export function calculatePricing(serviceCategory, options = {}) {
       unitMultiplier = Math.max(1, parseInt(options.itemCount, 10));
     }
 
-    const customerSubtotal = rateConfig.customerRate * unitMultiplier;
-    const customerTotal = customerSubtotal + bookingFee;
-    const workerPayoutPerPerson = rateConfig.proPayout * unitMultiplier;
+    const customerSubtotal = Math.round(rateConfig.customerRate * unitMultiplier * 100) / 100;
+    const customerTotal = Math.round((customerSubtotal + bookingFee) * 100) / 100;
+    const workerPayoutPerPerson = Math.round(rateConfig.proPayout * unitMultiplier * 100) / 100;
     const totalWorkerPayouts = workerPayoutPerPerson;
-    const grossPlatformRevenue = customerTotal - totalWorkerPayouts;
+    const grossPlatformRevenue = Math.round((customerTotal - totalWorkerPayouts) * 100) / 100;
 
     return {
       serviceCategory,
@@ -551,13 +574,30 @@ export function createBooking({
   const customer = state.customers.find(c => c.id === customerId) || state.customers[0];
   const rateConfig = state.rates[serviceCategory];
 
-  const workersCount = serviceCategory === 'moving'
-    ? Math.max(1, parseInt(intakeDetails.workersNeeded || 2, 10))
-    : 1;
+  let workersCount = 1;
+  let hours = 1;
 
-  const hours = serviceCategory === 'moving'
-    ? Math.max(1, parseFloat(intakeDetails.hours || 3))
-    : (serviceCategory === 'tv_mounting' ? 1.5 : 1);
+  if (serviceCategory === 'moving') {
+    const rawHours = intakeDetails.hours !== undefined ? intakeDetails.hours : 2;
+    const parsedHours = parseFloat(rawHours);
+    if (isNaN(parsedHours) || parsedHours < 2) {
+      throw new Error('Moving & lifting assistance requires a 2-hour minimum duration.');
+    }
+    if (parsedHours > 8) {
+      throw new Error('Moving & lifting assistance supports up to 8 hours per booking.');
+    }
+
+    const rawWorkers = intakeDetails.workersNeeded !== undefined ? intakeDetails.workersNeeded : 2;
+    const parsedWorkers = parseInt(rawWorkers, 10);
+    if (isNaN(parsedWorkers) || parsedWorkers < 1 || parsedWorkers > 4) {
+      throw new Error('Moving & lifting assistance supports between 1 and 4 movers per booking.');
+    }
+
+    workersCount = parsedWorkers;
+    hours = parsedHours;
+  } else {
+    hours = (serviceCategory === 'tv_mounting' ? 1.5 : 1);
+  }
 
   const pricing = calculatePricing(serviceCategory, {
     workersNeeded: workersCount,
@@ -3049,19 +3089,23 @@ function buildAllowedScopeSummary(booking) {
 
 function computeProWorkloadCounts(proId, state) {
   let activeAssignmentsCount = 0;
-  let completedJobsCount = 0;
+  let recentSessionCompletedJobsCount = 0;
   (state.bookings || []).forEach(b => {
     const isTerminal = b.overallStatus === 'completed' || b.overallStatus === 'cancelled';
     (b.workerAssignments || []).forEach(slot => {
       if (slot.assignedProId !== proId) return;
       if (slot.status === 'completed') {
-        completedJobsCount++;
+        recentSessionCompletedJobsCount++;
       } else if (!isTerminal && slot.status !== 'unassigned') {
         activeAssignmentsCount++;
       }
     });
   });
-  return { activeAssignmentsCount, completedJobsCount };
+  return {
+    activeAssignmentsCount,
+    recentSessionCompletedJobsCount,
+    completedJobsCount: recentSessionCompletedJobsCount // backward compatibility alias
+  };
 }
 
 /**
@@ -3411,6 +3455,7 @@ export function buildSanitizedAiDispatchPayload(bookingId, options = {}) {
         tier: pro.tier || 'Bronze',
         rating: Number(pro.rating || 0),
         reviewCount: Number(pro.reviewCount || 0),
+        historicalReviewCount: Number(pro.reviewCount || 0),
         reliabilityScore: Number(pro.reliabilityScore || 0),
         homeNeighborhood: neighborhoodLabel,
         sameNeighborhoodAsBooking: isMatchingNeighborhood(pro.homeNeighborhood, booking),
@@ -3420,7 +3465,9 @@ export function buildSanitizedAiDispatchPayload(bookingId, options = {}) {
           ? `${dayAvail.start}-${dayAvail.end}`
           : null,
         activeAssignmentsCount: workload.activeAssignmentsCount,
-        completedJobsCount: workload.completedJobsCount,
+        recentSessionCompletedJobsCount: workload.recentSessionCompletedJobsCount,
+        completedJobsCount: workload.recentSessionCompletedJobsCount, // backward compatibility
+        historicalCompletedJobsKnown: false, // Session completed jobs only track active demo session bookings; reviewCount reflects verified lifetime activity
         eligibleForSlotIds: candidateEligibleSlots.get(pro.id)
       };
     });
@@ -3526,8 +3573,14 @@ function buildCandidateRationaleLines(candidate, bookingContext, scored) {
   } else {
     bullets.push(`Home Dallas pilot zone: ${candidate.homeNeighborhood} (cross-zone label only; no live driving ETA calculated).`);
   }
+  const sessionJobs = candidate.recentSessionCompletedJobsCount !== undefined
+    ? candidate.recentSessionCompletedJobsCount
+    : (candidate.completedJobsCount || 0);
+  const sessionJobsNote = sessionJobs > 0
+    ? `, ${sessionJobs} recent session jobs`
+    : '';
   bullets.push(
-    `Supporting context: ${candidate.tier} tier, ${candidate.rating} rating (${candidate.reviewCount} reviews), ${candidate.reliabilityScore}% reliability, ${candidate.completedJobsCount} completed jobs.`
+    `Supporting context: ${candidate.tier} tier, ${candidate.rating} rating (${candidate.reviewCount} verified reviews), ${candidate.reliabilityScore}% reliability${sessionJobsNote}.`
   );
 
   let cautionNote = '';
@@ -3761,6 +3814,261 @@ export function computeDeterministicFallbackRanking(
 }
 
 /**
+ * Phase 4.6A: Application-Level Factual Verification & Truth Hardening Engine.
+ * Enforces that AI-generated candidate text (fitSummary, rationaleBullets, cautionNote)
+ * strictly adheres to Crewly ground-truth data from state.pros and PRICING_RATES.
+ * Contradictions and unverified claims are deterministically corrected or safely stripped.
+ */
+export function groundAndVerifyCandidateClaims(cand, pro, bookingContext, state = null, roleTitle = '') {
+  if (!cand || !pro) return cand;
+
+  const currentBookingState = state || loadState();
+  const workload = computeProWorkloadCounts(pro.id, currentBookingState);
+  const serviceRates = (bookingContext && bookingContext.serviceCategory && PRICING_RATES[bookingContext.serviceCategory])
+    ? PRICING_RATES[bookingContext.serviceCategory]
+    : null;
+
+  let fitSummary = sanitizeAiText(cand.fitSummary || '', 140);
+  let cautionNote = sanitizeAiText(cand.cautionNote || '', 140);
+  let rationaleBullets = Array.isArray(cand.rationaleBullets)
+    ? cand.rationaleBullets.slice(0, 4).map(b => sanitizeAiText(b, AI_DISPATCH_CONFIG.BULLET_MAX_CHARS)).filter(Boolean)
+    : [];
+
+  // ---------------------------------------------------------------------------
+  // 1. Completed Jobs & Experience Verification (Jamar Washington Discrepancy Fix)
+  // ---------------------------------------------------------------------------
+  const hasDemonstratedExperience = (Number(pro.reviewCount) > 0);
+
+  const testZeroJobs = (str) => /\b(?:0|zero|no)\s+(?:completed\s+)?jobs?\b|\bno\s+(?:jobs|history|experience|track\s*record)\s+recorded\b|\b(?:untested|new|no\s+prior\s+jobs?)\s+(?:on\s+(?:the\s+)?platform|worker|pro)\b|\bhasn't\s+completed\s+any\s+jobs\b|\bfirst\s+job\b|\b0\s+reviews?\b/i.test(str || '');
+
+  if (hasDemonstratedExperience) {
+    // If cautionNote asserts zero completed jobs or lack of track record, correct or strip it.
+    if (testZeroJobs(cautionNote)) {
+      if (workload.activeAssignmentsCount > 0) {
+        cautionNote = `Currently holding ${workload.activeAssignmentsCount} active assignment(s); confirm non-overlapping transit window.`;
+      } else {
+        cautionNote = ''; // Experienced Pro with historical reviews — no caution!
+      }
+    }
+
+    // In rationaleBullets, replace any bullet asserting 0 completed jobs with authoritative experience
+    // STRICT PRIVACY: Worker earnings and wallet balances MUST NEVER be included in AI explanations.
+    rationaleBullets = rationaleBullets.map(bullet => {
+      if (testZeroJobs(bullet)) {
+        return `Verified Dallas Pro with ${pro.reviewCount} customer reviews (${pro.rating}★) and ${pro.reliabilityScore}% reliability.`;
+      }
+      return bullet;
+    });
+
+    // In fitSummary, clean any zero-jobs claim
+    if (testZeroJobs(fitSummary)) {
+      fitSummary = fitSummary
+        .replace(/\b(?:0|zero|no)\s+(?:completed\s+)?jobs?\b/gi, `${pro.reviewCount} reviews (${pro.rating}★)`)
+        .replace(/\bno\s+(?:jobs|history|experience|track\s*record)\s+recorded\b/gi, `${pro.reviewCount} reviews`)
+        .replace(/\b(?:untested|new|no\s+prior\s+jobs?)\s+(?:on\s+(?:the\s+)?platform|worker|pro)?\b/gi, 'verified pro')
+        .replace(/\bhasn't\s+completed\s+any\s+jobs\b/gi, `has ${pro.reviewCount} verified reviews`)
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 1b. Pro Financial & Earnings Privacy Safeguard (Product Lead Requirement)
+  // Worker earnings, wallet balances, or payouts MUST NEVER appear in AI dispatch
+  // recommendations, bullets, fit summaries, caution notes, or draft reasons.
+  // Financial data is reserved strictly for authorized Finance & Wallet views.
+  // ---------------------------------------------------------------------------
+  const SENSITIVE_FINANCIAL_TEXT_REGEX = /\b(?:\$?\d+(?:\.\d{2})?\s*(?:lifetime\s*earned|earnings|wallet|take-home|payout\s*balance)|lifetime\s*earnings?(?:\s*of)?\s*\$?\d+(?:\.\d{2})?)\b/gi;
+  fitSummary = fitSummary.replace(SENSITIVE_FINANCIAL_TEXT_REGEX, '').trim();
+  cautionNote = cautionNote.replace(SENSITIVE_FINANCIAL_TEXT_REGEX, '').trim();
+  rationaleBullets = rationaleBullets
+    .map(b => b.replace(SENSITIVE_FINANCIAL_TEXT_REGEX, '').trim())
+    .filter(b => b.length > 5);
+
+  // ---------------------------------------------------------------------------
+  // 2. Worker Qualifications and Skills Verification
+  // ---------------------------------------------------------------------------
+  const verifiedSkills = new Set(Array.isArray(pro.verifiedSkills) ? pro.verifiedSkills : []);
+  const allServiceSkills = [
+    { key: 'tv_mounting', labels: [/\btv(?:\s+mounting)?\b/gi, /\btelevision(?:\s+mounting)?\b/gi] },
+    { key: 'wall_mounting', labels: [/\bwall\s+mounting\b/gi, /\bshelving\b/gi, /\bart\s+install/gi] },
+    { key: 'lawn_mowing', labels: [/\blawn(?:\s+mowing|\s+care)?\b/gi, /\bmow(?:ing|er)?\b/gi, /\byard\s+care\b/gi] },
+    { key: 'moving', labels: [/\bmov(?:ing|er)\b/gi, /\bheavy\s+lifting\b/gi] },
+    { key: 'furniture_assembly', labels: [/\bfurniture\s+assembly\b/gi, /\bassembl(?:y|er)\b/gi] },
+    { key: 'furniture_disassembly', labels: [/\bfurniture\s+disassembly\b/gi, /\bdisassembl(?:y|er)\b/gi] }
+  ];
+
+  // Outside trades that Crewly does NOT certify (electrician, plumber, roofer, hvac)
+  const UNVERIFIED_OUTSIDE_TRADES_REGEX = /\b(?:licensed|certified|master)?\s*(?:electrician|electrical|plumber|plumbing|roofer|roofing|hvac)\b/gi;
+
+  const groundSkillsText = (text) => {
+    let cleaned = text;
+    if (UNVERIFIED_OUTSIDE_TRADES_REGEX.test(cleaned)) {
+      cleaned = cleaned.replace(UNVERIFIED_OUTSIDE_TRADES_REGEX, '').trim();
+    }
+    allServiceSkills.forEach(({ key, labels }) => {
+      if (!verifiedSkills.has(key)) {
+        labels.forEach(regex => {
+          if (regex.test(cleaned)) {
+            cleaned = cleaned.replace(regex, '').trim();
+          }
+        });
+      }
+    });
+    cleaned = cleaned.replace(/\s+and\s+/gi, ' ').replace(/\s*,\s*,/g, ',').replace(/\s{2,}/g, ' ')
+      .replace(/^[,\s.]+/, '').replace(/[,\s.]+$/, '').trim();
+    return cleaned;
+  };
+
+  fitSummary = groundSkillsText(fitSummary);
+  rationaleBullets = rationaleBullets.map(b => groundSkillsText(b)).filter(b => b.length > 5);
+
+  // ---------------------------------------------------------------------------
+  // 3. Equipment Verification
+  // ---------------------------------------------------------------------------
+  const verifiedEquip = new Set(Array.isArray(pro.verifiedEquipment) ? pro.verifiedEquipment : []);
+  const hasTruck = verifiedEquip.has('pickup_truck') || verifiedEquip.has('box_truck') || verifiedEquip.has('truck');
+  const TRUCK_CLAIM_REGEX = /\b(?:brings?|owns?|equipped\s+with|has)\s+(?:a\s+|his\s+|their\s+)?(?:pickup\s+truck|box\s+truck|moving\s+truck|cargo\s+van|trailer|truck)\b|\b(?:pickup\s+truck|box\s+truck|moving\s+truck|truck)\b/i;
+
+  const allEquipmentChecks = [
+    { key: 'lawn_mower', regex: /\b(?:commercial\s+|gas\s+|riding\s+|push\s+)?(?:lawn\s+)?mower\b/i, matchKeys: ['self_propelled_mower', 'gas_mower'] },
+    { key: 'string_trimmer', regex: /\b(?:string\s+trimmer|weed\s*eater|gas_string_trimmer)\b/i, matchKeys: ['gas_string_trimmer', 'string_trimmer'] },
+    { key: 'leaf_blower', regex: /\bleaf\s+blower\b/i, matchKeys: ['leaf_blower'] },
+    { key: 'power_tools', regex: /\b(?:power\s+drill|drill|impact\s+driver|cordless\s+driver)\b/i, matchKeys: ['impact_driver', 'cordless_driver_set', 'drill'] },
+    { key: 'stud_finder', regex: /\b(?:digital\s+|wall\s+scanner|precision\s+)?stud\s+finder\b/i, matchKeys: ['stud_finder', 'digital_stud_finder'] },
+    { key: 'laser_level', regex: /\b(?:laser\s+)?level\b/i, matchKeys: ['laser_level', 'level'] },
+    { key: 'ladder', regex: /\bladder\b/i, matchKeys: ['ladder', 'step_ladder'] }
+  ];
+
+  const groundEquipmentText = (text) => {
+    let cleaned = text;
+    if (!hasTruck && TRUCK_CLAIM_REGEX.test(cleaned)) {
+      if (bookingContext && bookingContext.serviceCategory === 'moving') {
+        cleaned = cleaned.replace(TRUCK_CLAIM_REGEX, 'hand truck & shoulder dolly (labor-only moving; truck not included)').trim();
+      } else {
+        cleaned = cleaned.replace(TRUCK_CLAIM_REGEX, '').trim();
+      }
+    }
+    allEquipmentChecks.forEach(({ regex, matchKeys }) => {
+      const proHasItem = matchKeys.some(k => verifiedEquip.has(k));
+      if (!proHasItem && regex.test(cleaned)) {
+        cleaned = cleaned.replace(regex, '').trim();
+      }
+    });
+    cleaned = cleaned.replace(/\s*,\s*,/g, ',').replace(/\s{2,}/g, ' ').replace(/\s+and\s*$/, '').replace(/^\s*and\s+/, '').trim();
+    return cleaned;
+  };
+
+  fitSummary = groundEquipmentText(fitSummary);
+  rationaleBullets = rationaleBullets.map(b => groundEquipmentText(b)).filter(b => b.length > 5);
+
+  // ---------------------------------------------------------------------------
+  // 4. Ratings, Review Counts, Reliability, and Tiers Grounding
+  // ---------------------------------------------------------------------------
+  const TIER_REGEX = /\b(Bronze|Silver|Gold|Platinum)\s+(?:tier|pro|specialist|worker)?\b/gi;
+  const groundTiersAndStats = (text) => {
+    let cleaned = text;
+    cleaned = cleaned.replace(TIER_REGEX, (match, claimedTier) => {
+      if (claimedTier.toLowerCase() !== String(pro.tier || '').toLowerCase()) {
+        return `${pro.tier || 'Bronze'} tier`;
+      }
+      return match;
+    });
+
+    const RATING_REGEX = /\b(\d(?:\.\d{1,2})?)\s*(?:stars?|★|\/5|rating)\b/gi;
+    cleaned = cleaned.replace(RATING_REGEX, (match, valStr) => {
+      const val = parseFloat(valStr);
+      if (!isNaN(val) && Math.abs(val - (pro.rating || 0)) > 0.05) {
+        return `${pro.rating}★`;
+      }
+      return match;
+    });
+
+    const REVIEW_COUNT_REGEX = /\b(\d+)\s+reviews?\b/gi;
+    cleaned = cleaned.replace(REVIEW_COUNT_REGEX, (match, countStr) => {
+      const cnt = parseInt(countStr, 10);
+      if (!isNaN(cnt) && cnt !== (pro.reviewCount || 0)) {
+        return `${pro.reviewCount} reviews`;
+      }
+      return match;
+    });
+
+    const RELIABILITY_REGEX = /\b(\d{1,3})%\s+reliab(?:ility|le)\b/gi;
+    cleaned = cleaned.replace(RELIABILITY_REGEX, (match, scoreStr) => {
+      const sc = parseInt(scoreStr, 10);
+      if (!isNaN(sc) && sc !== (pro.reliabilityScore || 0)) {
+        return `${pro.reliabilityScore}% reliability`;
+      }
+      return match;
+    });
+
+    return cleaned;
+  };
+
+  fitSummary = groundTiersAndStats(fitSummary);
+  cautionNote = groundTiersAndStats(cautionNote);
+  rationaleBullets = rationaleBullets.map(b => groundTiersAndStats(b));
+
+  // ---------------------------------------------------------------------------
+  // 5. Prices and Payouts Grounding (Prevent Model Pricing Fabrications)
+  // ---------------------------------------------------------------------------
+  const SURCHARGE_REGEX = /\b(?:includes\s+)?\$?\d+(?:\.\d{2})?\s*(?:service\s+)?surcharge\b|\b(?:includes\s+)?(?:service\s+)?surcharge(?:\s+of)?\s*\$?\d+(?:\.\d{2})?\b/gi;
+  const PRICE_REGEX = /\$(\d+(?:\.\d{2})?)(?:\s*\/\s*hr)?/gi;
+  const groundPrices = (text) => {
+    if (!serviceRates) return text;
+    let cleaned = text;
+    if (SURCHARGE_REGEX.test(cleaned)) {
+      cleaned = cleaned.replace(SURCHARGE_REGEX, '').trim();
+    }
+    cleaned = cleaned.replace(PRICE_REGEX, (match, amountStr) => {
+      const amount = parseFloat(amountStr);
+      const isStandardCustomer = amount === serviceRates.customerRate;
+      const isStandardPayout = amount === serviceRates.proPayout;
+      const isBookingFee = amount === (PRICING_RATES.bookingFee || 10);
+      if (!isStandardCustomer && !isStandardPayout && !isBookingFee) {
+        if (serviceRates.type === 'hourly') {
+          return `$${serviceRates.customerRate}/hr`;
+        } else {
+          return `$${serviceRates.customerRate}`;
+        }
+      }
+      return match;
+    });
+    return cleaned;
+  };
+
+  fitSummary = groundPrices(fitSummary);
+  cautionNote = groundPrices(cautionNote);
+  rationaleBullets = rationaleBullets.map(b => groundPrices(b));
+
+  // Ensure there is at least one clean rationale bullet
+  if (rationaleBullets.length === 0) {
+    const verifiedRole = roleTitle || (bookingContext && bookingContext.serviceTitle) || 'position';
+    rationaleBullets.push(`Verified eligible for ${verifiedRole} with ${pro.tier} tier and ${pro.rating}★ rating (${pro.reviewCount} reviews).`);
+  }
+
+  // Ensure fitSummary is clean and non-empty
+  if (!fitSummary || fitSummary.length < 5) {
+    fitSummary = `Verified fit: ${pro.tier} tier pro (${pro.rating}★, ${pro.reviewCount} reviews, ${pro.reliabilityScore}% reliability).`;
+  }
+
+  return {
+    ...cand,
+    fitSummary: sanitizeAiText(fitSummary, 140),
+    rationaleBullets: rationaleBullets.slice(0, 3).map(b => sanitizeAiText(b, AI_DISPATCH_CONFIG.BULLET_MAX_CHARS)),
+    cautionNote: sanitizeAiText(cautionNote, 120)
+  };
+}
+
+export function groundDraftAdminReason(draftText, pro, bookingContext, slotRoleTitle) {
+  if (!draftText || !pro) return draftText;
+  const cleaned = sanitizeAiText(draftText, AI_DISPATCH_CONFIG.REASON_MAX_CHARS);
+  const dummyCand = { fitSummary: cleaned, rationaleBullets: [], cautionNote: '' };
+  const grounded = groundAndVerifyCandidateClaims(dummyCand, pro, bookingContext, null, slotRoleTitle);
+  return grounded.fitSummary;
+}
+
+/**
  * Explicit Trust Boundary for external Gemini responses.
  * Treats AI output as untrusted JSON: validates schema shape, booking/slot identity,
  * freshness fingerprint, XSS sanitization, multi-worker distinctness, and live
@@ -3911,12 +4219,28 @@ export function validateAndNormalizeAiRecommendation(rawAiResponse, bookingId, o
         // Weight AI rank ordering gently on top of deterministic score while respecting combination distinctness.
         const preferenceScore = ((AI_DISPATCH_CONFIG.MAX_RECOMMENDATIONS_PER_SLOT + 2 - aiOrderRank) * 1000) + detScored.totalScore;
 
-        const cleanBullets = Array.isArray(cand.rationaleBullets)
-          ? cand.rationaleBullets.slice(0, 3).map(b => sanitizeAiText(b, AI_DISPATCH_CONFIG.BULLET_MAX_CHARS)).filter(Boolean)
-          : [];
-        if (cleanBullets.length === 0) {
-          cleanBullets.push(`Verified eligible for ${supply.roleTitle} via Crewly qualification rules.`);
-        }
+        // Phase 4.6A: Application-level factual verification & truth hardening
+        const groundedClaims = groundAndVerifyCandidateClaims(
+          cand,
+          pro,
+          bookingContext,
+          state,
+          supply.roleTitle
+        );
+
+        const verifiedEvidence = {
+          proId: pro.id,
+          displayName: pro.name,
+          tier: pro.tier || 'Bronze',
+          rating: Number(pro.rating || 0),
+          reviewCount: Number(pro.reviewCount || 0),
+          reliabilityScore: Number(pro.reliabilityScore || 0),
+          homeNeighborhood: pro.homeNeighborhood || 'Dallas Pilot',
+          sameNeighborhoodAsBooking: safeCandidate.sameNeighborhoodAsBooking,
+          verifiedSkills: Array.isArray(pro.verifiedSkills) ? [...pro.verifiedSkills] : [],
+          verifiedEquipment: Array.isArray(pro.verifiedEquipment) ? [...pro.verifiedEquipment] : [],
+          recentSessionCompletedJobsCount: safeCandidate.recentSessionCompletedJobsCount || 0
+        };
 
         if (verifiedList.length < AI_DISPATCH_CONFIG.MAX_RECOMMENDATIONS_PER_SLOT) {
           verifiedList.push({
@@ -3931,9 +4255,10 @@ export function validateAndNormalizeAiRecommendation(rawAiResponse, bookingId, o
             sameNeighborhoodAsBooking: safeCandidate.sameNeighborhoodAsBooking,
             deterministicScore: detScored.totalScore,
             preferenceScore,
-            fitSummary: sanitizeAiText(cand.fitSummary, 140) || `Verified fit for ${supply.roleTitle}.`,
-            rationaleBullets: cleanBullets,
-            cautionNote: sanitizeAiText(cand.cautionNote, 120)
+            verifiedEvidence,
+            fitSummary: groundedClaims.fitSummary,
+            rationaleBullets: groundedClaims.rationaleBullets,
+            cautionNote: groundedClaims.cautionNote
           });
         }
       });
@@ -3985,13 +4310,19 @@ export function validateAndNormalizeAiRecommendation(rawAiResponse, bookingId, o
       ? sanitizeAiText(aiSlot.draftAdminReason, AI_DISPATCH_CONFIG.REASON_MAX_CHARS)
       : '';
     const primaryObj = ranked.find(c => c.proId === primaryProId) || null;
+    const primaryPro = primaryObj ? (state.pros || []).find(p => p.id === primaryObj.proId) : null;
 
-    const draftAdminReason = primaryObj
-      ? (rawDraft || sanitizeAiText(
+    let draftAdminReason = '';
+    if (primaryObj) {
+      if (rawDraft && primaryPro) {
+        draftAdminReason = groundDraftAdminReason(rawDraft, primaryPro, bookingContext, supply.roleTitle);
+      } else {
+        draftAdminReason = sanitizeAiText(
           `[AI Advisory Draft] Recommended ${primaryObj.displayName} for ${supply.roleTitle} (${bookingId}). Verified eligible via Crewly rules.`,
           AI_DISPATCH_CONFIG.REASON_MAX_CHARS
-        ))
-      : '';
+        );
+      }
+    }
 
     return {
       slotId: supply.slotId,

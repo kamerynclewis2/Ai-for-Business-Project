@@ -51,7 +51,8 @@ import {
   canBookingBeCancelled,
   canSlotBeAdminCompleted,
   adminVerifyAndCompleteAssignment,
-  recalculateBookingStatus
+  recalculateBookingStatus,
+  getDallasLocalNow
 } from '../matching.js';
 
 var passed = 0;
@@ -82,7 +83,15 @@ assert(b !== undefined, "CRW-1001 exists in state");
 assert(b.overallStatus === 'partially_filled', "CRW-1001 begins as partially_filled");
 
 // Ensure booking date is valid future date for test progression
-b.scheduledDate = '2026-11-15';
+var dNow = getDallasLocalNow();
+var candidateFutureDate = new Date(dNow.fullDate.getTime() + 4 * 86400000);
+while (candidateFutureDate.getDay() === 0) {
+  candidateFutureDate = new Date(candidateFutureDate.getTime() + 86400000);
+}
+var fY = candidateFutureDate.getFullYear();
+var fM = String(candidateFutureDate.getMonth() + 1).padStart(2, '0');
+var fD = String(candidateFutureDate.getDate()).padStart(2, '0');
+b.scheduledDate = `${fY}-${fM}-${fD}`;
 saveState(state);
 
 // Assign Jamar Washington to Slot 2

@@ -49,6 +49,7 @@ ALLOWED_CANDIDATE_KEYS = {
     "tier",
     "rating",
     "reviewCount",
+    "historicalReviewCount",
     "reliabilityScore",
     "homeNeighborhood",
     "sameNeighborhoodAsBooking",
@@ -56,7 +57,9 @@ ALLOWED_CANDIDATE_KEYS = {
     "verifiedEquipment",
     "dayAvailabilityWindow",
     "activeAssignmentsCount",
+    "recentSessionCompletedJobsCount",
     "completedJobsCount",
+    "historicalCompletedJobsKnown",
     "eligibleForSlotIds",
 }
 
@@ -323,12 +326,21 @@ def validate_dispatch_request_payload(payload):
         if not isinstance(reliability, (int, float)) or not (0 <= float(reliability) <= 100):
             return False, None, f"eligibleCandidates[{idx}].reliabilityScore out of range [0, 100]."
 
+        recent_session_jobs = cand.get("recentSessionCompletedJobsCount")
+        if not isinstance(recent_session_jobs, int):
+            recent_session_jobs = cand.get("completedJobsCount", 0) if isinstance(cand.get("completedJobsCount"), int) else 0
+
+        hist_reviews = cand.get("historicalReviewCount")
+        if not isinstance(hist_reviews, int):
+            hist_reviews = cand.get("reviewCount", 0) if isinstance(cand.get("reviewCount"), int) else 0
+
         sanitized_candidates.append({
             "proId": pro_id,
             "displayName": display_name,
             "tier": sanitize_text(cand.get("tier", "Bronze"), 24),
             "rating": float(rating),
             "reviewCount": int(cand.get("reviewCount", 0)) if isinstance(cand.get("reviewCount"), int) else 0,
+            "historicalReviewCount": int(hist_reviews),
             "reliabilityScore": float(reliability),
             "homeNeighborhood": home_zone,
             "sameNeighborhoodAsBooking": bool(cand.get("sameNeighborhoodAsBooking", False)),
@@ -336,7 +348,9 @@ def validate_dispatch_request_payload(payload):
             "verifiedEquipment": [sanitize_text(e, 32) for e in (cand.get("verifiedEquipment") or [])[:12] if isinstance(e, str)],
             "dayAvailabilityWindow": sanitize_text(cand.get("dayAvailabilityWindow"), 24) if cand.get("dayAvailabilityWindow") else None,
             "activeAssignmentsCount": int(cand.get("activeAssignmentsCount", 0)) if isinstance(cand.get("activeAssignmentsCount"), int) else 0,
-            "completedJobsCount": int(cand.get("completedJobsCount", 0)) if isinstance(cand.get("completedJobsCount"), int) else 0,
+            "recentSessionCompletedJobsCount": int(recent_session_jobs),
+            "completedJobsCount": int(cand.get("completedJobsCount", recent_session_jobs)) if isinstance(cand.get("completedJobsCount"), int) else int(recent_session_jobs),
+            "historicalCompletedJobsKnown": bool(cand.get("historicalCompletedJobsKnown", False)),
             "eligibleForSlotIds": list(dict.fromkeys(elig_slots)),
         })
 
@@ -463,6 +477,106 @@ def build_prompt_payload_for_gemini(validated_request):
     }
 
 
+def _ground_candidate_text_server_side(cand_dict, pro_data, booking_context):
+    """
+    Phase 4.6A: Application-level factual verification on proxy server.
+    Ensures model outputs do not assert contradictions regarding completed jobs,
+    unverified equipment (e.g. pickup trucks), unverified skills, ratings, or tiers.
+    """
+    if not pro_data:
+        return cand_dict
+
+    fit_summary = cand_dict.get("fitSummary", "")
+    caution_note = cand_dict.get("cautionNote", "")
+    bullets = list(cand_dict.get("rationaleBullets", []))
+
+    review_count = int(pro_data.get("reviewCount", 0))
+    rating = float(pro_data.get("rating", 0.0))
+    tier = str(pro_data.get("tier", "Bronze"))
+    verified_equipment = set(pro_data.get("verifiedEquipment") or [])
+
+    # 1. Zero jobs contradiction fix for experienced workers
+    has_experience = review_count > 0
+    zero_jobs_pattern = re.compile(
+        r"(?i)\b(?:0|zero|no)\s+(?:completed\s+)?jobs?\b|\bno\s+(?:jobs|history|experience|track\s*record)\s+recorded\b|\b(?:untested|new|no\s+prior\s+jobs?)\s+(?:on\s+(?:the\s+)?platform|worker|pro)\b|\bhasn't\s+completed\s+any\s+jobs\b|\bfirst\s+job\b|\b0\s+reviews?\b"
+    )
+
+    if has_experience:
+        if zero_jobs_pattern.search(caution_note):
+            caution_note = ""
+        bullets = [
+            f"Verified Dallas Pro with {review_count} customer reviews ({rating}★)."
+            if zero_jobs_pattern.search(b)
+            else b
+            for b in bullets
+        ]
+        if zero_jobs_pattern.search(fit_summary):
+            fit_summary = zero_jobs_pattern.sub(f"{review_count} reviews ({rating}★)", fit_summary)
+
+    # 2. Equipment grounding
+    has_truck = any(t in verified_equipment for t in ("pickup_truck", "box_truck", "truck"))
+    truck_pattern = re.compile(
+        r"(?i)\b(?:brings?|owns?|equipped\s+with|has)\s+(?:a\s+|his\s+|their\s+)?(?:pickup\s+truck|box\s+truck|moving\s+truck|cargo\s+van|trailer|truck)\b|\b(?:pickup\s+truck|box\s+truck|moving\s+truck|truck)\b"
+    )
+    if not has_truck:
+        if booking_context and booking_context.get("serviceCategory") == "moving":
+            fit_summary = truck_pattern.sub("hand truck & shoulder dolly (labor-only moving; truck not included)", fit_summary)
+            bullets = [
+                truck_pattern.sub("hand truck & shoulder dolly (labor-only moving; truck not included)", b)
+                for b in bullets
+            ]
+        else:
+            fit_summary = truck_pattern.sub("", fit_summary).strip()
+            bullets = [truck_pattern.sub("", b).strip() for b in bullets if truck_pattern.sub("", b).strip()]
+
+    # 3. Skills grounding: unverified outside trades
+    outside_trades = re.compile(r"(?i)\b(?:licensed|certified|master)?\s*(?:electrician|electrical|plumber|plumbing|roofer|roofing|hvac)\b")
+    fit_summary = outside_trades.sub("", fit_summary).strip()
+    bullets = [outside_trades.sub("", b).strip() for b in bullets if outside_trades.sub("", b).strip()]
+
+    # 4. Tier grounding
+    tier_pattern = re.compile(r"(?i)\b(Bronze|Silver|Gold|Platinum)\s+(?:tier|pro|specialist|worker)?\b")
+    def _tier_sub(m):
+        claimed = m.group(1)
+        if claimed.lower() != tier.lower():
+            return f"{tier} tier"
+        return m.group(0)
+
+    fit_summary = tier_pattern.sub(_tier_sub, fit_summary)
+    caution_note = tier_pattern.sub(_tier_sub, caution_note)
+    bullets = [tier_pattern.sub(_tier_sub, b) for b in bullets]
+
+    # 5. Financial privacy safeguard: strip worker earnings/wallet references from AI text
+    financial_pattern = re.compile(
+        r"(?i)\b(?:\$?\d+(?:\.\d{2})?\s*(?:lifetime\s*earned|earnings|wallet|take-home|payout\s*balance)|lifetime\s*earnings?(?:\s*of)?\s*\$?\d+(?:\.\d{2})?)\b"
+    )
+    fit_summary = financial_pattern.sub("", fit_summary).strip()
+    caution_note = financial_pattern.sub("", caution_note).strip()
+    bullets = [financial_pattern.sub("", b).strip() for b in bullets if financial_pattern.sub("", b).strip()]
+
+    # Clean empty or degenerate bullets
+    bullets = [b for b in bullets if len(b) > 4]
+    if not bullets:
+        bullets = [f"Verified eligible with {tier} tier and {rating}★ rating ({review_count} reviews)."]
+
+    return {
+        "fitSummary": fit_summary,
+        "rationaleBullets": bullets[:3],
+        "cautionNote": caution_note,
+    }
+
+
+def _ground_draft_admin_reason_server_side(draft_text, pro_data, booking_context):
+    if not draft_text or not pro_data:
+        return draft_text
+    grounded = _ground_candidate_text_server_side(
+        {"fitSummary": draft_text, "rationaleBullets": [], "cautionNote": ""},
+        pro_data,
+        booking_context,
+    )
+    return grounded.get("fitSummary", draft_text)
+
+
 def validate_and_normalize_gemini_output(raw_output, validated_request, api_key=None):
     """
     Verifies upstream Gemini JSON structure and candidate/slot membership against the
@@ -475,7 +589,9 @@ def validate_and_normalize_gemini_output(raw_output, validated_request, api_key=
     open_slot_ids = {s["slotId"] for s in open_slots}
 
     slot_eligible_map = {}
+    cand_lookup = {}
     for cand in validated_request["eligibleCandidates"]:
+        cand_lookup[cand["proId"]] = cand
         for sid in cand.get("eligibleForSlotIds", []):
             slot_eligible_map.setdefault(sid, set()).add(cand["proId"])
 
@@ -541,17 +657,32 @@ def validate_and_normalize_gemini_output(raw_output, validated_request, api_key=
                     if not clean_bullets:
                         clean_bullets = ["Candidate submitted within verified eligibility allowlist."]
 
+                    pro_data = cand_lookup.get(pid)
+                    grounded = _ground_candidate_text_server_side(
+                        {
+                            "fitSummary": redact_secrets(sanitize_text(cand.get("fitSummary"), 140), api_key)
+                            or "Eligible candidate evaluated by advisory model.",
+                            "rationaleBullets": clean_bullets,
+                            "cautionNote": redact_secrets(sanitize_text(cand.get("cautionNote"), 120), api_key),
+                        },
+                        pro_data,
+                        ctx,
+                    )
+
                     clean_ranked.append({
                         "proId": pid,
-                        "fitSummary": redact_secrets(sanitize_text(cand.get("fitSummary"), 140), api_key)
-                        or "Eligible candidate evaluated by advisory model.",
-                        "rationaleBullets": clean_bullets,
-                        "cautionNote": redact_secrets(sanitize_text(cand.get("cautionNote"), 120), api_key),
+                        "fitSummary": grounded["fitSummary"],
+                        "rationaleBullets": grounded["rationaleBullets"],
+                        "cautionNote": grounded["cautionNote"],
                     })
+
+        primary_pro_data = cand_lookup.get(clean_ranked[0]["proId"]) if clean_ranked else None
+        raw_draft = redact_secrets(sanitize_text(entry.get("draftAdminReason"), 240), api_key)
+        clean_draft = _ground_draft_admin_reason_server_side(raw_draft, primary_pro_data, ctx) if primary_pro_data else raw_draft
 
         valid_slot_entries[sid] = {
             "slotId": sid,
-            "draftAdminReason": redact_secrets(sanitize_text(entry.get("draftAdminReason"), 240), api_key),
+            "draftAdminReason": clean_draft,
             "rankedCandidates": clean_ranked,
         }
 

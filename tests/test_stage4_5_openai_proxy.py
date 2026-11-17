@@ -36,6 +36,10 @@ from proxy.openai_client import (
 )
 from proxy.rate_limit import LocalDispatchRateLimiter
 from proxy.server import create_proxy_context, handle_proxy_http_request
+from proxy.validator import (
+    validate_and_normalize_gemini_output,
+    validate_dispatch_request_payload,
+)
 
 DUMMY_OPENAI_KEY = "sk-proj-DummyTestOpenAIKeyNotReal9876543210987654"
 DUMMY_GEMINI_KEY = "AIzaDummyTestKeyNotReal987654321098765432"
@@ -431,6 +435,52 @@ def main():
         "output_text": json.dumps(sample_valid_recommendation()),
     })
     check(extracted_top["bookingId"] == "CRW-1004", "Supports top-level output_text fallback when output contains only reasoning items")
+
+    # Group 4: Stage 4.6A Proxy-Level AI Accuracy & Factual Grounding
+    print("\n[Group 4: Stage 4.6A Proxy-Level AI Accuracy & Factual Truth-Hardening]")
+
+    # 4A: Workload metric pass-through in request validator
+    req_with_session_metrics = sample_sanitized_request()
+    req_with_session_metrics["eligibleCandidates"][0]["recentSessionCompletedJobsCount"] = 0
+    req_with_session_metrics["eligibleCandidates"][0]["historicalReviewCount"] = 14
+    ok_val, sanitized_val, val_err = validate_dispatch_request_payload(req_with_session_metrics)
+    check(ok_val is True and val_err is None, "Payload validator accepts recentSessionCompletedJobsCount & historicalReviewCount")
+    cand_san = sanitized_val["eligibleCandidates"][0]
+    check(cand_san["recentSessionCompletedJobsCount"] == 0 and cand_san["historicalReviewCount"] == 14,
+          "Payload validator preserves recentSessionCompletedJobsCount (0) and historicalReviewCount (14)")
+
+    # 4B: Proxy-level grounding of zero-jobs caution note on Jamar
+    raw_ai_zero_jobs = sample_valid_recommendation()
+    raw_ai_zero_jobs["slotRecommendations"][0]["rankedCandidates"][0]["cautionNote"] = "Jamar has 0 completed jobs recorded on the platform."
+    raw_ai_zero_jobs["slotRecommendations"][0]["rankedCandidates"][0]["rationaleBullets"] = [
+        "Untested on platform with 0 completed jobs",
+        "Brings his own pickup truck to transport furniture"
+    ]
+    raw_ai_zero_jobs["slotRecommendations"][0]["rankedCandidates"][0]["fitSummary"] = "Gold tier mover with 0 completed jobs."
+    raw_ai_zero_jobs["slotRecommendations"][0]["draftAdminReason"] = "Recommend Jamar (Gold tier) with 0 completed jobs."
+
+    ok_norm, norm_err, norm_rec, norm_report = validate_and_normalize_gemini_output(
+        raw_ai_zero_jobs,
+        sanitized_val,
+        api_key=DUMMY_OPENAI_KEY
+    )
+    check(ok_norm is True and norm_err is None, "validate_and_normalize_gemini_output succeeds on raw recommendation")
+    grounded_cand = norm_rec["slotRecommendations"][0]["rankedCandidates"][0]
+    check(grounded_cand["cautionNote"] == "", "Proxy validator strips misleading 0-completed-jobs caution note for Jamar")
+    check(any("14 customer reviews" in b for b in grounded_cand["rationaleBullets"]),
+          "Proxy validator replaces 0-completed-jobs bullet with authoritative 14 reviews")
+    check(any("labor-only moving" in b for b in grounded_cand["rationaleBullets"]),
+          "Proxy validator grounds hallucinated truck claim to labor-only moving assistance")
+    check("Gold" not in grounded_cand["fitSummary"] and "Bronze" in grounded_cand["fitSummary"],
+          "Proxy validator corrects hallucinated Gold tier to authoritative Bronze tier in fitSummary")
+    check("0 completed jobs" not in grounded_cand["fitSummary"],
+          "Proxy validator cleans 0-completed-jobs reference from fitSummary")
+    check("520" not in str(grounded_cand) and "lifetime" not in str(grounded_cand).lower(),
+          "Proxy validator ensures Pro earnings/lifetime data is never present in candidate recommendation text")
+    check("earnings" not in str(sanitized_val["eligibleCandidates"][0]) and "lifetimeEarned" not in str(sanitized_val["eligibleCandidates"][0]),
+          "Sanitized request candidate object strictly excludes earnings and wallet fields")
+    check("Gold" not in norm_rec["slotRecommendations"][0]["draftAdminReason"],
+          "Proxy validator grounds slot-level draftAdminReason (strips Gold tier)")
 
     print("\n============================================================")
     print(f"STAGE 4.5 OPENAI PROXY SUITE SUMMARY: {passed} passed, {failed} failed")

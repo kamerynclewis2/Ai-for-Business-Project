@@ -78,11 +78,12 @@ export const FUTURE_EXPANSION_CITIES = [
 export const PRICING_RATES = {
   moving: {
     type: 'hourly',
-    customerRate: 40, // per worker-hour
-    proPayout: 25,    // per worker-hour
+    customerRate: 50, // per worker-hour (approved DFW Phase 1 rate, up from $40)
+    proPayout: 30,    // per worker-hour (approved DFW Phase 1 payout, up from $25)
+    minHours: 2,      // 2-hour minimum duration for moving bookings
     name: 'Moving & Lifting Assistance',
     categoryIcon: 'truck',
-    description: 'Heavy lifting, apartment moving, truck loading/unloading across Dallas.'
+    description: 'Heavy lifting, apartment moving, truck loading/unloading across Dallas (2-hour minimum).'
   },
   tv_mounting: {
     type: 'fixed',
@@ -302,6 +303,31 @@ export const INITIAL_CUSTOMERS = [
   }
 ];
 
+export function getUpcomingSundayDateStr() {
+  try {
+    const now = new Date();
+    const dallasFormatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Chicago',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const parts = dallasFormatter.formatToParts(now);
+    const partMap = {};
+    parts.forEach(p => partMap[p.type] = p.value);
+    const curDate = new Date(`${partMap.year}-${partMap.month}-${partMap.day}T12:00:00`);
+    const day = curDate.getDay();
+    const daysUntilSunday = day === 0 ? 7 : (7 - day);
+    const nextSunday = new Date(curDate.getTime() + daysUntilSunday * 86400000);
+    const yyyy = nextSunday.getFullYear();
+    const mm = String(nextSunday.getMonth() + 1).padStart(2, '0');
+    const dd = String(nextSunday.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  } catch (e) {
+    return '2026-11-22';
+  }
+}
+
 export const INITIAL_BOOKINGS = [
   {
     id: 'CRW-1001',
@@ -513,7 +539,7 @@ export const INITIAL_BOOKINGS = [
     serviceCategory: 'moving',
     serviceTitle: 'Moving & Lifting Assistance (Upcoming Weekend)',
     timingType: 'scheduled',
-    scheduledDate: '2026-11-15',
+    scheduledDate: getUpcomingSundayDateStr(),
     scheduledTime: '10:00',
     estimatedDurationHours: 3,
     workersNeeded: 2,
