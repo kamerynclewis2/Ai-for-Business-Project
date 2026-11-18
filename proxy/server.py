@@ -21,12 +21,22 @@ from proxy.config import (
     resolve_provider_api_key,
     resolve_provider_model,
 )
-from proxy.gemini_client import GeminiClientError, request_gemini_recommendation
-from proxy.openai_client import OpenAIClientError, request_openai_recommendation
+from proxy.gemini_client import (
+    GeminiClientError,
+    request_gemini_concierge,
+    request_gemini_recommendation,
+)
+from proxy.openai_client import (
+    OpenAIClientError,
+    request_openai_concierge,
+    request_openai_recommendation,
+)
 from proxy.rate_limit import LocalDispatchRateLimiter
 from proxy.validator import (
     build_prompt_payload_for_gemini,
+    validate_and_normalize_concierge_output,
     validate_and_normalize_gemini_output,
+    validate_concierge_request_payload,
     validate_dispatch_request_payload,
 )
 
@@ -155,7 +165,7 @@ def handle_proxy_http_request(context, method, path, headers, raw_body_bytes=b""
         )
 
     if upper_method == "GET":
-        if path != "/health":
+        if path not in ("/health", "/api/health"):
             return _build_json_response(
                 context, upper_method, path, 404,
                 {"ok": False, "code": "not_found", "error": "Endpoint not found."},
@@ -198,7 +208,7 @@ def handle_proxy_http_request(context, method, path, headers, raw_body_bytes=b""
             log_code="method_not_allowed",
         )
 
-    if path != "/api/dispatch/recommend":
+    if path not in ("/api/dispatch/recommend", "/api/concierge/chat"):
         return _build_json_response(
             context, upper_method, path, 404,
             {"ok": False, "code": "not_found", "error": "Endpoint not found."},
@@ -286,6 +296,133 @@ def handle_proxy_http_request(context, method, path, headers, raw_body_bytes=b""
             },
             cors_origin=cors_origin,
             log_code="invalid_json",
+        )
+
+    if path == "/api/concierge/chat":
+        ok_concierge, validated_concierge, val_err = validate_concierge_request_payload(parsed_body)
+        if not ok_concierge:
+            return _build_json_response(
+                context, upper_method, path, 400,
+                {
+                    "ok": False,
+                    "code": "invalid_concierge_payload",
+                    "error": val_err,
+                    "fallbackRecommended": True,
+                },
+                cors_origin=cors_origin,
+                log_code="invalid_concierge_payload",
+            )
+
+        provider = context["provider_resolver"]()
+        if provider not in ALLOWED_AI_PROVIDERS:
+            provider = DEFAULT_AI_PROVIDER
+
+        api_key = context["api_key_loader"]()
+        if not is_api_key_configured(api_key):
+            key_env_name = "GEMINI_API_KEY" if provider == "gemini" else "OPENAI_API_KEY"
+            return _build_json_response(
+                context, upper_method, path, 503,
+                {
+                    "ok": False,
+                    "code": "proxy_not_configured",
+                    "provider": provider,
+                    "error": (
+                        f"Local AI Concierge proxy disabled: {key_env_name} is not configured. "
+                        "Please use Crewly's standard guided moving booking form."
+                    ),
+                    "fallbackRecommended": True,
+                },
+                cors_origin=cors_origin,
+                log_code="concierge_proxy_not_configured",
+            )
+
+        allowed_rate, rate_code, rate_msg, retry_after = context["rate_limiter"].check_and_record(
+            client_ip,
+            validated_concierge,
+        )
+        if not allowed_rate:
+            return _build_json_response(
+                context, upper_method, path, 429,
+                {
+                    "ok": False,
+                    "code": rate_code,
+                    "error": rate_msg,
+                    "fallbackRecommended": True,
+                },
+                cors_origin=cors_origin,
+                extra_headers={"Retry-After": retry_after},
+                log_code=rate_code,
+            )
+
+        model = context["model_resolver"]()
+        started = time.monotonic()
+        try:
+            if provider == "gemini":
+                raw_ai_output = request_gemini_concierge(
+                    validated_payload=validated_concierge,
+                    api_key=api_key,
+                    model=model,
+                    timeout_seconds=context["upstream_timeout_seconds"],
+                    transport_fn=context["transport_fn"],
+                )
+            else:
+                raw_ai_output = request_openai_concierge(
+                    validated_payload=validated_concierge,
+                    api_key=api_key,
+                    model=model,
+                    timeout_seconds=context["upstream_timeout_seconds"],
+                    transport_fn=context["transport_fn"],
+                )
+        except (OpenAIClientError, GeminiClientError) as ai_err:
+            return _build_json_response(
+                context, upper_method, path, ai_err.http_status,
+                {
+                    "ok": False,
+                    "code": ai_err.code,
+                    "provider": provider,
+                    "error": redact_secrets(ai_err.message, api_key=api_key),
+                    "fallbackRecommended": True,
+                },
+                cors_origin=cors_origin,
+                log_code=ai_err.code,
+            )
+
+        ok_out, out_code, normalized_out, val_report = validate_and_normalize_concierge_output(
+            raw_ai_output,
+            validated_concierge,
+            api_key=api_key,
+        )
+        if not ok_out:
+            return _build_json_response(
+                context, upper_method, path, 502,
+                {
+                    "ok": False,
+                    "code": out_code,
+                    "provider": provider,
+                    "error": normalized_out,
+                    "proxyValidation": val_report,
+                    "fallbackRecommended": True,
+                },
+                cors_origin=cors_origin,
+                log_code=out_code,
+            )
+
+        is_mock_transport = context["transport_fn"] is not None
+        live_source = "live_gemini_ai" if provider == "gemini" else "live_openai_ai"
+        inference_source = "mock_ai_test_mode" if is_mock_transport else live_source
+        return _build_json_response(
+            context, upper_method, path, 200,
+            {
+                "ok": True,
+                "provider": provider,
+                "inferenceSource": inference_source,
+                "isSimulatedTestMode": is_mock_transport,
+                "conciergeResult": normalized_out,
+                "validationReport": val_report,
+                "limitations": LOCAL_TRUST_LIMITATION,
+            },
+            cors_origin=cors_origin,
+            log_code="concierge_success",
         )
 
     ok_req, validated_req, validation_err = validate_dispatch_request_payload(parsed_body)

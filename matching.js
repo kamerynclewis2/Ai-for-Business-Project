@@ -4736,9 +4736,11 @@ export function getBookingAiDispatchEligibility(bookingId, options = {}) {
  * Hosted deployments (e.g. GitHub Pages) and file:// origins remain safely offline.
  */
 export function resolveAiDispatchProxyConfig(options = {}) {
-  const allowedOrigins = Array.isArray(AI_DISPATCH_CONFIG.LOCAL_PROXY_ALLOWED_ORIGINS)
-    ? AI_DISPATCH_CONFIG.LOCAL_PROXY_ALLOWED_ORIGINS
-    : ['http://localhost:8000', 'http://127.0.0.1:8000'];
+  const allowedOrigins = (typeof window !== 'undefined' && Array.isArray(window.AI_DISPATCH_CONFIG_ALLOWED_ORIGINS))
+    ? window.AI_DISPATCH_CONFIG_ALLOWED_ORIGINS
+    : (Array.isArray(AI_DISPATCH_CONFIG.LOCAL_PROXY_ALLOWED_ORIGINS)
+      ? AI_DISPATCH_CONFIG.LOCAL_PROXY_ALLOWED_ORIGINS
+      : ['http://localhost:8000', 'http://127.0.0.1:8000']);
 
   if (options && options.forceOffline === true) {
     return {
@@ -5063,4 +5065,467 @@ export async function requestAiDispatchAdvice(bookingId, options = {}) {
     recommendation: normalized,
     fallbackNotice: 'AI response did not pass Crewly eligibility verification; showing deterministic rules-based fallback.'
   };
+}
+
+// ===========================================================================
+// Stage 4.6B1: Customer AI Booking Concierge for Moving & Lifting
+// ===========================================================================
+
+export const CONCIERGE_CONFIG = {
+  ENDPOINT: 'http://127.0.0.1:8787/api/concierge/chat',
+  HEALTH_ENDPOINT: 'http://127.0.0.1:8787/health',
+  SERVICE_CATEGORY: 'moving',
+  ALLOWED_ORIGINS: ['http://localhost:8000', 'http://127.0.0.1:8000'],
+  REQUEST_TIMEOUT_MS: 10000,
+  SUPPORTED_DALLAS_ZIPS: [
+    '75201', '75202', '75204', '75205', '75206',
+    '75209', '75214', '75219', '75225', '75226', '75230'
+  ]
+};
+
+const CLIENT_PII_ADDRESS_RE = /\b\d{1,5}\s+[A-Za-z0-9\.\s]+(?:St|Street|Ave|Avenue|Blvd|Boulevard|Rd|Road|Ln|Lane|Dr|Drive|Ct|Court|Way|Pkwy|Parkway|Apt|Apartment|Suite|Unit)\b/gi;
+const CLIENT_PII_PHONE_RE = /(?:(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\b\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b)/g;
+const CLIENT_PII_EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+const CLIENT_PII_GATE_RE = /(?:gate|door|entry|buzzer|access|callbox)\s*(?:code|#)?\s*(?:is|[:=])?\s*#?\d{3,6}\b/gi;
+const CLIENT_PII_CARD_RE = /\b(?:\d{4}[-\s]?){3}\d{4}\b/g;
+
+/**
+ * Client-side privacy filter: scrubs street addresses, phone numbers, emails,
+ * gate codes, and payment numbers from conversation text before network transmission.
+ */
+export function sanitizeCustomerInputPii(text) {
+  if (!text || typeof text !== 'string') return '';
+  let clean = text.trim();
+  clean = clean.replace(CLIENT_PII_ADDRESS_RE, '[REDACTED_STREET_ADDRESS]');
+  clean = clean.replace(CLIENT_PII_PHONE_RE, '[REDACTED_PHONE]');
+  clean = clean.replace(CLIENT_PII_EMAIL_RE, '[REDACTED_EMAIL]');
+  clean = clean.replace(CLIENT_PII_GATE_RE, '[REDACTED_ACCESS_CODE]');
+  clean = clean.replace(CLIENT_PII_CARD_RE, '[REDACTED_PAYMENT_INFO]');
+  return clean.slice(0, 500);
+}
+
+/**
+ * Normalizes 12h/24h time strings (e.g. '10:00 AM', '10:00am', '14:30') to standard HH:MM (24h).
+ */
+export function normalizeConciergeTimeStr(timeStr) {
+  if (!timeStr || typeof timeStr !== 'string') return '';
+  const t = timeStr.trim().toUpperCase();
+  const m = t.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/);
+  if (m) {
+    let h = parseInt(m[1], 10);
+    const mn = m[2];
+    const meridiem = m[3];
+    if (meridiem === 'PM' && h < 12) h += 12;
+    else if (meridiem === 'AM' && h === 12) h = 0;
+    return `${String(h).padStart(2, '0')}:${mn}`;
+  }
+  return '';
+}
+
+/**
+ * Authoritative business validation for a Customer Moving Concierge draft.
+ * Used consistently across:
+ * - Conversational intake & multi-turn draft merging
+ * - Real-time UI rendering & confirmation button enablement
+ * - Customer confirmation click handler
+ * - createBookingFromConciergeDraft
+ *
+ * Enforces:
+ * - serviceCategory: strictly 'moving'
+ * - workersNeeded: integer between 1 and 4
+ * - hours: number between 2 and 8 (mandatory 2-hour minimum per Dallas pilot rules)
+ * - scheduledDate: valid upcoming date (YYYY-MM-DD), today or future in Dallas
+ * - scheduledTime: valid upcoming time (HH:MM), defaults to '10:00' if date is valid
+ * - zipCode: valid Dallas pilot ZIP code (one of 11 supported ZIPs)
+ * - truckOption: 'labor_only' or 'truck_required' (defaults to 'labor_only')
+ * - stairsOption: 'ground_floor', 'stairs_1_flight', 'stairs_multi', 'elevator' (defaults to 'ground_floor')
+ */
+export function validateConciergeMovingDraft(draft, options = {}) {
+  const dallasNow = getDallasLocalNow();
+  const missing = ['workersNeeded', 'hours', 'scheduledDate', 'scheduledTime', 'zipCode'];
+
+  if (!draft || typeof draft !== 'object') {
+    return {
+      isComplete: false,
+      missingFields: missing,
+      normalizedDraft: {
+        serviceCategory: 'moving',
+        workersNeeded: null,
+        hours: null,
+        scheduledDate: null,
+        scheduledTime: null,
+        zipCode: null,
+        truckOption: 'labor_only',
+        stairsOption: 'ground_floor',
+        scopeSummary: '',
+        isComplete: false,
+        missingFields: missing
+      }
+    };
+  }
+
+  const missingFields = [];
+
+  // 1. Workers needed (1 to 4)
+  const workers = parseInt(draft.workersNeeded, 10);
+  const workersValid = !isNaN(workers) && workers >= 1 && workers <= 4;
+  if (!workersValid) {
+    missingFields.push('workersNeeded');
+  }
+
+  // 2. Duration hours (2 to 8)
+  const hours = parseFloat(draft.hours);
+  const hoursValid = !isNaN(hours) && hours >= 2 && hours <= 8;
+  if (!hoursValid) {
+    missingFields.push('hours');
+  }
+
+  // 3. Scheduled Date (YYYY-MM-DD, today or future in Dallas)
+  const rawDate = String(draft.scheduledDate || '').trim();
+  const dateValid = /^\d{4}-\d{2}-\d{2}$/.test(rawDate) && rawDate >= dallasNow.dateStr;
+  if (!dateValid) {
+    missingFields.push('scheduledDate');
+  }
+
+  // 4. Scheduled Time (HH:MM)
+  let rawTime = normalizeConciergeTimeStr(String(draft.scheduledTime || '').trim());
+  if (!rawTime && dateValid) {
+    rawTime = '10:00';
+  }
+  const timeFormatValid = /^\d{2}:\d{2}$/.test(rawTime);
+  const timeValid = timeFormatValid && (rawDate !== dallasNow.dateStr || rawTime >= dallasNow.timeStr);
+  if (!timeValid) {
+    missingFields.push('scheduledTime');
+  }
+
+  // 5. ZIP Code (Dallas pilot only)
+  const rawZip = String(draft.zipCode || '').trim();
+  const zipCheck = lookupDallasZip(rawZip);
+  if (!zipCheck.valid) {
+    missingFields.push('zipCode');
+  }
+
+  // Options & Scope
+  const truckOption = (draft.truckOption === 'truck_required') ? 'truck_required' : 'labor_only';
+  const validStairs = ['ground_floor', 'stairs_1_flight', 'stairs_multi', 'elevator'];
+  const stairsOption = validStairs.includes(draft.stairsOption) ? draft.stairsOption : 'ground_floor';
+  const scopeSummary = String(draft.scopeSummary || '').slice(0, 500);
+
+  const isComplete = missingFields.length === 0;
+
+  const normalizedDraft = {
+    serviceCategory: 'moving',
+    workersNeeded: workersValid ? workers : null,
+    hours: hoursValid ? hours : null,
+    scheduledDate: dateValid ? rawDate : (rawDate || null),
+    scheduledTime: timeValid ? rawTime : (rawTime || null),
+    zipCode: zipCheck.valid ? rawZip : (rawZip || null),
+    truckOption,
+    stairsOption,
+    scopeSummary,
+    isComplete,
+    missingFields
+  };
+
+  return {
+    isComplete,
+    missingFields,
+    normalizedDraft
+  };
+}
+
+/**
+ * Calculates guaranteed upfront pricing for a moving concierge draft deterministically.
+ * Enforces Crewly approved rates: $50/mover-hour, $30 Pro payout, 2-hr min, $10 fee.
+ * The AI model NEVER calculates or invents prices.
+ */
+export function calculateConciergeDeterministicPricing(draft) {
+  if (!draft || typeof draft !== 'object') {
+    return {
+      isReady: false,
+      workersNeeded: 0,
+      hours: 0,
+      customerSubtotal: 0,
+      bookingFee: 10,
+      customerTotal: 0,
+      workerPayoutPerPerson: 0,
+      totalWorkerPayouts: 0,
+      grossPlatformRevenue: 0,
+      ratePerHour: 50,
+      payoutPerHour: 30
+    };
+  }
+
+  const workers = parseInt(draft.workersNeeded, 10);
+  const hours = parseFloat(draft.hours);
+
+  const workersValid = !isNaN(workers) && workers >= 1 && workers <= 4;
+  const hoursValid = !isNaN(hours) && hours >= 2 && hours <= 8;
+
+  if (!workersValid || !hoursValid) {
+    return {
+      isReady: false,
+      workersNeeded: workersValid ? workers : 0,
+      hours: hoursValid ? hours : 0,
+      customerSubtotal: 0,
+      bookingFee: 10,
+      customerTotal: 0,
+      workerPayoutPerPerson: 0,
+      totalWorkerPayouts: 0,
+      grossPlatformRevenue: 0,
+      ratePerHour: 50,
+      payoutPerHour: 30
+    };
+  }
+
+  const pricing = calculatePricing('moving', {
+    workersNeeded: workers,
+    hours: hours
+  });
+
+  return {
+    isReady: true,
+    workersNeeded: workers,
+    hours: hours,
+    customerSubtotal: pricing.customerSubtotal,
+    bookingFee: pricing.bookingFee,
+    customerTotal: pricing.customerTotal,
+    workerPayoutPerPerson: pricing.workerPayoutPerPerson,
+    totalWorkerPayouts: pricing.totalWorkerPayouts,
+    grossPlatformRevenue: pricing.grossPlatformRevenue,
+    ratePerHour: 50,
+    payoutPerHour: 30
+  };
+}
+
+/**
+ * Coordinates conversation turns with the local AI Concierge proxy.
+ * Checks loopback dev origin permissions, sanitizes PII client-side,
+ * enforces serviceCategory == 'moving' ONLY, and computes deterministic pricing.
+ * If proxy is unavailable, returns honest offline notice recommending manual booking.
+ */
+export async function requestAiConciergeMovingChat({ messages = [], currentDraft = null, options = {} } = {}) {
+  // Check loopback dev origin
+  const proxyCfg = resolveAiDispatchProxyConfig(options);
+  if (!proxyCfg.enabled) {
+    return {
+      ok: false,
+      offline: true,
+      error: 'AI Concierge is unavailable outside approved local dev server (http://localhost:8000). Please use our standard guided moving booking form.',
+      fallbackRecommended: true,
+      draft: currentDraft,
+      pricing: calculateConciergeDeterministicPricing(currentDraft)
+    };
+  }
+
+  const endpoint = (options && typeof options.endpoint === 'string' && options.endpoint.trim())
+    ? options.endpoint.trim()
+    : CONCIERGE_CONFIG.ENDPOINT;
+
+  const fetchFn = (options && typeof options.fetchFn === 'function')
+    ? options.fetchFn
+    : (typeof fetch === 'function' ? fetch : null);
+
+  if (!fetchFn) {
+    return {
+      ok: false,
+      offline: true,
+      error: 'Fetch API unavailable in this browser environment. Please use our standard guided moving booking form.',
+      fallbackRecommended: true,
+      draft: currentDraft,
+      pricing: calculateConciergeDeterministicPricing(currentDraft)
+    };
+  }
+
+  // Sanitize user message history client-side before sending
+  const sanitizedMessages = (messages || []).slice(-10).map(m => ({
+    role: m.role === 'assistant' ? 'assistant' : 'user',
+    content: m.role === 'assistant'
+      ? String(m.content || '').slice(0, 500)
+      : sanitizeCustomerInputPii(String(m.content || ''))
+  }));
+
+  // Strip UI-only state fields (isComplete, missingFields) from draft before sending to proxy.
+  // The proxy schema accepts these now but filtering here prevents future schema drift issues.
+  const DRAFT_SCHEMA_KEYS = new Set([
+    'serviceCategory', 'workersNeeded', 'hours', 'scheduledDate', 'scheduledTime',
+    'zipCode', 'truckOption', 'stairsOption', 'scopeSummary', 'isComplete', 'missingFields', 'unsupportedReason'
+  ]);
+  const sanitizedDraft = (currentDraft && typeof currentDraft === 'object')
+    ? Object.fromEntries(Object.entries(currentDraft).filter(([k]) => DRAFT_SCHEMA_KEYS.has(k)))
+    : null;
+
+  const payload = {
+    serviceCategory: 'moving',
+    messages: sanitizedMessages,
+    currentDraft: sanitizedDraft
+  };
+
+  const timeoutMs = (options && typeof options.timeoutMs === 'number' && options.timeoutMs > 0)
+    ? options.timeoutMs
+    : CONCIERGE_CONFIG.REQUEST_TIMEOUT_MS;
+
+  let abortCtrl = null;
+  let timeoutId = null;
+
+  try {
+    if (typeof AbortController !== 'undefined') {
+      abortCtrl = new AbortController();
+      if (typeof setTimeout === 'function') {
+        timeoutId = setTimeout(() => {
+          try { abortCtrl.abort(); } catch (e) {}
+        }, timeoutMs);
+      }
+    }
+
+    const fetchOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    };
+    if (abortCtrl) fetchOptions.signal = abortCtrl.signal;
+
+    const response = await fetchFn(endpoint, fetchOptions);
+    let parsedBody = null;
+    try {
+      parsedBody = await response.json();
+    } catch (e) {
+      parsedBody = null;
+    }
+
+    if (!response.ok || !parsedBody || parsedBody.ok !== true) {
+      const code = (parsedBody && parsedBody.code) || `http_${response.status}`;
+      const errDetail = (parsedBody && parsedBody.error) || 'Local AI proxy error.';
+      const isConfigError = code === 'proxy_not_configured';
+      const isValidationError = response.status === 400 || code === 'invalid_concierge_payload' || code === 'invalid_json' || code === 'unsupported_media_type' || code === 'payload_too_large';
+      const isRateLimit = response.status === 429 || code === 'rate_limit_exceeded';
+      // Only mark as "offline" for genuine connectivity/config failures, not for payload validation errors
+      const isOffline = !isValidationError && !isRateLimit && (isConfigError || response.status >= 500 || response.status === 0);
+      const friendlyMsg = isConfigError
+        ? 'Local AI Concierge proxy is offline (no API key configured). Please use our standard guided moving booking form.'
+        : isValidationError
+        ? errDetail
+        : isRateLimit
+        ? 'Too many requests to the AI Concierge. Please wait a moment and try again.'
+        : `Local AI Concierge is currently unavailable (${code}). You can easily book moving with our standard guided form.`;
+
+      return {
+        ok: false,
+        offline: isOffline,
+        validationError: isValidationError,
+        rateLimited: isRateLimit,
+        error: friendlyMsg,
+        code,
+        rawError: errDetail,
+        fallbackRecommended: isOffline || isConfigError,
+        draft: currentDraft,
+        pricing: calculateConciergeDeterministicPricing(currentDraft)
+      };
+    }
+
+    const conciergeResult = parsedBody.conciergeResult || {};
+    const extractedDetails = conciergeResult.extractedDetails || {};
+
+    // Authoritative multi-turn draft merging:
+    // If earlier turns captured details, preserve them unless explicitly overwritten
+    const mergedDetails = {
+      ...(currentDraft && typeof currentDraft === 'object' ? currentDraft : {}),
+      ...extractedDetails
+    };
+    Object.keys(extractedDetails).forEach(k => {
+      if (extractedDetails[k] !== null && extractedDetails[k] !== undefined && extractedDetails[k] !== '') {
+        mergedDetails[k] = extractedDetails[k];
+      }
+    });
+
+    const validation = validateConciergeMovingDraft(mergedDetails);
+    const authoritativeDraft = validation.normalizedDraft;
+    const deterministicPricing = calculateConciergeDeterministicPricing(authoritativeDraft);
+
+    return {
+      ok: true,
+      offline: false,
+      provider: parsedBody.provider || 'openai',
+      inferenceSource: parsedBody.inferenceSource || 'live_ai',
+      isSimulatedTestMode: !!parsedBody.isSimulatedTestMode,
+      reply: conciergeResult.assistantMessage || '',
+      assistantMessage: conciergeResult.assistantMessage || '',
+      isComplete: authoritativeDraft.isComplete,
+      missingFields: authoritativeDraft.missingFields,
+      clarificationQuestions: conciergeResult.clarificationQuestions || [],
+      draft: authoritativeDraft,
+      pricing: deterministicPricing
+    };
+  } catch (err) {
+    const isTimeout = err && (err.name === 'AbortError' || String(err.message || '').toLowerCase().includes('timeout'));
+    return {
+      ok: false,
+      offline: true,
+      error: isTimeout
+        ? 'AI Concierge request timed out. Please use our standard guided moving booking form.'
+        : 'Local AI Concierge proxy is not reachable at 127.0.0.1:8787. Please use our standard guided moving booking form.',
+      code: isTimeout ? 'timeout' : 'proxy_unreachable',
+      fallbackRecommended: true,
+      draft: currentDraft,
+      pricing: calculateConciergeDeterministicPricing(currentDraft)
+    };
+  } finally {
+    if (timeoutId !== null && typeof clearTimeout === 'function') {
+      clearTimeout(timeoutId);
+    }
+  }
+}
+
+/**
+ * Creates a booking from a confirmed Moving Concierge draft.
+ * Requires explicit customer confirmation and local private fields (street address).
+ * Strictly guards against double-booking and invalid fields.
+ */
+export function createBookingFromConciergeDraft({
+  customerId,
+  address,
+  zipCode,
+  draft,
+  notes = '',
+  options = {}
+}) {
+  if (!draft || typeof draft !== 'object') {
+    throw new Error('A valid moving draft is required to create a booking.');
+  }
+
+  const finalZip = String(zipCode || (draft && draft.zipCode) || '').trim();
+  const zipCheck = lookupDallasZip(finalZip);
+  if (!zipCheck.valid) {
+    throw new Error(zipCheck.message);
+  }
+
+  const validation = validateConciergeMovingDraft({ ...draft, zipCode: finalZip }, options);
+  if (!validation.isComplete) {
+    throw new Error('Your moving booking draft is incomplete. Please complete all required moving details before confirming.');
+  }
+  const cleanDraft = validation.normalizedDraft;
+
+  const finalAddress = String(address || '').trim();
+  if (!finalAddress) {
+    throw new Error('Please enter a street address for your moving service.');
+  }
+
+  const intakeDetails = {
+    workersNeeded: cleanDraft.workersNeeded,
+    hours: cleanDraft.hours,
+    truckOption: cleanDraft.truckOption || 'labor_only',
+    stairsOption: cleanDraft.stairsOption || 'ground_floor',
+    notes: String(notes || cleanDraft.scopeSummary || '').slice(0, 500)
+  };
+
+  return createBooking({
+    customerId,
+    address: finalAddress,
+    zipCode: finalZip,
+    serviceCategory: 'moving',
+    timingType: 'scheduled',
+    scheduledDate: cleanDraft.scheduledDate,
+    scheduledTime: cleanDraft.scheduledTime,
+    intakeDetails
+  });
 }

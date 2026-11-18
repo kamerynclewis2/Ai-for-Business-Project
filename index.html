@@ -1063,6 +1063,168 @@
   </div>
 
   <!-- ===================================================================
+       MODAL: CUSTOMER AI BOOKING CONCIERGE (MOVING & LIFTING ONLY)
+       =================================================================== -->
+  <div class="modal-overlay" id="ai-concierge-modal">
+    <div class="modal-dialog" style="max-width: 960px; width: 95%;">
+      <div class="modal-header" style="border-bottom: 1px solid var(--border-light); padding-bottom: 14px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <h2 style="margin: 0; font-size: 1.25rem; color: var(--primary-navy);">
+              🤖 Moving Booking Concierge
+            </h2>
+            <span class="service-badge-pill" id="concierge-proxy-status-pill" style="background: #ECFDF5; color: #059669; font-size: 0.72rem; padding: 3px 8px; border-radius: 12px; font-weight: 700;">
+              AI Ready
+            </span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
+            Conversational intake for Dallas Moving & Lifting. Guaranteed $50/mover-hour rate computed upfront.
+          </div>
+        </div>
+        <button class="modal-close-btn" id="btn-close-concierge">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 18px 24px;">
+        <!-- Offline Warning Banner (shown if proxy is offline / disabled) -->
+        <div id="concierge-offline-banner" style="display: none; background: #FEF3C7; border-left: 4px solid #D97706; padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #92400E;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <strong>ℹ️ Local AI Concierge Offline:</strong> You can book moving right now with guaranteed upfront pricing using our standard guided form.
+            </div>
+            <button class="btn-book-service" id="btn-concierge-switch-standard" style="width: auto; padding: 6px 14px; font-size: 0.8rem; background: #D97706;">
+              Open Standard Form ➔
+            </button>
+          </div>
+        </div>
+
+        <!-- 2-Column Responsive Layout -->
+        <div style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 20px;" class="concierge-layout-grid">
+          
+          <!-- Left Column: Conversational Chat -->
+          <div style="display: flex; flex-direction: column; height: 520px; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: #F8FAFC; overflow: hidden;">
+            
+            <!-- Chat Messages Log -->
+            <div id="concierge-chat-messages" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+              <!-- Initial Greeting from Concierge -->
+              <div class="concierge-msg concierge-msg-assistant" style="display: flex; gap: 10px; max-width: 90%;">
+                <div style="font-size: 1.4rem;">🤖</div>
+                <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; font-size: 0.88rem; color: var(--primary-navy); box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+                  <div style="font-weight: 700; font-size: 0.75rem; color: var(--accent-blue); margin-bottom: 4px;">CREWLY MOVING CONCIERGE</div>
+                  Hello! I'm Crewly's Moving Concierge for the Dallas pilot area. Tell me about your upcoming move — what are you moving, where in Dallas (ZIP or neighborhood), and what date or preferred time do you have in mind?
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Suggestion Chips -->
+            <div id="concierge-suggestion-chips" style="padding: 8px 12px; background: white; border-top: 1px solid var(--border-light); display: flex; gap: 6px; overflow-x: auto; white-space: nowrap;">
+              <button type="button" class="btn-open-tab concierge-chip" data-text="1-bedroom apartment move in Uptown (2 movers, 3 hours)" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border-dark);">1-Bed Uptown (2 Movers, 3 hrs)</button>
+              <button type="button" class="btn-open-tab concierge-chip" data-text="2-bedroom home move in Lakewood (3 movers, 4 hours)" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border-dark);">2-Bed Lakewood (3 Movers, 4 hrs)</button>
+              <button type="button" class="btn-open-tab concierge-chip" data-text="Heavy furniture moving in Downtown Dallas (2 movers, 2 hours)" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border-dark);">Heavy Items (2 Movers, 2 hrs)</button>
+            </div>
+
+            <!-- Chat Input Area -->
+            <form id="concierge-chat-form" style="display: flex; gap: 8px; padding: 12px; background: white; border-top: 1px solid var(--border-light); align-items: center;">
+              <input type="text" id="concierge-user-input" class="form-input" placeholder="Describe your move (e.g. 1-bed apartment in Uptown next Sat 10am)..." style="flex: 1;" autocomplete="off" maxlength="500">
+              <button type="submit" id="btn-concierge-send" class="btn-book-service" style="width: auto; padding: 10px 18px; display: flex; align-items: center; gap: 6px;">
+                <span>Send</span> ➔
+              </button>
+            </form>
+          </div>
+
+          <!-- Right Column: Live Structured Draft & Guaranteed Pricing Quote -->
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            
+            <!-- Live Intake Summary -->
+            <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-weight: 700; font-size: 0.88rem; color: var(--primary-navy);">📋 Moving Intake Draft</span>
+                <span id="concierge-draft-status" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; background: #EFF6FF; color: var(--accent-blue); font-weight: 700;">In Progress</span>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-light); padding-bottom: 4px;">
+                  <span style="color: var(--text-muted);">Service:</span>
+                  <strong style="color: var(--primary-navy);">Moving & Lifting Assistance</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-light); padding-bottom: 4px;">
+                  <span style="color: var(--text-muted);">Crew Size:</span>
+                  <span id="concierge-draft-movers" style="font-weight: 700; color: #D97706;">Needs clarification</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-light); padding-bottom: 4px;">
+                  <span style="color: var(--text-muted);">Duration:</span>
+                  <span id="concierge-draft-hours" style="font-weight: 700; color: #D97706;">Needs clarification</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-light); padding-bottom: 4px;">
+                  <span style="color: var(--text-muted);">Date & Time:</span>
+                  <span id="concierge-draft-datetime" style="font-weight: 700; color: #D97706;">Needs clarification</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-light); padding-bottom: 4px;">
+                  <span style="color: var(--text-muted);">Dallas Area / ZIP:</span>
+                  <span id="concierge-draft-zip" style="font-weight: 700; color: #D97706;">Needs clarification</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-light); padding-bottom: 4px;">
+                  <span style="color: var(--text-muted);">Truck Status:</span>
+                  <span id="concierge-draft-truck" style="font-weight: 700; color: #D97706;">Needs clarification</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-bottom: 2px;">
+                  <span style="color: var(--text-muted);">Access / Stairs:</span>
+                  <span id="concierge-draft-stairs" style="font-weight: 700; color: #D97706;">Needs clarification</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Deterministic Pricing Quote Card -->
+            <div class="quote-breakdown-card" style="margin: 0; background: #F8FAFC; border: 1px solid var(--border-light); padding: 14px;">
+              <div style="font-weight: 700; font-size: 0.88rem; color: var(--primary-navy); margin-bottom: 6px; display: flex; justify-content: space-between;">
+                <span>Guaranteed Upfront Pricing</span>
+                <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">$50/mover-hr</span>
+              </div>
+
+              <div id="concierge-pricing-details" style="display: flex; flex-direction: column; gap: 4px;">
+                <div class="quote-row">
+                  <span id="concierge-quote-service-desc">Service Subtotal:</span>
+                  <strong id="concierge-quote-subtotal">—</strong>
+                </div>
+                <div class="quote-row">
+                  <span>Platform Booking Fee (Disclosed):</span>
+                  <strong id="concierge-quote-fee">$10.00</strong>
+                </div>
+                <div class="quote-row total" style="border-top: 1px solid var(--border-dark); padding-top: 6px; margin-top: 2px;">
+                  <span style="font-weight: 800;">Total Customer Price:</span>
+                  <span id="concierge-quote-total" style="color: var(--brand-emerald); font-size: 1.15rem; font-weight: 800;">—</span>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+                  * Deterministic rate. Pros earn $30/mover-hr. No hidden fees.
+                </div>
+              </div>
+            </div>
+
+            <!-- Local Private Details (Outside AI Prompt) -->
+            <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px;">
+              <div style="font-size: 0.78rem; font-weight: 700; color: var(--primary-navy); margin-bottom: 6px;">
+                🔒 Private Service Location (Kept strictly local)
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <input type="text" id="concierge-input-address" class="form-input" placeholder="Service street address (e.g. 2800 McKinney Ave, Apt 402)" style="font-size: 0.82rem; padding: 7px 10px;" required>
+                <input type="text" id="concierge-input-notes" class="form-input" placeholder="Gate code / parking notes (optional)" style="font-size: 0.82rem; padding: 7px 10px;">
+              </div>
+            </div>
+
+            <!-- Explicit Confirmation Button -->
+            <div>
+              <button class="btn-book-service" id="btn-concierge-confirm-booking" style="width: 100%; padding: 12px; font-size: 0.95rem;" disabled>
+                Complete Details Above to Book
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
        MODAL: ADMINISTRATIVE / DEMO MARKETPLACE METRICS
        =================================================================== -->
   <div class="modal-overlay" id="admin-modal">

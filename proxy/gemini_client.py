@@ -7,10 +7,12 @@ import urllib.error
 import urllib.request
 
 from proxy.config import (
+    CONCIERGE_SYSTEM_INSTRUCTION,
     GEMINI_API_BASE_URL,
     MAX_OUTPUT_TOKENS,
     SERVER_SYSTEM_INSTRUCTION,
     UPSTREAM_TIMEOUT_SECONDS,
+    build_concierge_response_json_schema,
     build_gemini_response_json_schema,
     redact_secrets,
 )
@@ -219,6 +221,116 @@ def request_gemini_recommendation(
             502,
             "upstream_error",
             f"Gemini API error (HTTP {status_code}). Use Crewly rules fallback.",
+        )
+
+    try:
+        envelope = json.loads(raw_body)
+    except json.JSONDecodeError:
+        raise GeminiClientError(
+            502,
+            "invalid_gemini_envelope",
+            "Upstream Gemini HTTP body was not valid JSON.",
+        )
+
+    return extract_json_from_gemini_envelope(envelope, api_key=api_key)
+
+
+def build_gemini_concierge_body(validated_payload):
+    """Builds official Gemini v1beta generateContent body for the Moving Booking Concierge."""
+    messages = validated_payload.get("messages", [])
+    conv_lines = [f"{m['role'].upper()}: {m['content']}" for m in messages]
+    draft_dict = validated_payload.get("currentDraft") or {}
+    input_text = (
+        "Customer Conversation History:\n" + "\n".join(conv_lines) + "\n\n"
+        "Existing Intake Draft:\n" + json.dumps(draft_dict, ensure_ascii=True) + "\n\n"
+        "Analyze the moving request and return ONLY valid JSON matching the schema."
+    )
+    return {
+        "systemInstruction": {
+            "parts": [{"text": CONCIERGE_SYSTEM_INSTRUCTION}],
+        },
+        "contents": [
+            {
+                "role": "user",
+                "parts": [{"text": input_text}],
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.2,
+            "maxOutputTokens": MAX_OUTPUT_TOKENS,
+            "responseMimeType": "application/json",
+            "responseJsonSchema": build_concierge_response_json_schema(),
+            "thinkingConfig": {"thinkingLevel": "minimal"},
+        },
+    }
+
+
+def request_gemini_concierge(
+    validated_payload,
+    api_key,
+    model="gemini-3.5-flash-lite",
+    timeout_seconds=UPSTREAM_TIMEOUT_SECONDS,
+    transport_fn=None,
+):
+    """Sends sanitized Moving Concierge conversation to Google Gemini Developer API."""
+    body_dict = build_gemini_concierge_body(validated_payload)
+    body_bytes = json.dumps(body_dict).encode("utf-8")
+
+    headers = {
+        "Content-Type": "application/json",
+        "x-goog-api-key": api_key.strip(),
+        "User-Agent": "CrewlyLocalProxy/1.0",
+    }
+    url = f"{GEMINI_API_BASE_URL}/{model}:generateContent"
+
+    transport = transport_fn or default_https_transport
+    try:
+        status_code, raw_body = transport(url, headers, body_bytes, timeout_seconds)
+    except (socket.timeout, TimeoutError):
+        raise GeminiClientError(
+            504,
+            "upstream_timeout",
+            f"Gemini API request timed out after {int(timeout_seconds)}s. Use Crewly manual booking.",
+        )
+    except urllib.error.URLError as err:
+        reason = getattr(err, "reason", None)
+        if isinstance(reason, (socket.timeout, TimeoutError)) or "timed out" in str(reason).lower():
+            raise GeminiClientError(
+                504,
+                "upstream_timeout",
+                f"Gemini API request timed out after {int(timeout_seconds)}s. Use Crewly manual booking.",
+            )
+        safe_reason = redact_secrets(str(reason), api_key)
+        raise GeminiClientError(
+            502,
+            "upstream_network_error",
+            f"Unable to reach Gemini API ({safe_reason or 'network error'}). Use Crewly manual booking.",
+        )
+    except Exception as exc:
+        safe_msg = redact_secrets(str(exc), api_key)
+        raise GeminiClientError(
+            502,
+            "upstream_client_error",
+            f"Upstream proxy call failed ({safe_msg or 'unexpected error'}).",
+        )
+
+    if status_code >= 500:
+        raise GeminiClientError(
+            502,
+            "upstream_unavailable",
+            f"Gemini API temporary service error (HTTP {status_code}). Use Crewly manual booking.",
+        )
+    if status_code == 429:
+        raise GeminiClientError(
+            429,
+            "upstream_rate_limited",
+            "Gemini API rate limit exceeded (HTTP 429); switch to Crewly manual booking.",
+        )
+    if status_code >= 400:
+        raise GeminiClientError(
+            502,
+            "upstream_error",
+            f"Gemini API error (HTTP {status_code}). Use Crewly manual booking.",
         )
 
     try:

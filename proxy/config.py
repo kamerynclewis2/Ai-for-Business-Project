@@ -206,7 +206,7 @@ def redact_secrets(text, api_key=None):
     clean = re.sub(r"(?i)([?&]key=)([^&\s'\"]+)", r"\1[REDACTED_KEY]", clean)
     clean = re.sub(r"(?i)\bBearer\s+[0-9A-Za-z._-]{12,}\b", "Bearer [REDACTED_TOKEN]", clean)
     clean = re.sub(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", "[REDACTED_EMAIL]", clean)
-    clean = re.sub(r"\b(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b", "[REDACTED_PHONE]", clean)
+    clean = re.sub(r"(?:(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\b\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b)", "[REDACTED_PHONE]", clean)
     return clean
 
 
@@ -301,3 +301,144 @@ def build_gemini_response_json_schema():
 
 
 build_dispatch_response_json_schema = build_gemini_response_json_schema
+
+DALLAS_PILOT_ZIP_CODES = (
+    "75201",
+    "75202",
+    "75204",
+    "75205",
+    "75206",
+    "75209",
+    "75214",
+    "75219",
+    "75225",
+    "75226",
+    "75230",
+)
+
+CONCIERGE_SYSTEM_INSTRUCTION = (
+    "You are Crewly's conversational Moving & Lifting Booking Concierge in Dallas, Texas. "
+    "Your objective is to help Dallas customers describe their residential moving requirements, "
+    "gather all necessary details, and prepare a structured booking draft. "
+    "\n\n"
+    "Moving Service Guidelines:\n"
+    "- Scope: Moving & lifting labor assistance ONLY. Supported crew size is 1 to 4 movers.\n"
+    "- Duration: 2 to 8 hours (mandatory 2-hour minimum per Dallas pilot rules).\n"
+    "- Service Area: Dallas pilot neighborhoods only (supported ZIP codes: 75201, 75202, 75204, "
+    "75205, 75206, 75209, 75214, 75219, 75225, 75226, 75230). If customer provides an outside ZIP, "
+    "politely inform them that service is currently limited to the Dallas pilot zone.\n"
+    "- Truck Policy: Crewly offers two options: 'labor_only' (customer arranges their own rental truck, "
+    "POD, container, or moves within the building) OR 'truck_required' (Pros provide pickup truck "
+    "assistance with dollies and straps). NEVER promise or claim that Crewly supplies commercial box "
+    "trucks, semi-trucks, or freight vans.\n"
+    "- Access Details: Ask whether there are stairs (1 flight, multi-flight), ground floor, or elevator access.\n"
+    "- STRICT PRICING RULE: NEVER calculate, invent, quote, or state prices, hourly rates, booking fees, "
+    "or worker payouts. Do not state dollar amounts in your assistantMessage. State that Crewly's deterministic "
+    "pricing engine calculates an exact guaranteed upfront quote automatically once hours and movers are set.\n"
+    "- UNSUPPORTED SERVICE RULE: If the customer asks for a service other than moving (e.g. TV mounting, "
+    "furniture assembly, wall mounting, lawn mowing), explain politely that this Concierge coordinates "
+    "Moving & Lifting assistance only, and recommend using Crewly's standard service cards on the home screen.\n"
+    "- PRIVACY: Never ask for or store credit cards, bank accounts, SSNs, phone numbers, emails, "
+    "or exact street addresses. Street addresses and private gate codes are entered by the customer in local "
+    "fields on the confirmation card.\n"
+    "- Do not assume unanswered information is confirmed. Mark unconfirmed fields as missing."
+)
+
+
+def build_concierge_response_json_schema():
+    """
+    Returns strict JSON Schema for the Customer Moving Concierge response,
+    compatible with OpenAI Responses API strict JSON mode and Gemini responseJsonSchema.
+    """
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "assistantMessage",
+            "isComplete",
+            "missingFields",
+            "clarificationQuestions",
+            "extractedDetails",
+        ],
+        "properties": {
+            "assistantMessage": {
+                "type": "string",
+                "description": "Conversational reply to the customer. No invented dollar amounts.",
+            },
+            "isComplete": {
+                "type": "boolean",
+                "description": "True only when movers, hours, date, time, valid Dallas ZIP, and truckOption are all confirmed.",
+            },
+            "missingFields": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Names of required fields still needing clarification.",
+            },
+            "clarificationQuestions": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Next follow-up questions to ask the customer.",
+            },
+            "extractedDetails": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": [
+                    "serviceCategory",
+                    "workersNeeded",
+                    "hours",
+                    "scheduledDate",
+                    "scheduledTime",
+                    "zipCode",
+                    "truckOption",
+                    "stairsOption",
+                    "scopeSummary",
+                    "unsupportedReason",
+                ],
+                "properties": {
+                    "serviceCategory": {
+                        "type": "string",
+                        "enum": ["moving", "unsupported"],
+                        "description": "Service category ('moving' or 'unsupported').",
+                    },
+                    "workersNeeded": {
+                        "type": "integer",
+                        "description": "Number of movers (1 to 4). Use 0 if undetermined.",
+                    },
+                    "hours": {
+                        "type": "number",
+                        "description": "Estimated duration in hours (2 to 8). Use 0.0 if undetermined.",
+                    },
+                    "scheduledDate": {
+                        "type": "string",
+                        "description": "Scheduled date in YYYY-MM-DD format, or empty string.",
+                    },
+                    "scheduledTime": {
+                        "type": "string",
+                        "description": "Scheduled time in HH:MM format (24h), or empty string.",
+                    },
+                    "zipCode": {
+                        "type": "string",
+                        "description": "Supported 5-digit Dallas ZIP code, or empty string.",
+                    },
+                    "truckOption": {
+                        "type": "string",
+                        "enum": ["undetermined", "labor_only", "truck_required"],
+                        "description": "Truck scope selection.",
+                    },
+                    "stairsOption": {
+                        "type": "string",
+                        "enum": ["undetermined", "ground_floor", "stairs_1_flight", "stairs_multi", "elevator"],
+                        "description": "Access conditions.",
+                    },
+                    "scopeSummary": {
+                        "type": "string",
+                        "description": "Brief description of items to move.",
+                    },
+                    "unsupportedReason": {
+                        "type": "string",
+                        "description": "Reason if requested work is unsupported, or empty string.",
+                    },
+                },
+            },
+        },
+    }

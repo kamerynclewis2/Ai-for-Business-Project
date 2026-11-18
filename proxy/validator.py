@@ -4,6 +4,7 @@ import json
 import re
 
 from proxy.config import (
+    DALLAS_PILOT_ZIP_CODES,
     MAX_CANDIDATES,
     MAX_OPEN_SLOTS,
     MAX_TEXT_INPUT_CHARS,
@@ -15,6 +16,22 @@ SLOT_ID_RE = re.compile(r"^slot_\d{1,3}$")
 PRO_ID_RE = re.compile(r"^pro_[a-zA-Z0-9_]{1,40}$")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 TIME_RE = re.compile(r"^\d{2}:\d{2}$")
+
+
+def normalize_time_str(time_str):
+    """Normalizes 12h/24h time strings (e.g. '10:00 AM', '10:00am', '14:30') to standard HH:MM (24h)."""
+    if not time_str or not isinstance(time_str, str):
+        return ""
+    t = str(time_str).strip().upper()
+    m = re.match(r"^(\d{1,2}):(\d{2})\s*(AM|PM)?$", t)
+    if m:
+        h, mn, meridiem = int(m.group(1)), m.group(2), m.group(3)
+        if meridiem == "PM" and h < 12:
+            h += 12
+        elif meridiem == "AM" and h == 12:
+            h = 0
+        return f"{h:02d}:{mn}"
+    return ""
 
 ALLOWED_ROOT_KEYS = {
     "schemaVersion",
@@ -746,3 +763,276 @@ def validate_and_normalize_gemini_output(raw_output, validated_request, api_key=
         "rejectedSlots": rejected_slots,
         "rejectedCandidates": rejected_candidates,
     }
+
+
+# =============================================================================
+# Stage 4.6B1: Customer AI Booking Concierge Validators & PII Filters
+# =============================================================================
+
+CONCIERGE_ALLOWED_ROOT_KEYS = {"serviceCategory", "messages", "currentDraft"}
+CONCIERGE_ALLOWED_ROLES = {"user", "assistant"}
+CONCIERGE_ALLOWED_DRAFT_KEYS = {
+    "serviceCategory",
+    "workersNeeded",
+    "hours",
+    "scheduledDate",
+    "scheduledTime",
+    "zipCode",
+    "truckOption",
+    "stairsOption",
+    "scopeSummary",
+    "isComplete",
+    "missingFields",
+    "unsupportedReason",
+}
+
+PII_ADDRESS_RE = re.compile(
+    r"\b\d{1,5}\s+[A-Za-z0-9\.\s]+(?:St|Street|Ave|Avenue|Blvd|Boulevard|Rd|Road|Ln|Lane|Dr|Drive|Ct|Court|Way|Pkwy|Parkway|Apt|Apartment|Suite|Unit)\b",
+    re.IGNORECASE,
+)
+PII_PHONE_RE = re.compile(r"(?:(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\b\d{3})[-.\s]?\d{3}[-.\s]?\d{4}\b)")
+PII_EMAIL_RE = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}")
+PII_GATE_CODE_RE = re.compile(r"(?i)(?:gate|door|entry|buzzer|access|callbox)\s*(?:code|#)?\s*(?:is|[:=])?\s*#?\d{3,6}\b")
+PII_CARD_RE = re.compile(r"\b(?:\d{4}[-\s]?){3}\d{4}\b")
+PII_SSN_RE = re.compile(r"\b\d{3}-\d{2}-\d{4}\b")
+
+
+def sanitize_concierge_input_text(text, api_key=None):
+    """
+    Scrubs sensitive PII (street addresses, phone numbers, emails, gate codes, credit cards)
+    from customer conversation text before dispatching to an AI model.
+    """
+    clean = str(text or "")
+    clean = redact_secrets(clean, api_key=api_key)
+    clean = PII_ADDRESS_RE.sub("[REDACTED_STREET_ADDRESS]", clean)
+    clean = PII_PHONE_RE.sub("[REDACTED_PHONE]", clean)
+    clean = PII_EMAIL_RE.sub("[REDACTED_EMAIL]", clean)
+    clean = PII_GATE_CODE_RE.sub("[REDACTED_ACCESS_CODE]", clean)
+    clean = PII_CARD_RE.sub("[REDACTED_PAYMENT_INFO]", clean)
+    clean = PII_SSN_RE.sub("[REDACTED_SSN]", clean)
+    return clean.strip()
+
+
+def validate_concierge_request_payload(parsed_body, api_key=None):
+    """
+    Validates incoming POST /api/concierge/chat request body.
+    Enforces serviceCategory == 'moving' ONLY, message count/length limits, and PII scrubbing.
+    """
+    if not isinstance(parsed_body, dict):
+        return False, None, "Request body must be a JSON object."
+
+    extra_keys = set(parsed_body.keys()) - CONCIERGE_ALLOWED_ROOT_KEYS
+    if extra_keys:
+        return False, None, f"Disallowed root keys in concierge payload: {sorted(list(extra_keys))}."
+
+    service_cat = parsed_body.get("serviceCategory")
+    if service_cat != "moving":
+        return False, None, (
+            "Customer AI Concierge currently coordinates Moving & Lifting assistance only. "
+            f"Requested service '{service_cat}' is not supported in Stage 4.6B1."
+        )
+
+    raw_messages = parsed_body.get("messages")
+    if not isinstance(raw_messages, list) or len(raw_messages) == 0:
+        return False, None, "Concierge 'messages' must be a non-empty list of conversation turns."
+    if len(raw_messages) > 10:
+        return False, None, "Concierge conversation exceeds maximum limit of 10 message turns."
+
+    clean_messages = []
+    pii_redacted_count = 0
+    for idx, msg in enumerate(raw_messages):
+        if not isinstance(msg, dict):
+            return False, None, f"Message at index {idx} must be a JSON object with 'role' and 'content'."
+        role = str(msg.get("role") or "").strip().lower()
+        if role not in CONCIERGE_ALLOWED_ROLES:
+            return False, None, f"Message at index {idx} has invalid role '{role}'; must be 'user' or 'assistant'."
+        raw_content = str(msg.get("content") or "").strip()
+        if not raw_content:
+            return False, None, f"Message at index {idx} contains empty content."
+        if len(raw_content) > 500:
+            return False, None, f"Message at index {idx} exceeds maximum allowed length of 500 characters."
+
+        # Apply strict PII sanitization to user messages
+        if role == "user":
+            sanitized = sanitize_concierge_input_text(raw_content, api_key=api_key)
+            if sanitized != raw_content:
+                pii_redacted_count += 1
+            clean_messages.append({"role": role, "content": sanitized})
+        else:
+            clean_messages.append({"role": role, "content": redact_secrets(raw_content, api_key=api_key)})
+
+    clean_draft = None
+    if "currentDraft" in parsed_body and parsed_body["currentDraft"] is not None:
+        raw_draft = parsed_body["currentDraft"]
+        if not isinstance(raw_draft, dict):
+            return False, None, "'currentDraft' must be a JSON object if provided."
+        draft_extra = set(raw_draft.keys()) - CONCIERGE_ALLOWED_DRAFT_KEYS
+        if draft_extra:
+            return False, None, f"Disallowed keys in currentDraft: {sorted(list(draft_extra))}."
+        clean_draft = {
+            k: raw_draft[k] for k in CONCIERGE_ALLOWED_DRAFT_KEYS if k in raw_draft
+        }
+
+    validated_payload = {
+        "serviceCategory": "moving",
+        "messages": clean_messages,
+        "currentDraft": clean_draft,
+        "piiRedactedTurnsCount": pii_redacted_count,
+    }
+    return True, validated_payload, None
+
+
+def validate_and_normalize_concierge_output(raw_output, request_payload, api_key=None):
+    """
+    Validates and normalizes upstream model response for Customer Moving Concierge.
+    Enforces deterministic pricing separation (strips made-up prices), field bounds,
+    and returns a clean, safe output.
+    """
+    if isinstance(raw_output, str):
+        try:
+            raw_output = json.loads(raw_output)
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return False, "invalid_json_envelope", "AI output was not valid JSON.", {}
+
+    if not isinstance(raw_output, dict):
+        return False, "invalid_ai_response", "AI output was not a JSON object.", {}
+
+    raw_msg = str(raw_output.get("assistantMessage") or "").strip()
+    if not raw_msg:
+        return False, "empty_assistant_message", "AI output contained an empty assistantMessage.", {}
+
+    # Strict Price Neutralization: AI must NEVER invent or state dollar prices or rates
+    # If the model emits dollar signs or rate figures, neutralize them
+    neutralized_msg = re.sub(
+        r"\$\s*\d+(?:\.\d{2})?(?:\s*/\s*(?:hr|hour|mover-hour))?",
+        "[exact upfront quote calculated by Crewly]",
+        raw_msg,
+        flags=re.IGNORECASE,
+    )
+    clean_msg = redact_secrets(neutralized_msg, api_key=api_key)
+
+    raw_details = raw_output.get("extractedDetails")
+    if not isinstance(raw_details, dict):
+        raw_details = {}
+
+    service_cat = str(raw_details.get("serviceCategory") or "moving").strip().lower()
+    if service_cat not in ("moving", "unsupported"):
+        service_cat = "moving"
+
+    # Normalize workersNeeded (0 if unset, 1 to 4)
+    raw_workers = raw_details.get("workersNeeded")
+    try:
+        workers = int(raw_workers) if raw_workers is not None else 0
+    except (ValueError, TypeError):
+        workers = 0
+    if workers < 0:
+        workers = 0
+    elif workers > 4:
+        workers = 4
+
+    # Normalize hours (0.0 if unset, 2.0 to 8.0)
+    raw_hours = raw_details.get("hours")
+    try:
+        hours = float(raw_hours) if raw_hours is not None else 0.0
+    except (ValueError, TypeError):
+        hours = 0.0
+    if hours < 0:
+        hours = 0.0
+    elif 0.0 < hours < 2.0:
+        # Enforce 2-hour minimum if duration was requested below minimum
+        hours = 2.0
+    elif hours > 8.0:
+        hours = 8.0
+
+    # Scheduled Date & Time
+    raw_date = str(raw_details.get("scheduledDate") or "").strip()
+    clean_date = raw_date if DATE_RE.match(raw_date) else ""
+
+    raw_time = str(raw_details.get("scheduledTime") or "").strip()
+    norm_time = normalize_time_str(raw_time)
+    clean_time = norm_time if norm_time and TIME_RE.match(norm_time) else (raw_time if TIME_RE.match(raw_time) else "")
+
+    # ZIP code verification against Dallas pilot zones
+    raw_zip = str(raw_details.get("zipCode") or "").strip()
+    clean_zip = raw_zip if raw_zip in DALLAS_PILOT_ZIP_CODES else ""
+
+    # Truck option
+    raw_truck = str(raw_details.get("truckOption") or "undetermined").strip().lower()
+    if raw_truck not in ("labor_only", "truck_required", "undetermined"):
+        raw_truck = "undetermined"
+
+    # Stairs option
+    raw_stairs = str(raw_details.get("stairsOption") or "undetermined").strip().lower()
+    if raw_stairs not in ("ground_floor", "stairs_1_flight", "stairs_multi", "elevator", "undetermined"):
+        raw_stairs = "undetermined"
+
+    raw_scope = str(raw_details.get("scopeSummary") or "").strip()
+    clean_scope = sanitize_concierge_input_text(raw_scope[:200], api_key=api_key)
+
+    unsupported_reason = str(raw_details.get("unsupportedReason") or "").strip()
+    if service_cat == "unsupported" and not unsupported_reason:
+        unsupported_reason = "Requested service is outside Moving & Lifting scope."
+
+    # Determine completion status deterministically
+    is_complete_deterministic = (
+        service_cat == "moving"
+        and workers >= 1
+        and hours >= 2.0
+        and bool(clean_date)
+        and bool(clean_time)
+        and bool(clean_zip)
+        and raw_truck in ("labor_only", "truck_required")
+    )
+
+    missing = []
+    if workers == 0:
+        missing.append("workersNeeded")
+    if hours == 0.0:
+        missing.append("hours")
+    if not clean_date:
+        missing.append("scheduledDate")
+    if not clean_time:
+        missing.append("scheduledTime")
+    if not clean_zip:
+        missing.append("zipCode")
+    if raw_truck == "undetermined":
+        missing.append("truckOption")
+    if raw_stairs == "undetermined":
+        missing.append("stairsOption")
+
+    raw_questions = raw_output.get("clarificationQuestions")
+    clean_questions = []
+    if isinstance(raw_questions, list):
+        for q in raw_questions[:3]:
+            q_str = str(q or "").strip()
+            if q_str:
+                clean_questions.append(redact_secrets(q_str, api_key=api_key))
+
+    normalized_output = {
+        "assistantMessage": clean_msg,
+        "isComplete": is_complete_deterministic,
+        "missingFields": missing,
+        "clarificationQuestions": clean_questions,
+        "extractedDetails": {
+            "serviceCategory": service_cat,
+            "workersNeeded": workers if workers > 0 else None,
+            "hours": hours if hours > 0 else None,
+            "scheduledDate": clean_date or None,
+            "scheduledTime": clean_time or None,
+            "zipCode": clean_zip or None,
+            "truckOption": raw_truck if raw_truck != "undetermined" else None,
+            "stairsOption": raw_stairs if raw_stairs != "undetermined" else None,
+            "scopeSummary": clean_scope or None,
+            "unsupportedReason": unsupported_reason or None,
+            "isComplete": is_complete_deterministic,
+            "missingFields": missing,
+        },
+    }
+
+    validation_meta = {
+        "serviceCategory": service_cat,
+        "isComplete": is_complete_deterministic,
+        "missingCount": len(missing),
+    }
+
+    return True, None, normalized_output, validation_meta

@@ -6,12 +6,14 @@ import urllib.error
 
 from proxy.config import (
     ALLOWED_OPENAI_MODELS,
+    CONCIERGE_SYSTEM_INSTRUCTION,
     DEFAULT_OPENAI_MODEL,
     OPENAI_DEFAULT_REASONING_EFFORT,
     OPENAI_MAX_OUTPUT_TOKENS,
     OPENAI_RESPONSES_API_URL,
     SERVER_SYSTEM_INSTRUCTION,
     UPSTREAM_TIMEOUT_SECONDS,
+    build_concierge_response_json_schema,
     build_dispatch_response_json_schema,
     redact_secrets,
 )
@@ -233,6 +235,103 @@ def request_openai_recommendation(
             502,
             "upstream_network_error",
             f"Unable to reach OpenAI API ({safe_reason or 'network error'}). Use Crewly rules fallback.",
+        )
+    except Exception as exc:
+        safe_msg = redact_secrets(str(exc), api_key)
+        raise OpenAIClientError(
+            502,
+            "upstream_client_error",
+            f"Upstream proxy call failed ({safe_msg or 'unexpected error'}).",
+        )
+
+    if status_code >= 400:
+        _raise_for_upstream_http_status(status_code)
+
+    try:
+        envelope = json.loads(raw_body)
+    except json.JSONDecodeError:
+        raise OpenAIClientError(
+            502,
+            "invalid_openai_envelope",
+            "Upstream OpenAI HTTP body was not valid JSON.",
+        )
+
+    return extract_json_from_openai_envelope(envelope, api_key=api_key)
+
+
+def build_openai_concierge_body(validated_payload, model=DEFAULT_OPENAI_MODEL):
+    """Builds official OpenAI POST /v1/responses body for the Moving Booking Concierge."""
+    selected_model = model if model in ALLOWED_OPENAI_MODELS else DEFAULT_OPENAI_MODEL
+    messages = validated_payload.get("messages", [])
+    conv_lines = [f"{m['role'].upper()}: {m['content']}" for m in messages]
+    draft_dict = validated_payload.get("currentDraft") or {}
+    input_text = (
+        f"Customer Conversation History:\n" + "\n".join(conv_lines) + "\n\n"
+        f"Existing Intake Draft:\n" + json.dumps(draft_dict, ensure_ascii=True) + "\n\n"
+        "Analyze the moving request and return ONLY valid JSON matching the schema."
+    )
+    return {
+        "model": selected_model,
+        "instructions": CONCIERGE_SYSTEM_INSTRUCTION,
+        "input": input_text,
+        "reasoning": {"effort": OPENAI_DEFAULT_REASONING_EFFORT},
+        "max_output_tokens": OPENAI_MAX_OUTPUT_TOKENS,
+        "store": False,
+        "text": {
+            "format": {
+                "type": "json_schema",
+                "name": "crewly_moving_concierge_response",
+                "strict": True,
+                "schema": build_concierge_response_json_schema(),
+            }
+        },
+    }
+
+
+def request_openai_concierge(
+    validated_payload,
+    api_key,
+    model=DEFAULT_OPENAI_MODEL,
+    timeout_seconds=UPSTREAM_TIMEOUT_SECONDS,
+    transport_fn=None,
+):
+    """Sends sanitized Moving Concierge conversation to OpenAI Responses API."""
+    body_dict = build_openai_concierge_body(validated_payload, model=model)
+    body_bytes = json.dumps(body_dict).encode("utf-8")
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key.strip()}",
+        "User-Agent": "CrewlyLocalProxy/1.0",
+    }
+
+    transport = transport_fn or default_https_transport
+    try:
+        status_code, raw_body = transport(
+            OPENAI_RESPONSES_API_URL,
+            headers,
+            body_bytes,
+            timeout_seconds,
+        )
+    except (socket.timeout, TimeoutError):
+        raise OpenAIClientError(
+            504,
+            "upstream_timeout",
+            f"OpenAI API request timed out after {int(timeout_seconds)}s. Use Crewly manual booking.",
+        )
+    except urllib.error.URLError as err:
+        reason = getattr(err, "reason", None)
+        if isinstance(reason, (socket.timeout, TimeoutError)) or "timed out" in str(reason).lower():
+            raise OpenAIClientError(
+                504,
+                "upstream_timeout",
+                f"OpenAI API request timed out after {int(timeout_seconds)}s. Use Crewly manual booking.",
+            )
+        safe_reason = redact_secrets(str(reason), api_key)
+        raise OpenAIClientError(
+            502,
+            "upstream_network_error",
+            f"Unable to reach OpenAI API ({safe_reason or 'network error'}). Use Crewly manual booking.",
         )
     except Exception as exc:
         safe_msg = redact_secrets(str(exc), api_key)

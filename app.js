@@ -68,7 +68,13 @@ import {
   getBookingAiDispatchEligibility,
   requestAiDispatchAdvice,
   resolveAiDispatchProxyConfig,
-  groundAndVerifyCandidateClaims
+  groundAndVerifyCandidateClaims,
+  CONCIERGE_CONFIG,
+  sanitizeCustomerInputPii,
+  calculateConciergeDeterministicPricing,
+  validateConciergeMovingDraft,
+  requestAiConciergeMovingChat,
+  createBookingFromConciergeDraft
 } from './matching.js';
 
 // Global UI State
@@ -103,6 +109,12 @@ let pendingAdminUnassignProName = null;
 const aiDispatchUiMap = {};
 let aiDispatchRequestCounter = 0;
 let pendingAdminAssignAiContext = null;
+
+// Stage 4.6B1: Customer AI Booking Concierge State (Moving Only)
+let conciergeConversationMessages = [];
+let conciergeCurrentDraft = null;
+let isConciergeSubmitting = false;
+let isConciergeBookingSubmitting = false;
 
 // ---------------------------------------------------------------------------
 // Timing Formatting Utility (Separates human labels from valid ISO/time values)
@@ -264,9 +276,20 @@ function renderServiceCards() {
             <span class="rate-label">Customer Upfront Rate</span>
             <div class="rate-amount">${rateText}</div>
           </div>
-          <button class="btn-book-service btn-open-booking" data-service="${s.key}">
-            <span>Book Service</span> ➔
-          </button>
+          ${s.key === 'moving' ? `
+            <div style="display: flex; gap: 8px;">
+              <button class="btn-book-service btn-open-booking" data-service="${s.key}" style="flex: 1;">
+                <span>Book Service</span> ➔
+              </button>
+              <button class="btn-book-service btn-open-moving-concierge" style="background: linear-gradient(135deg, #1E40AF, #2563EB); border: none; padding: 0 12px; font-size: 0.82rem;" title="AI-Assisted Moving Intake">
+                🤖 Concierge
+              </button>
+            </div>
+          ` : `
+            <button class="btn-book-service btn-open-booking" data-service="${s.key}">
+              <span>Book Service</span> ➔
+            </button>
+          `}
         </div>
       </div>
     `;
@@ -277,6 +300,13 @@ function renderServiceCards() {
     btn.addEventListener('click', (e) => {
       const serviceKey = e.currentTarget.getAttribute('data-service');
       openIntakeModal(serviceKey);
+    });
+  });
+
+  // Attach moving concierge click handlers
+  container.querySelectorAll('.btn-open-moving-concierge').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openMovingConciergeModal();
     });
   });
 }
@@ -296,6 +326,12 @@ function openIntakeModal(serviceKey) {
   // Populate dynamic questions based on service
   if (serviceKey === 'moving') {
     questionsContainer.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; background: #F0FDF4; border: 1px solid #BBF7D0; padding: 8px 12px; border-radius: var(--radius-sm); margin-bottom: 12px; font-size: 0.82rem; color: #166534;">
+        <span>✨ Prefer conversational booking?</span>
+        <button type="button" id="link-switch-to-moving-concierge" style="background: none; border: none; color: var(--accent-blue); font-weight: 700; cursor: pointer; text-decoration: underline; font-size: 0.82rem;">
+          Try AI Moving Concierge ➔
+        </button>
+      </div>
       <div style="background: #EFF6FF; border-left: 4px solid var(--accent-blue); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #1E40AF;">
         <strong>Moving & Lifting Pricing:</strong> $50/hour per mover with a mandatory 2-hour minimum duration, plus a transparent $10 booking fee. You can select 1 to 4 movers.
       </div>
@@ -601,6 +637,15 @@ function openIntakeModal(serviceKey) {
   // Attach live calculation listeners
   setupIntakeCalculationListeners();
   recalculateIntakePrice();
+
+  // Switch to moving concierge if link clicked
+  const switchConciergeBtn = document.getElementById('link-switch-to-moving-concierge');
+  if (switchConciergeBtn) {
+    switchConciergeBtn.onclick = () => {
+      modal.classList.remove('open');
+      openMovingConciergeModal();
+    };
+  }
 
   modal.classList.add('open');
 }
@@ -930,6 +975,411 @@ function handleBookingSubmit(e) {
     renderAll();
   } catch (err) {
     showToast(err.message || 'Error creating booking.', '⚠️');
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Stage 4.6B1: Customer AI Booking Concierge UI (Moving & Lifting ONLY)
+// ---------------------------------------------------------------------------
+
+function openMovingConciergeModal() {
+  const modal = document.getElementById('ai-concierge-modal');
+  if (!modal) return;
+
+  const state = loadState();
+  const activeCustomer = state.customers.find(c => c.id === state.activeCustomerId) || state.customers[0];
+  const defaultAddress = activeCustomer ? (activeCustomer.address || '') : '';
+
+  const addressInput = document.getElementById('concierge-input-address');
+  if (addressInput && !addressInput.value) {
+    addressInput.value = defaultAddress;
+  }
+
+  // Address input listener enables/disables the confirmation button in real time
+  if (addressInput && !addressInput._hasConciergeListener) {
+    addressInput._hasConciergeListener = true;
+    addressInput.addEventListener('input', () => {
+      const validation = validateConciergeMovingDraft(conciergeCurrentDraft);
+      conciergeCurrentDraft = validation.normalizedDraft;
+      const pricing = calculateConciergeDeterministicPricing(conciergeCurrentDraft);
+      updateConciergeDraftUi(conciergeCurrentDraft, validation.isComplete, pricing);
+    });
+  }
+
+  conciergeConversationMessages = [];
+  const initialValidation = validateConciergeMovingDraft(null);
+  conciergeCurrentDraft = initialValidation.normalizedDraft;
+
+  const chatContainer = document.getElementById('concierge-chat-messages');
+  if (chatContainer) {
+    chatContainer.innerHTML = `
+      <div class="concierge-msg concierge-msg-assistant" style="display: flex; gap: 10px; max-width: 90%;">
+        <div style="font-size: 1.4rem;">🤖</div>
+        <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; font-size: 0.88rem; color: var(--primary-navy); box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+          <div style="font-weight: 700; font-size: 0.75rem; color: var(--accent-blue); margin-bottom: 4px;">CREWLY MOVING CONCIERGE</div>
+          Hello! I'm Crewly's Moving Concierge for the Dallas pilot area. Tell me about your upcoming move — what are you moving, where in Dallas (ZIP or neighborhood), and what date or preferred time do you have in mind?
+        </div>
+      </div>
+    `;
+  }
+
+  const initialPricing = calculateConciergeDeterministicPricing(conciergeCurrentDraft);
+  updateConciergeDraftUi(conciergeCurrentDraft, false, initialPricing);
+
+  checkConciergeProxyHealth();
+
+  modal.classList.add('open');
+  const inputEl = document.getElementById('concierge-user-input');
+  if (inputEl) inputEl.focus();
+}
+
+function closeMovingConciergeModal() {
+  const modal = document.getElementById('ai-concierge-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+async function checkConciergeProxyHealth() {
+  const statusPill = document.getElementById('concierge-proxy-status-pill');
+  const offlineBanner = document.getElementById('concierge-offline-banner');
+
+  if (typeof window !== 'undefined' && window.location && window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    if (statusPill) {
+      statusPill.textContent = 'Standard Only';
+      statusPill.style.background = '#F3F4F6';
+      statusPill.style.color = '#6B7280';
+    }
+    if (offlineBanner) offlineBanner.style.display = 'block';
+    return false;
+  }
+
+  try {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 1200) : null;
+    const healthUrl = (typeof CONCIERGE_CONFIG !== 'undefined' && CONCIERGE_CONFIG.HEALTH_ENDPOINT)
+      ? CONCIERGE_CONFIG.HEALTH_ENDPOINT
+      : 'http://127.0.0.1:8787/health';
+    const res = await fetch(healthUrl, {
+      method: 'GET',
+      signal: controller ? controller.signal : undefined
+    });
+    if (timeoutId) clearTimeout(timeoutId);
+
+    if (res.ok) {
+      const data = await res.json().catch(() => null);
+      if (data && data.ok === true) {
+        if (data.keyConfigured === true) {
+          // Proxy online and AI API key is configured — fully ready
+          if (statusPill) {
+            statusPill.textContent = 'AI Ready';
+            statusPill.style.background = '#ECFDF5';
+            statusPill.style.color = '#059669';
+          }
+          if (offlineBanner) offlineBanner.style.display = 'none';
+          return 'ready';
+        } else {
+          // Proxy online but no API key — will reject chat requests with 503
+          if (statusPill) {
+            statusPill.textContent = 'No API Key';
+            statusPill.style.background = '#FEF3C7';
+            statusPill.style.color = '#92400E';
+          }
+          if (offlineBanner) offlineBanner.style.display = 'block';
+          return 'no_key';
+        }
+      }
+    }
+  } catch (_) {
+    // Proxy unreachable
+  }
+
+  if (statusPill) {
+    statusPill.textContent = 'Offline';
+    statusPill.style.background = '#FEF3C7';
+    statusPill.style.color = '#92400E';
+  }
+  if (offlineBanner) offlineBanner.style.display = 'block';
+  return false;
+}
+
+function appendConciergeChatMessage(role, text) {
+  const container = document.getElementById('concierge-chat-messages');
+  if (!container) return;
+
+  const msgDiv = document.createElement('div');
+  msgDiv.className = `concierge-msg concierge-msg-${role}`;
+  msgDiv.style.display = 'flex';
+  msgDiv.style.gap = '10px';
+  msgDiv.style.maxWidth = '90%';
+
+  if (role === 'user') {
+    msgDiv.style.alignSelf = 'flex-end';
+    msgDiv.style.flexDirection = 'row-reverse';
+    msgDiv.innerHTML = `
+      <div style="font-size: 1.4rem;">👤</div>
+      <div style="background: var(--primary-navy); color: white; border-radius: var(--radius-md); padding: 10px 14px; font-size: 0.88rem; box-shadow: 0 1px 2px rgba(0,0,0,0.06);">
+        ${escapeHtml(text)}
+      </div>
+    `;
+  } else {
+    msgDiv.style.alignSelf = 'flex-start';
+    msgDiv.innerHTML = `
+      <div style="font-size: 1.4rem;">🤖</div>
+      <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; font-size: 0.88rem; color: var(--primary-navy); box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+        <div style="font-weight: 700; font-size: 0.75rem; color: var(--accent-blue); margin-bottom: 4px;">CREWLY MOVING CONCIERGE</div>
+        ${escapeHtml(text)}
+      </div>
+    `;
+  }
+
+  container.appendChild(msgDiv);
+  container.scrollTop = container.scrollHeight;
+}
+
+function appendConciergeTypingIndicator(id) {
+  const container = document.getElementById('concierge-chat-messages');
+  if (!container) return;
+  const typingDiv = document.createElement('div');
+  typingDiv.id = id;
+  typingDiv.className = 'concierge-msg concierge-msg-assistant';
+  typingDiv.style.display = 'flex';
+  typingDiv.style.gap = '10px';
+  typingDiv.style.maxWidth = '90%';
+  typingDiv.innerHTML = `
+    <div style="font-size: 1.4rem;">🤖</div>
+    <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 10px 14px; font-size: 0.85rem; color: var(--text-muted); font-style: italic;">
+      Concierge is reviewing your moving details...
+    </div>
+  `;
+  container.appendChild(typingDiv);
+  container.scrollTop = container.scrollHeight;
+}
+
+function removeConciergeTypingIndicator(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function updateConciergeDraftUi(draft, isComplete, pricing) {
+  const complete = (draft && typeof draft.isComplete === 'boolean') ? draft.isComplete : !!isComplete;
+  const statusEl = document.getElementById('concierge-draft-status');
+  const moversEl = document.getElementById('concierge-draft-movers');
+  const hoursEl = document.getElementById('concierge-draft-hours');
+  const datetimeEl = document.getElementById('concierge-draft-datetime');
+  const zipEl = document.getElementById('concierge-draft-zip');
+  const truckEl = document.getElementById('concierge-draft-truck');
+  const stairsEl = document.getElementById('concierge-draft-stairs');
+
+  const descEl = document.getElementById('concierge-quote-service-desc');
+  const subtotalEl = document.getElementById('concierge-quote-subtotal');
+  const feeEl = document.getElementById('concierge-quote-fee');
+  const totalEl = document.getElementById('concierge-quote-total');
+  const confirmBtn = document.getElementById('btn-concierge-confirm-booking');
+
+  if (statusEl) {
+    statusEl.innerHTML = complete
+      ? `<span style="background: #ECFDF5; color: #059669; padding: 2px 8px; border-radius: 10px; font-weight: 700;">Ready to Book</span>`
+      : `<span style="background: #EFF6FF; color: var(--accent-blue); padding: 2px 8px; border-radius: 10px; font-weight: 700;">In Progress</span>`;
+  }
+
+  if (moversEl) {
+    if (draft && draft.workersNeeded) {
+      moversEl.innerHTML = `<span style="color: var(--brand-emerald); font-weight: 700;">${draft.workersNeeded} Mover${draft.workersNeeded > 1 ? 's' : ''}</span>`;
+    } else {
+      moversEl.innerHTML = `<span style="color: #D97706; font-weight: 700;">Needs clarification</span>`;
+    }
+  }
+
+  if (hoursEl) {
+    if (draft && draft.hours) {
+      hoursEl.innerHTML = `<span style="color: var(--brand-emerald); font-weight: 700;">${draft.hours} Hours (2-hr min)</span>`;
+    } else {
+      hoursEl.innerHTML = `<span style="color: #D97706; font-weight: 700;">Needs clarification</span>`;
+    }
+  }
+
+  if (datetimeEl) {
+    if (draft && draft.scheduledDate) {
+      const timePart = draft.scheduledTime ? ` at ${draft.scheduledTime}` : '';
+      datetimeEl.innerHTML = `<span style="color: var(--brand-emerald); font-weight: 700;">${draft.scheduledDate}${timePart}</span>`;
+    } else {
+      datetimeEl.innerHTML = `<span style="color: #D97706; font-weight: 700;">Needs clarification</span>`;
+    }
+  }
+
+  if (zipEl) {
+    if (draft && draft.zipCode) {
+      const area = lookupDallasZip(draft.zipCode);
+      const areaName = area.valid ? ` (${area.areaName})` : '';
+      zipEl.innerHTML = `<span style="color: var(--brand-emerald); font-weight: 700;">${draft.zipCode}${areaName}</span>`;
+    } else {
+      zipEl.innerHTML = `<span style="color: #D97706; font-weight: 700;">Needs clarification</span>`;
+    }
+  }
+
+  if (truckEl) {
+    if (draft && draft.truckOption === 'truck_required') {
+      truckEl.innerHTML = `<span style="color: var(--brand-emerald); font-weight: 700;">Pickup Truck Needed</span>`;
+    } else if (draft && draft.truckOption === 'labor_only') {
+      truckEl.innerHTML = `<span style="color: var(--brand-emerald); font-weight: 700;">Labor Only</span>`;
+    } else {
+      truckEl.innerHTML = `<span style="color: var(--text-muted); font-weight: 700;">Labor Only (Default)</span>`;
+    }
+  }
+
+  if (stairsEl) {
+    if (draft && draft.stairsOption) {
+      const label = draft.stairsOption.replace(/_/g, ' ');
+      stairsEl.innerHTML = `<span style="color: var(--brand-emerald); font-weight: 700;">${label}</span>`;
+    } else {
+      stairsEl.innerHTML = `<span style="color: var(--text-muted); font-weight: 700;">Ground floor (Default)</span>`;
+    }
+  }
+
+  if (pricing && pricing.isReady) {
+    if (descEl) descEl.textContent = `${pricing.workersNeeded} Movers × ${pricing.hours} hrs ($50/hr):`;
+    if (subtotalEl) subtotalEl.textContent = `$${pricing.customerSubtotal.toFixed(2)}`;
+    if (feeEl) feeEl.textContent = `$${pricing.bookingFee.toFixed(2)}`;
+    if (totalEl) totalEl.textContent = `$${pricing.customerTotal.toFixed(2)}`;
+  } else {
+    if (descEl) descEl.textContent = `Service Subtotal:`;
+    if (subtotalEl) subtotalEl.textContent = `—`;
+    if (feeEl) feeEl.textContent = `$10.00`;
+    if (totalEl) totalEl.textContent = `—`;
+  }
+
+  const addressVal = (document.getElementById('concierge-input-address')?.value || '').trim();
+  if (confirmBtn) {
+    if (complete && pricing && pricing.isReady && addressVal) {
+      confirmBtn.disabled = false;
+      confirmBtn.style.background = 'var(--brand-emerald)';
+      confirmBtn.style.color = 'white';
+      confirmBtn.textContent = `Confirm & Book Dallas Moving — $${pricing.customerTotal.toFixed(2)}`;
+    } else {
+      confirmBtn.disabled = true;
+      confirmBtn.style.background = '';
+      confirmBtn.style.color = '';
+      if (!complete) {
+        confirmBtn.textContent = 'Complete Details with Concierge to Book';
+      } else if (!addressVal) {
+        confirmBtn.textContent = 'Enter Street Address Below to Confirm';
+      } else {
+        confirmBtn.textContent = 'Complete Details Above to Book';
+      }
+    }
+  }
+}
+
+async function handleConciergeSendMessage(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const inputEl = document.getElementById('concierge-user-input');
+  if (!inputEl) return;
+  const userText = inputEl.value.trim();
+  if (!userText || isConciergeSubmitting) return;
+
+  isConciergeSubmitting = true;
+  inputEl.value = '';
+
+  const sendBtn = document.getElementById('btn-concierge-send');
+  if (sendBtn) {
+    sendBtn.disabled = true;
+    sendBtn.innerHTML = '<span>...</span>';
+  }
+
+  appendConciergeChatMessage('user', userText);
+
+  const typingId = 'concierge-typing-indicator';
+  appendConciergeTypingIndicator(typingId);
+
+  conciergeConversationMessages.push({ role: 'user', content: userText });
+
+  try {
+    const res = await requestAiConciergeMovingChat({
+      messages: conciergeConversationMessages,
+      currentDraft: conciergeCurrentDraft
+    });
+
+    removeConciergeTypingIndicator(typingId);
+
+    if (res.ok) {
+      appendConciergeChatMessage('assistant', res.reply);
+      conciergeConversationMessages.push({ role: 'assistant', content: res.reply });
+      if (res.draft) {
+        conciergeCurrentDraft = res.draft;
+      }
+      updateConciergeDraftUi(conciergeCurrentDraft, res.isComplete, res.pricing);
+    } else {
+      const errorMsg = res.error || (res.offline
+        ? "I'm currently unable to reach the local AI engine. You can switch to our standard guided moving form anytime using the button above to book with guaranteed pricing."
+        : "I encountered an error processing that message. Please try again or switch to our standard booking form.");
+      appendConciergeChatMessage('assistant', errorMsg);
+      // Only show the offline banner for genuine proxy connectivity failures, not validation rejections
+      if (res.offline && !res.validationError) {
+        const offlineBanner = document.getElementById('concierge-offline-banner');
+        if (offlineBanner) offlineBanner.style.display = 'block';
+      }
+    }
+  } catch (err) {
+    removeConciergeTypingIndicator(typingId);
+    appendConciergeChatMessage('assistant', "Network connection error. You can switch to our standard booking form anytime.");
+  } finally {
+    isConciergeSubmitting = false;
+    if (sendBtn) {
+      sendBtn.disabled = false;
+      sendBtn.innerHTML = '<span>Send</span> ➔';
+    }
+    inputEl.focus();
+  }
+}
+
+async function handleConciergeConfirmBooking() {
+  if (isConciergeBookingSubmitting) return;
+  const addressInput = document.getElementById('concierge-input-address');
+  const notesInput = document.getElementById('concierge-input-notes');
+  const address = (addressInput ? addressInput.value : '').trim();
+  const notes = (notesInput ? notesInput.value : '').trim();
+
+  if (!address) {
+    showToast('Please enter your service street address to confirm.', '⚠️');
+    if (addressInput) addressInput.focus();
+    return;
+  }
+
+  const validation = validateConciergeMovingDraft(conciergeCurrentDraft);
+  if (!validation.isComplete) {
+    showToast('Please provide all moving details (movers, hours, date, ZIP) before confirming.', '⚠️');
+    return;
+  }
+
+  const confirmBtn = document.getElementById('btn-concierge-confirm-booking');
+  isConciergeBookingSubmitting = true;
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Creating Booking...';
+  }
+
+  try {
+    const state = loadState();
+    const customerId = state.activeCustomerId;
+    const booking = createBookingFromConciergeDraft({
+      customerId,
+      address,
+      zipCode: validation.normalizedDraft.zipCode,
+      draft: validation.normalizedDraft,
+      notes
+    });
+
+    closeMovingConciergeModal();
+    showToast(`Booking ${booking.id} confirmed! Dispatched to Dallas Job Board for ${booking.neighborhoodName}.`);
+    renderAll();
+  } catch (err) {
+    showToast(err.message || 'Error creating booking.', '⚠️');
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      const pricing = calculateConciergeDeterministicPricing(conciergeCurrentDraft);
+      confirmBtn.textContent = `Confirm & Book Dallas Moving — $${pricing.customerTotal.toFixed(2)}`;
+    }
+  } finally {
+    isConciergeBookingSubmitting = false;
   }
 }
 
@@ -4441,6 +4891,25 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('intake-modal').classList.remove('open');
   });
   document.getElementById('btn-submit-booking').addEventListener('click', handleBookingSubmit);
+
+  // Stage 4.6B1: Customer AI Booking Concierge Handlers
+  document.getElementById('btn-close-concierge')?.addEventListener('click', closeMovingConciergeModal);
+  document.getElementById('btn-concierge-switch-standard')?.addEventListener('click', () => {
+    closeMovingConciergeModal();
+    openIntakeModal('moving');
+  });
+  document.getElementById('concierge-chat-form')?.addEventListener('submit', handleConciergeSendMessage);
+  document.querySelectorAll('.concierge-chip').forEach(chip => {
+    chip.addEventListener('click', (e) => {
+      const text = e.currentTarget.getAttribute('data-text');
+      const inputEl = document.getElementById('concierge-user-input');
+      if (inputEl && text) {
+        inputEl.value = text;
+        handleConciergeSendMessage();
+      }
+    });
+  });
+  document.getElementById('btn-concierge-confirm-booking')?.addEventListener('click', handleConciergeConfirmBooking);
 
   // Admin Modal
   document.getElementById('btn-admin-metrics').addEventListener('click', openAdminMetricsModal);
