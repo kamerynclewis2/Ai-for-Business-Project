@@ -6,6 +6,11 @@
 
 import {
   PRICING_RATES,
+  FURNITURE_ASSEMBLY_TIERS,
+  FURNITURE_DISASSEMBLY_TIERS,
+  UNSUPPORTED_FURNITURE_ITEMS,
+  FURNITURE_ASSEMBLY_CATALOG,
+  FURNITURE_DISASSEMBLY_CATALOG,
   DALLAS_NEIGHBORHOODS,
   DALLAS_SERVICE_ZIPS,
   lookupDallasZip,
@@ -380,25 +385,168 @@ function openIntakeModal(serviceKey) {
         </select>
       </div>
     `;
-  } else if (serviceKey === 'furniture_assembly' || serviceKey === 'furniture_disassembly') {
+  } else if (serviceKey === 'furniture_assembly') {
     questionsContainer.innerHTML = `
-      <div class="form-group">
-        <label class="form-label">Furniture Type & Complexity:</label>
-        <select id="intake-furniture-type" class="form-select">
-          <option value="bed_frame" selected>Bed Frame / Platform Bed (with headboard)</option>
-          <option value="dresser">Dresser (6+ drawers)</option>
-          <option value="desk">Office Desk or Standing Desk</option>
-          <option value="dining_set">Dining Table & Chairs</option>
-          <option value="outdoor_patio">Outdoor Patio Furniture</option>
-        </select>
+      <div style="background: #EFF6FF; border-left: 4px solid var(--accent-blue); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #1E40AF;">
+        <strong>Tiered Upfront Pricing:</strong> Tier 1 Simple ($60), Tier 2 Standard ($90), Tier 3 Complex ($160). Plus, enjoy a <strong>20% bundle discount</strong> on every secondary item, with only one $10 platform fee!
+      </div>
+      <div id="intake-assembly-decline-banner" style="display: none; background: #FEF3C7; border-left: 4px solid #D97706; padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #92400E;">
       </div>
       <div class="form-group">
-        <label class="form-label">Number of Items:</label>
-        <select id="intake-furniture-count" class="form-select">
-          <option value="1" selected>1 Item ($${config.customerRate})</option>
-          <option value="2">2 Items ($${config.customerRate * 2})</option>
-          <option value="3">3 Items ($${config.customerRate * 3})</option>
+        <label class="form-label">Primary Item (Type & Complexity Tier):</label>
+        <select id="intake-assembly-primary-item" class="form-select">
+          <optgroup label="Tier 2: Standard Assembly ($90)">
+            <option value="bed_frame_standard" selected>Bed Frame / Platform Bed ($90)</option>
+            <option value="standard_desk">Writing Desk or Computer Desk ($90)</option>
+            <option value="dresser_3_to_5_drawers">3 to 5-Drawer Dresser / Chest ($90)</option>
+            <option value="media_console">TV Media Console / Entertainment Stand ($90)</option>
+            <option value="dining_table">Standard Dining Table ($90)</option>
+            <option value="tall_bookcase">Tall Bookcase (4+ shelves with wall anchor) ($90)</option>
+          </optgroup>
+          <optgroup label="Tier 1: Simple Assembly ($60)">
+            <option value="chair_stools_pair">Dining Chairs or Bar Stools (Pair) ($60)</option>
+            <option value="nightstand_end_table">Nightstand, End Table, or Side Table ($60)</option>
+            <option value="office_chair">Ergonomic Office Chair ($60)</option>
+            <option value="coffee_table_simple">Coffee Table or Simple Console ($60)</option>
+            <option value="small_bookshelf">Small Bookshelf (≤3 shelves) ($60)</option>
+          </optgroup>
+          <optgroup label="Tier 3: Complex Multi-Component ($160)">
+            <option value="dresser_6_to_8_drawers">Large Dresser (6 to 8 Drawers with anti-tip anchor) ($160)</option>
+            <option value="wardrobe_single_frame">Wardrobe / Armoire / IKEA PAX (Single frame, up to 4 inserts) ($160)</option>
+            <option value="bunk_bed_loft_bed">Residential Bunk Bed or Loft Bed ($160)</option>
+            <option value="standing_desk_motorized">Motorized Standing Desk or L-Shaped Desk ($160)</option>
+            <option value="treadmill_exercise">Motorized Treadmill, Stationary Bike, or Rowing Machine ($160)</option>
+            <option value="bed_frame_with_storage">Platform Bed with Under-Bed Storage Drawers ($160)</option>
+          </optgroup>
+          <optgroup label="Unsupported Items (Requires Specialized Contractor)">
+            <option value="murphy_bed">⚠️ Murphy Bed (Wall-Mounted Pull-Down Bed) [Decline]</option>
+            <option value="builtin_cabinetry">⚠️ Custom Built-in Cabinetry / Kitchen Cabinets [Decline]</option>
+            <option value="gas_appliance">⚠️ Gas Grill or Gas Appliance [Decline]</option>
+            <option value="commercial_gym_multi_stack">⚠️ Commercial Multi-Station Gym Rig [Decline]</option>
+          </optgroup>
         </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Total Number of Items to Assemble (Up to 4 Items):</label>
+        <select id="intake-assembly-count" class="form-select">
+          <option value="1" selected>1 Item (No secondary items)</option>
+          <option value="2">2 Items (2nd item receives 20% bundle discount!)</option>
+          <option value="3">3 Items (Items 2 & 3 receive 20% bundle discount!)</option>
+          <option value="4">4 Items (Items 2, 3, & 4 receive 20% bundle discount!)</option>
+        </select>
+      </div>
+
+      <!-- Secondary item selectors (revealed dynamically if count > 1) -->
+      <div id="intake-assembly-secondary-container" style="display: none; border-top: 1px dashed var(--border-dark); padding-top: 12px; margin-top: 12px;">
+        <div class="form-group" id="intake-assembly-sec-item-2-group" style="display: none;">
+          <label class="form-label" style="color: var(--brand-emerald);">Second Item (20% Bundle Discount Applied):</label>
+          <select id="intake-assembly-sec-2" class="form-select">
+            <option value="nightstand_end_table" selected>Tier 1: Nightstand / End Table ($48 — Save $12)</option>
+            <option value="chair_stools_pair">Tier 1: Dining Chairs / Stools Pair ($48 — Save $12)</option>
+            <option value="office_chair">Tier 1: Office Chair ($48 — Save $12)</option>
+            <option value="coffee_table_simple">Tier 1: Coffee Table ($48 — Save $12)</option>
+            <option value="small_bookshelf">Tier 1: Small Bookshelf ($48 — Save $12)</option>
+            <option value="standard_desk">Tier 2: Standard Desk ($72 — Save $18)</option>
+            <option value="bed_frame_standard">Tier 2: Platform Bed Frame ($72 — Save $18)</option>
+            <option value="dresser_3_to_5_drawers">Tier 2: 3-5 Drawer Dresser ($72 — Save $18)</option>
+            <option value="media_console">Tier 2: Media Console ($72 — Save $18)</option>
+            <option value="dresser_6_to_8_drawers">Tier 3: 6-8 Drawer Dresser ($128 — Save $32)</option>
+            <option value="wardrobe_single_frame">Tier 3: Wardrobe / PAX Unit ($128 — Save $32)</option>
+            <option value="standing_desk_motorized">Tier 3: Motorized Standing Desk ($128 — Save $32)</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="intake-assembly-sec-item-3-group" style="display: none;">
+          <label class="form-label" style="color: var(--brand-emerald);">Third Item (20% Bundle Discount Applied):</label>
+          <select id="intake-assembly-sec-3" class="form-select">
+            <option value="nightstand_end_table" selected>Tier 1: Nightstand / End Table ($48 — Save $12)</option>
+            <option value="office_chair">Tier 1: Office Chair ($48 — Save $12)</option>
+            <option value="chair_stools_pair">Tier 1: Dining Chairs / Stools Pair ($48 — Save $12)</option>
+            <option value="standard_desk">Tier 2: Standard Desk ($72 — Save $18)</option>
+            <option value="dresser_3_to_5_drawers">Tier 2: 3-5 Drawer Dresser ($72 — Save $18)</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="intake-assembly-sec-item-4-group" style="display: none;">
+          <label class="form-label" style="color: var(--brand-emerald);">Fourth Item (20% Bundle Discount Applied):</label>
+          <select id="intake-assembly-sec-4" class="form-select">
+            <option value="chair_stools_pair" selected>Tier 1: Dining Chairs / Stools Pair ($48 — Save $12)</option>
+            <option value="nightstand_end_table">Tier 1: Nightstand / End Table ($48 — Save $12)</option>
+            <option value="office_chair">Tier 1: Office Chair ($48 — Save $12)</option>
+          </select>
+        </div>
+      </div>
+    `;
+  } else if (serviceKey === 'furniture_disassembly') {
+    questionsContainer.innerHTML = `
+      <div style="background: #EFF6FF; border-left: 4px solid var(--accent-blue); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #1E40AF;">
+        <strong>Tiered Disassembly Pricing:</strong> Tier 1 Simple ($50), Tier 2 Standard ($80), Tier 3 Complex ($120). Additional items: Tier 1 (+$35), Tier 2 (+$55), Tier 3 (+$85) with no duplicate booking fee!
+      </div>
+      <div id="intake-disassembly-decline-banner" style="display: none; background: #FEF3C7; border-left: 4px solid #D97706; padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #92400E;">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Primary Item to Disassemble:</label>
+        <select id="intake-disassembly-primary-item" class="form-select">
+          <optgroup label="Tier 2: Standard Disassembly ($80)">
+            <option value="bed_frame_with_headboard_slats" selected>Platform Bed with Headboard & Slats ($80)</option>
+            <option value="sectional_sofa">Modular Sectional Sofa (Uncoupling & Brackets) ($80)</option>
+            <option value="executive_desk">Executive Desk / L-Shaped Desk ($80)</option>
+            <option value="treadmill_disassembly">Standard Treadmill Folding & Breakdown ($80)</option>
+            <option value="standard_dresser_dis">Standard Dresser / Chest Breakdown ($80)</option>
+          </optgroup>
+          <optgroup label="Tier 1: Simple Disassembly ($50)">
+            <option value="bed_frame_simple">Simple Bed Frame (Unbolting) ($50)</option>
+            <option value="dining_table_legs">Dining Table (Legs Removal) ($50)</option>
+            <option value="simple_desk">Simple Computer Desk Breakdown ($50)</option>
+            <option value="small_bookshelf_dis">Small Bookshelf Breakdown ($50)</option>
+          </optgroup>
+          <optgroup label="Tier 3: Complex Disassembly ($120)">
+            <option value="wardrobe_armoire_complex">Multi-Door Wardrobe / Armoire System ($120)</option>
+            <option value="bunk_bed_complex">Wooden Bunk Bed or Loft Bed Breakdown ($120)</option>
+            <option value="home_gym_exercise_complex">Complex Motorized Gym / Elliptical Breakdown ($120)</option>
+          </optgroup>
+          <optgroup label="Unsupported Items (Requires Specialized Contractor)">
+            <option value="antique_heirloom_glue">⚠️ Antique Heirloom (Hide-Glued Joinery) [Decline]</option>
+            <option value="slate_pool_table">⚠️ Slate Pool Table [Decline]</option>
+            <option value="piano">⚠️ Upright or Grand Piano [Decline]</option>
+          </optgroup>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Total Items to Disassemble (Up to 3 Items):</label>
+        <select id="intake-disassembly-count" class="form-select">
+          <option value="1" selected>1 Item (No additional items)</option>
+          <option value="2">2 Items (Discounted additional item rate!)</option>
+          <option value="3">3 Items (Discounted additional item rates!)</option>
+        </select>
+      </div>
+
+      <!-- Secondary item selectors for disassembly -->
+      <div id="intake-disassembly-secondary-container" style="display: none; border-top: 1px dashed var(--border-dark); padding-top: 12px; margin-top: 12px;">
+        <div class="form-group" id="intake-disassembly-sec-item-2-group" style="display: none;">
+          <label class="form-label" style="color: var(--brand-emerald);">Second Item:</label>
+          <select id="intake-disassembly-sec-2" class="form-select">
+            <option value="dining_table_legs" selected>Tier 1: Dining Table Legs (+ $35)</option>
+            <option value="bed_frame_simple">Tier 1: Simple Bed Frame (+ $35)</option>
+            <option value="simple_desk">Tier 1: Simple Desk (+ $35)</option>
+            <option value="bed_frame_with_headboard_slats">Tier 2: Platform Bed with Slats (+ $55)</option>
+            <option value="sectional_sofa">Tier 2: Modular Sectional (+ $55)</option>
+            <option value="executive_desk">Tier 2: Executive Desk (+ $55)</option>
+            <option value="wardrobe_armoire_complex">Tier 3: Wardrobe / Armoire (+ $85)</option>
+          </select>
+        </div>
+
+        <div class="form-group" id="intake-disassembly-sec-item-3-group" style="display: none;">
+          <label class="form-label" style="color: var(--brand-emerald);">Third Item:</label>
+          <select id="intake-disassembly-sec-3" class="form-select">
+            <option value="bed_frame_simple" selected>Tier 1: Simple Bed Frame (+ $35)</option>
+            <option value="dining_table_legs">Tier 1: Dining Table Legs (+ $35)</option>
+            <option value="simple_desk">Tier 1: Simple Desk (+ $35)</option>
+            <option value="bed_frame_with_headboard_slats">Tier 2: Platform Bed with Slats (+ $55)</option>
+          </select>
+        </div>
       </div>
     `;
   } else {
@@ -499,9 +647,168 @@ function setupIntakeCalculationListeners() {
 }
 
 function recalculateIntakePrice() {
+  const submitBtn = document.getElementById('btn-submit-booking');
+  const rawSubtotalRow = document.getElementById('quote-raw-subtotal-row');
+  const rawSubtotalEl = document.getElementById('quote-raw-subtotal');
+  const discountRow = document.getElementById('quote-discount-row');
+  const discountEl = document.getElementById('quote-discount');
+  const discountLabel = document.getElementById('quote-discount-label');
+
+  if (currentSelectedService === 'furniture_assembly') {
+    const primarySelect = document.getElementById('intake-assembly-primary-item');
+    const countSelect = document.getElementById('intake-assembly-count');
+    const declineBanner = document.getElementById('intake-assembly-decline-banner');
+    const secContainer = document.getElementById('intake-assembly-secondary-container');
+    const sec2Group = document.getElementById('intake-assembly-sec-item-2-group');
+    const sec3Group = document.getElementById('intake-assembly-sec-item-3-group');
+    const sec4Group = document.getElementById('intake-assembly-sec-item-4-group');
+
+    const primaryType = primarySelect ? primarySelect.value : 'bed_frame_standard';
+    const count = countSelect ? parseInt(countSelect.value, 10) : 1;
+
+    // Toggle secondary selectors visibility
+    if (secContainer) {
+      secContainer.style.display = count > 1 ? 'block' : 'none';
+      if (sec2Group) sec2Group.style.display = count >= 2 ? 'block' : 'none';
+      if (sec3Group) sec3Group.style.display = count >= 3 ? 'block' : 'none';
+      if (sec4Group) sec4Group.style.display = count >= 4 ? 'block' : 'none';
+    }
+
+    // Check for unsupported items
+    if (UNSUPPORTED_FURNITURE_ITEMS[primaryType]) {
+      const u = UNSUPPORTED_FURNITURE_ITEMS[primaryType];
+      if (declineBanner) {
+        declineBanner.innerHTML = `<strong>⚠️ Unsupported Item:</strong> ${u.name}. ${u.reason}`;
+        declineBanner.style.display = 'block';
+      }
+      if (submitBtn) submitBtn.disabled = true;
+      document.getElementById('quote-service-desc').textContent = 'Unsupported Service Request:';
+      document.getElementById('quote-subtotal').textContent = '—';
+      if (rawSubtotalRow) rawSubtotalRow.style.display = 'none';
+      if (discountRow) discountRow.style.display = 'none';
+      document.getElementById('quote-customer-total').textContent = '—';
+      return;
+    } else {
+      if (declineBanner) declineBanner.style.display = 'none';
+      if (submitBtn) submitBtn.disabled = false;
+    }
+
+    const items = [primaryType];
+    if (count >= 2) items.push(document.getElementById('intake-assembly-sec-2')?.value || 'nightstand_end_table');
+    if (count >= 3) items.push(document.getElementById('intake-assembly-sec-3')?.value || 'nightstand_end_table');
+    if (count >= 4) items.push(document.getElementById('intake-assembly-sec-4')?.value || 'chair_stools_pair');
+
+    const quote = calculatePricing('furniture_assembly', { items });
+
+    if (rawSubtotalRow && rawSubtotalEl) {
+      if (quote.bundleDiscount > 0) {
+        rawSubtotalRow.style.display = 'flex';
+        rawSubtotalEl.textContent = `$${quote.rawCustomerSubtotal.toFixed(2)}`;
+      } else {
+        rawSubtotalRow.style.display = 'none';
+      }
+    }
+
+    if (discountRow && discountEl) {
+      if (quote.bundleDiscount > 0) {
+        discountRow.style.display = 'flex';
+        discountEl.textContent = `-$${quote.bundleDiscount.toFixed(2)}`;
+        if (discountLabel) discountLabel.textContent = 'Secondary-Item Discount (20% off):';
+      } else {
+        discountRow.style.display = 'none';
+      }
+    }
+
+    document.getElementById('quote-service-desc').textContent = count > 1
+      ? (quote.bundleDiscount > 0 ? `Discounted Service Subtotal (${count} Items):` : `Service Subtotal (${count} Items):`)
+      : `Service Subtotal (${quote.primaryItem.name}):`;
+
+    document.getElementById('quote-subtotal').textContent = `$${quote.customerSubtotal.toFixed(2)}`;
+    document.getElementById('quote-booking-fee').textContent = `$${quote.bookingFee.toFixed(2)}`;
+    document.getElementById('quote-customer-total').textContent = `$${quote.customerTotal.toFixed(2)}`;
+    return;
+  }
+
+  if (currentSelectedService === 'furniture_disassembly') {
+    const primarySelect = document.getElementById('intake-disassembly-primary-item');
+    const countSelect = document.getElementById('intake-disassembly-count');
+    const declineBanner = document.getElementById('intake-disassembly-decline-banner');
+    const secContainer = document.getElementById('intake-disassembly-secondary-container');
+    const sec2Group = document.getElementById('intake-disassembly-sec-item-2-group');
+    const sec3Group = document.getElementById('intake-disassembly-sec-item-3-group');
+
+    const primaryType = primarySelect ? primarySelect.value : 'bed_frame_with_headboard_slats';
+    const count = countSelect ? parseInt(countSelect.value, 10) : 1;
+
+    // Toggle secondary selectors visibility
+    if (secContainer) {
+      secContainer.style.display = count > 1 ? 'block' : 'none';
+      if (sec2Group) sec2Group.style.display = count >= 2 ? 'block' : 'none';
+      if (sec3Group) sec3Group.style.display = count >= 3 ? 'block' : 'none';
+    }
+
+    // Check for unsupported items
+    if (UNSUPPORTED_FURNITURE_ITEMS[primaryType]) {
+      const u = UNSUPPORTED_FURNITURE_ITEMS[primaryType];
+      if (declineBanner) {
+        declineBanner.innerHTML = `<strong>⚠️ Unsupported Item:</strong> ${u.name}. ${u.reason}`;
+        declineBanner.style.display = 'block';
+      }
+      if (submitBtn) submitBtn.disabled = true;
+      document.getElementById('quote-service-desc').textContent = 'Unsupported Service Request:';
+      document.getElementById('quote-subtotal').textContent = '—';
+      if (rawSubtotalRow) rawSubtotalRow.style.display = 'none';
+      if (discountRow) discountRow.style.display = 'none';
+      document.getElementById('quote-customer-total').textContent = '—';
+      return;
+    } else {
+      if (declineBanner) declineBanner.style.display = 'none';
+      if (submitBtn) submitBtn.disabled = false;
+    }
+
+    const items = [primaryType];
+    if (count >= 2) items.push(document.getElementById('intake-disassembly-sec-2')?.value || 'dining_table_legs');
+    if (count >= 3) items.push(document.getElementById('intake-disassembly-sec-3')?.value || 'bed_frame_simple');
+
+    const quote = calculatePricing('furniture_disassembly', { items });
+
+    if (rawSubtotalRow && rawSubtotalEl) {
+      if (quote.bundleDiscount > 0) {
+        rawSubtotalRow.style.display = 'flex';
+        rawSubtotalEl.textContent = `$${quote.rawCustomerSubtotal.toFixed(2)}`;
+      } else {
+        rawSubtotalRow.style.display = 'none';
+      }
+    }
+
+    if (discountRow && discountEl) {
+      if (quote.bundleDiscount > 0) {
+        discountRow.style.display = 'flex';
+        discountEl.textContent = `-$${quote.bundleDiscount.toFixed(2)}`;
+        if (discountLabel) discountLabel.textContent = 'Secondary-Item Discount:';
+      } else {
+        discountRow.style.display = 'none';
+      }
+    }
+
+    document.getElementById('quote-service-desc').textContent = count > 1
+      ? (quote.bundleDiscount > 0 ? `Discounted Service Subtotal (${count} Items):` : `Service Subtotal (${count} Items):`)
+      : `Service Subtotal (${quote.primaryItem.name}):`;
+
+    document.getElementById('quote-subtotal').textContent = `$${quote.customerSubtotal.toFixed(2)}`;
+    document.getElementById('quote-booking-fee').textContent = `$${quote.bookingFee.toFixed(2)}`;
+    document.getElementById('quote-customer-total').textContent = `$${quote.customerTotal.toFixed(2)}`;
+    return;
+  }
+
+  // Ensure discount rows are hidden for other services
+  if (rawSubtotalRow) rawSubtotalRow.style.display = 'none';
+  if (discountRow) discountRow.style.display = 'none';
+  if (submitBtn) submitBtn.disabled = false;
+
   const workersInput = document.getElementById('intake-moving-workers');
   const hoursInput = document.getElementById('intake-moving-hours');
-  const countInput = document.getElementById('intake-furniture-count') || document.getElementById('intake-mount-count');
+  const countInput = document.getElementById('intake-mount-count');
 
   const workersNeeded = workersInput ? parseInt(workersInput.value, 10) : 1;
   const hours = hoursInput ? parseFloat(hoursInput.value) : 1;
@@ -583,6 +890,27 @@ function handleBookingSubmit(e) {
     intakeDetails.yardSize = document.getElementById('intake-lawn-size').value;
     intakeDetails.gateAccess = document.getElementById('intake-lawn-gate').value;
     intakeDetails.requiredEquipment = ['lawn_mower', 'string_trimmer'];
+  } else if (currentSelectedService === 'furniture_assembly') {
+    const primary = document.getElementById('intake-assembly-primary-item')?.value || 'bed_frame_standard';
+    const count = parseInt(document.getElementById('intake-assembly-count')?.value || '1', 10);
+    const items = [primary];
+    if (count >= 2) items.push(document.getElementById('intake-assembly-sec-2')?.value || 'nightstand_end_table');
+    if (count >= 3) items.push(document.getElementById('intake-assembly-sec-3')?.value || 'nightstand_end_table');
+    if (count >= 4) items.push(document.getElementById('intake-assembly-sec-4')?.value || 'chair_stools_pair');
+    intakeDetails.items = items;
+    intakeDetails.itemCount = items.length;
+    intakeDetails.primaryItem = items[0];
+    intakeDetails.secondaryItems = items.slice(1);
+  } else if (currentSelectedService === 'furniture_disassembly') {
+    const primary = document.getElementById('intake-disassembly-primary-item')?.value || 'bed_frame_with_headboard_slats';
+    const count = parseInt(document.getElementById('intake-disassembly-count')?.value || '1', 10);
+    const items = [primary];
+    if (count >= 2) items.push(document.getElementById('intake-disassembly-sec-2')?.value || 'dining_table_legs');
+    if (count >= 3) items.push(document.getElementById('intake-disassembly-sec-3')?.value || 'bed_frame_simple');
+    intakeDetails.items = items;
+    intakeDetails.itemCount = items.length;
+    intakeDetails.primaryItem = items[0];
+    intakeDetails.secondaryItems = items.slice(1);
   }
 
   try {
@@ -794,7 +1122,10 @@ function renderCustomerActiveBookings() {
         <!-- Pricing Summary (Customer View strictly sees Total + Disclosed Fee) -->
         <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 16px; margin: 16px 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
           <div style="font-size: 0.85rem; color: var(--text-secondary);">
-            Service Subtotal: <strong>$${b.pricing.customerSubtotal.toFixed(2)}</strong> + Platform Booking Fee: <strong>$${b.pricing.bookingFee.toFixed(2)}</strong>
+            ${b.pricing && b.pricing.bundleDiscount > 0
+              ? `Original Items: <span style="text-decoration: line-through;">$${(b.pricing.rawCustomerSubtotal || (b.pricing.customerSubtotal + b.pricing.bundleDiscount)).toFixed(2)}</span> · Discount: <strong style="color: var(--brand-emerald);">-$${b.pricing.bundleDiscount.toFixed(2)}</strong> · Service Subtotal: <strong>$${b.pricing.customerSubtotal.toFixed(2)}</strong> + Platform Booking Fee: <strong>$${b.pricing.bookingFee.toFixed(2)}</strong>`
+              : `Service Subtotal: <strong>$${b.pricing.customerSubtotal.toFixed(2)}</strong> + Platform Booking Fee: <strong>$${b.pricing.bookingFee.toFixed(2)}</strong>`
+            }
           </div>
           <div style="font-size: 1.1rem; font-weight: 800; color: var(--primary-navy);">
             Customer Total: <span style="color: var(--brand-emerald);">$${b.pricing.customerTotal.toFixed(2)}</span>

@@ -6,6 +6,11 @@
 
 import {
   PRICING_RATES,
+  FURNITURE_ASSEMBLY_TIERS,
+  FURNITURE_DISASSEMBLY_TIERS,
+  UNSUPPORTED_FURNITURE_ITEMS,
+  FURNITURE_ASSEMBLY_CATALOG,
+  FURNITURE_DISASSEMBLY_CATALOG,
   DALLAS_NEIGHBORHOODS,
   DALLAS_SERVICE_ZIPS,
   lookupDallasZip,
@@ -499,8 +504,187 @@ export function calculatePricing(serviceCategory, options = {}) {
       grossPlatformRevenue,
       disclaimer: 'Demonstration assumptions — Dallas pilot market'
     };
+  } else if (serviceCategory === 'furniture_assembly' || serviceCategory === 'furniture_disassembly') {
+    // -------------------------------------------------------------------------
+    // Phase 2A: Complexity-Based Furniture Assembly & Disassembly Pricing
+    // -------------------------------------------------------------------------
+    const isAssembly = serviceCategory === 'furniture_assembly';
+    const tierConfig = isAssembly ? FURNITURE_ASSEMBLY_TIERS : FURNITURE_DISASSEMBLY_TIERS;
+    const catalog = isAssembly ? FURNITURE_ASSEMBLY_CATALOG : FURNITURE_DISASSEMBLY_CATALOG;
+    const maxItems = isAssembly ? 4 : 3;
+
+    // Safety checks for unsupported items (hard decline / specialized review)
+    const checkUnsupported = (itemKey) => {
+      if (itemKey && UNSUPPORTED_FURNITURE_ITEMS[itemKey]) {
+        const u = UNSUPPORTED_FURNITURE_ITEMS[itemKey];
+        throw new Error(`Unsupported item "${u.name}": ${u.reason}`);
+      }
+    };
+
+    if (options.unsupportedType) checkUnsupported(options.unsupportedType);
+    if (options.furnitureType) checkUnsupported(options.furnitureType);
+
+    // Resolve items list
+    let rawItems = [];
+    if (Array.isArray(options.items) && options.items.length > 0) {
+      rawItems = options.items;
+    } else if (options.tier) {
+      rawItems = [{ tier: options.tier, type: options.furnitureType || options.type }];
+    } else if (options.furnitureType) {
+      const match = catalog.find(c => c.id === options.furnitureType);
+      rawItems = [{ tier: match ? match.tier : 'tier_2', type: options.furnitureType, name: match ? match.name : options.furnitureType }];
+    } else {
+      const count = Math.max(1, parseInt(options.itemCount || 1, 10));
+      for (let i = 0; i < count; i++) {
+        rawItems.push({ tier: 'tier_2', type: isAssembly ? 'bed_frame_standard' : 'bed_frame_with_headboard_slats' });
+      }
+    }
+
+    // Verify no unsupported items inside rawItems
+    rawItems.forEach(item => {
+      const key = typeof item === 'string' ? item : (item.type || item.id);
+      checkUnsupported(key);
+    });
+
+    if (rawItems.length > maxItems) {
+      throw new Error(`${rateConfig.name} supports up to ${maxItems} items per booking session.`);
+    }
+
+    // Normalize items
+    const normalizedItems = rawItems.map((item, idx) => {
+      let tierKey = 'tier_2';
+      let typeKey = null;
+      let displayName = null;
+
+      if (typeof item === 'string') {
+        if (tierConfig[item]) {
+          tierKey = item;
+        } else {
+          const match = catalog.find(c => c.id === item);
+          if (match) {
+            tierKey = match.tier;
+            typeKey = match.id;
+            displayName = match.name;
+          }
+        }
+      } else if (item && typeof item === 'object') {
+        if (item.tier && tierConfig[item.tier]) {
+          tierKey = item.tier;
+        }
+        if (item.type) {
+          typeKey = item.type;
+          const match = catalog.find(c => c.id === item.type);
+          if (match) {
+            if (!item.tier) tierKey = match.tier;
+            displayName = match.name;
+          }
+        }
+        if (item.name) displayName = item.name;
+      }
+
+      const tInfo = tierConfig[tierKey] || tierConfig.tier_2;
+      return {
+        itemIndex: idx + 1,
+        tier: tierKey,
+        tierName: tInfo.name,
+        type: typeKey,
+        name: displayName || tInfo.name,
+        estHours: tInfo.estHours,
+        tInfo
+      };
+    });
+
+    // Sort items descending by tier so highest tier is primary (Tier 3 > Tier 2 > Tier 1)
+    const tierWeight = { tier_3: 3, tier_2: 2, tier_1: 1 };
+    normalizedItems.sort((a, b) => (tierWeight[b.tier] || 0) - (tierWeight[a.tier] || 0));
+
+    // Pricing calculation
+    let rawCustomerSubtotal = 0;
+    let actualCustomerSubtotal = 0;
+    let totalBundleDiscount = 0;
+    let totalProPayout = 0;
+    let totalHours = 0;
+
+    const itemizedBreakdown = normalizedItems.map((item, index) => {
+      const isPrimary = index === 0;
+      const t = item.tInfo;
+      totalHours += t.estHours;
+
+      let stdCustomerPrice = t.primaryRate;
+      let finalCustomerPrice = 0;
+      let itemDiscount = 0;
+      let proPayout = 0;
+
+      if (isAssembly) {
+        if (isPrimary) {
+          finalCustomerPrice = t.primaryRate;
+          itemDiscount = 0;
+          proPayout = t.primaryPayout;
+        } else {
+          finalCustomerPrice = t.secondaryRate; // 20% bundle discount
+          itemDiscount = Math.round((t.primaryRate - t.secondaryRate) * 100) / 100;
+          proPayout = t.secondaryPayout;
+        }
+      } else {
+        // Disassembly
+        if (isPrimary) {
+          finalCustomerPrice = t.primaryRate;
+          itemDiscount = 0;
+          proPayout = t.primaryPayout;
+        } else {
+          finalCustomerPrice = t.secondaryRate;
+          itemDiscount = Math.round((t.primaryRate - t.secondaryRate) * 100) / 100;
+          proPayout = t.secondaryPayout;
+        }
+      }
+
+      rawCustomerSubtotal += stdCustomerPrice;
+      actualCustomerSubtotal += finalCustomerPrice;
+      totalBundleDiscount += itemDiscount;
+      totalProPayout += proPayout;
+
+      return {
+        itemPosition: index + 1,
+        role: isPrimary ? 'Primary Item' : 'Secondary Item (Bundled)',
+        tier: item.tier,
+        tierName: item.tierName,
+        name: item.name,
+        type: item.type,
+        standardPrice: stdCustomerPrice,
+        bundleDiscount: itemDiscount,
+        customerPrice: finalCustomerPrice,
+        proPayout: proPayout,
+        platformContribution: Math.round((finalCustomerPrice - proPayout) * 100) / 100
+      };
+    });
+
+    const customerSubtotal = Math.round(actualCustomerSubtotal * 100) / 100;
+    const customerTotal = Math.round((customerSubtotal + bookingFee) * 100) / 100;
+    const workerPayoutPerPerson = Math.round(totalProPayout * 100) / 100;
+    const totalWorkerPayouts = workerPayoutPerPerson;
+    const grossPlatformRevenue = Math.round((customerTotal - totalWorkerPayouts) * 100) / 100;
+
+    return {
+      serviceCategory,
+      rateType: 'complexity_tiered',
+      workersNeeded: 1,
+      hours: Math.round(totalHours * 10) / 10,
+      itemCount: normalizedItems.length,
+      items: itemizedBreakdown,
+      primaryItem: itemizedBreakdown[0],
+      secondaryItems: itemizedBreakdown.slice(1),
+      rawCustomerSubtotal: Math.round(rawCustomerSubtotal * 100) / 100,
+      bundleDiscount: Math.round(totalBundleDiscount * 100) / 100,
+      customerSubtotal,
+      bookingFee,
+      customerTotal,
+      workerPayoutPerPerson,
+      totalWorkerPayouts,
+      grossPlatformRevenue,
+      disclaimer: 'Demonstration assumptions — Dallas pilot market'
+    };
   } else {
-    // Fixed Price services (TV Mounting, Wall Mounting, Assembly, Disassembly, Lawn Mowing)
+    // Fixed Price services (TV Mounting, Wall Mounting, Lawn Mowing - Unchanged in Phase 2A)
     let unitMultiplier = 1;
     if (options.itemCount) {
       unitMultiplier = Math.max(1, parseInt(options.itemCount, 10));
@@ -595,6 +779,9 @@ export function createBooking({
 
     workersCount = parsedWorkers;
     hours = parsedHours;
+  } else if (serviceCategory === 'furniture_assembly' || serviceCategory === 'furniture_disassembly') {
+    workersCount = 1;
+    hours = intakeDetails.estimatedHours || (serviceCategory === 'furniture_assembly' ? 1.5 : 1.25);
   } else {
     hours = (serviceCategory === 'tv_mounting' ? 1.5 : 1);
   }
@@ -602,8 +789,15 @@ export function createBooking({
   const pricing = calculatePricing(serviceCategory, {
     workersNeeded: workersCount,
     hours: hours,
-    itemCount: intakeDetails.itemCount || 1
+    itemCount: intakeDetails.itemCount || (intakeDetails.items ? intakeDetails.items.length : 1),
+    items: intakeDetails.items || null,
+    tier: intakeDetails.tier || null,
+    furnitureType: intakeDetails.furnitureType || null
   });
+
+  if (pricing.hours) {
+    hours = pricing.hours;
+  }
 
   // Create discrete assignment slots for every required worker
   const workerAssignments = [];
