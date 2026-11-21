@@ -28,12 +28,8 @@
   <header class="main-header">
     <div class="header-container">
       <a href="javascript:void(0)" class="brand-logo" id="brand-home-link">
-        <div class="logo-badge">⚡</div>
-        <div>
-          <span class="brand-text">Crewly</span>
-          <span class="brand-tagline">Dallas</span>
-        </div>
-      </a>
+  <img src="assets/crewly-logo.png" alt="Crewly" class="logo-image">
+</a>
 
       <!-- 1-Click Role Switcher -->
       <div class="role-switcher-container">
@@ -178,7 +174,7 @@
         <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <label style="font-size: 0.88rem; font-weight: 700; color: var(--primary-navy); display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="pro-autobook-toggle" style="width: 18px; height: 18px; accent-color: var(--brand-emerald);">
+              <input type="checkbox" id="pro-autobook-toggle" style="width: 18px; height: 18px; accent-color: var(--primary-rose);">
               Enable Auto-Book for Compatible Jobs
             </label>
             <span style="font-size: 0.78rem; color: var(--text-muted);" id="pro-autobook-status">
@@ -204,7 +200,7 @@
               </p>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span class="verified-credential-chip" style="background: #ECFDF5; color: var(--brand-emerald); border-color: #A7F3D0; font-size: 0.75rem;">
+              <span class="verified-credential-chip" style="background: var(--light-blush); color: var(--dark-rose); border-color: var(--secondary-rose); font-size: 0.75rem;">
                 ✓ Simulated Ledger Active
               </span>
               <button class="btn-cashout" id="btn-cashout-trigger" style="margin: 0; padding: 10px 20px; font-size: 0.9rem;">
@@ -241,7 +237,7 @@
               </div>
               <!-- Filter Pills -->
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button id="wallet-filter-all" class="wallet-filter-pill active" style="padding: 5px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; cursor: pointer; background: var(--primary-navy); color: white; border: 1px solid var(--primary-navy);">
+                <button id="wallet-filter-all" class="wallet-filter-pill active" style="padding: 5px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; cursor: pointer; background: var(--primary-rose); color: white; border: 1px solid var(--primary-rose);">
                   All Transactions (<span id="wallet-count-all">0</span>)
                 </button>
                 <button id="wallet-filter-earnings" class="wallet-filter-pill" style="padding: 5px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; cursor: pointer; background: white; color: var(--text-secondary); border: 1px solid var(--border-light);">
@@ -295,7 +291,7 @@
 
       <!-- Job Board Category Filter Pills -->
       <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
-        <button id="job-filter-available" class="btn-banner-link" style="padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; background: var(--primary-navy); color: white;">
+        <button id="job-filter-available" class="btn-banner-link" style="padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; background: var(--primary-rose); color: white;">
           ⚡ Available to Me (<span id="count-filter-available">0</span>)
         </button>
         <button id="job-filter-upcoming" class="btn-banner-link" style="padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; background: white; color: var(--text-secondary); border: 1px solid var(--border-light);">
@@ -409,10 +405,10 @@
           </div>
 
           <div class="admin-metric-card">
-            <div class="admin-metric-icon" style="background: #ECFDF5; color: #059669;">✓</div>
+            <div class="admin-metric-icon" style="background: var(--light-blush); color: var(--dark-rose);">✓</div>
             <div class="admin-metric-info">
               <span class="admin-metric-label">Fully Confirmed / Active</span>
-              <strong class="admin-metric-value" id="admin-stat-confirmed-bookings" style="color: #059669;">0</strong>
+              <strong class="admin-metric-value" id="admin-stat-confirmed-bookings" style="color: var(--primary-rose);">0</strong>
               <span class="admin-metric-subtext">Full crew assigned</span>
             </div>
           </div>
@@ -464,7 +460,7 @@
 
           <div class="admin-finance-card">
             <div class="admin-finance-label">Completed-Job Gross Value</div>
-            <div class="admin-finance-value" id="admin-fin-completed-gbv" style="color: #059669;">$0.00</div>
+            <div class="admin-finance-value" id="admin-fin-completed-gbv" style="color: var(--primary-rose);">$0.00</div>
             <div class="admin-finance-hint">Customer billings on finalized bookings</div>
           </div>
 
@@ -480,9 +476,9 @@
             <div class="admin-finance-hint">Committed (<span id="admin-fin-worker-pending">$0.00</span> pending, <span id="admin-fin-worker-released">$0.00</span> paid)</div>
           </div>
 
-          <div class="admin-finance-card" style="border-left: 4px solid #059669;">
+          <div class="admin-finance-card" style="border-left: 4px solid var(--primary-rose);">
             <div class="admin-finance-label">Realized Margin (Completed Jobs)</div>
-            <div class="admin-finance-value" id="admin-fin-completed-margin" style="color: #059669;">$0.00</div>
+            <div class="admin-finance-value" id="admin-fin-completed-margin" style="color: var(--primary-rose);">$0.00</div>
             <div class="admin-finance-hint">Completed customer charges minus completed payouts</div>
           </div>
 
@@ -492,9 +488,9 @@
             <div class="admin-finance-hint">Active/open customer charges minus pending payouts</div>
           </div>
 
-          <div class="admin-finance-card" style="border-left: 4px solid #4338CA;">
+          <div class="admin-finance-card" style="border-left: 4px solid var(--dark-rose);">
             <div class="admin-finance-label">Total Platform Gross Margin</div>
-            <div class="admin-finance-value" id="admin-fin-gross-margin" style="color: #4338CA;">$0.00</div>
+            <div class="admin-finance-value" id="admin-fin-gross-margin" style="color: var(--dark-rose);">$0.00</div>
             <div class="admin-finance-hint">Total Customer Charges minus Total Worker Payouts</div>
           </div>
 
@@ -602,7 +598,7 @@
           </div>
           <div class="admin-metric-card">
             <div class="admin-metric-label">Available Pros Today</div>
-            <div class="admin-metric-val" id="admin-workers-stat-available-today" style="color: var(--primary-teal);">--</div>
+            <div class="admin-metric-val" id="admin-workers-stat-available-today" style="color: var(--primary-rose);">--</div>
             <div class="admin-metric-sub" id="admin-workers-stat-today-name">Weekly schedule enabled today</div>
           </div>
           <div class="admin-metric-card">
@@ -654,7 +650,7 @@
               Manage staffing shortage alerts, customer booking inquiries, and internal dispatch incident notes.
             </p>
           </div>
-          <button id="btn-admin-create-case-open" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; background: var(--primary-teal); color: white; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;">
+          <button id="btn-admin-create-case-open" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; background: var(--primary-rose); color: white; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;">
             + Create Support Case
           </button>
         </div>
@@ -673,12 +669,12 @@
           </div>
           <div class="admin-metric-card">
             <div class="admin-metric-label">Under Review</div>
-            <div class="admin-metric-val" id="admin-support-stat-review" style="color: var(--primary-teal);">0</div>
+            <div class="admin-metric-val" id="admin-support-stat-review" style="color: var(--primary-rose);">0</div>
             <div class="admin-metric-sub">Active investigation</div>
           </div>
           <div class="admin-metric-card">
             <div class="admin-metric-label">Resolved Cases</div>
-            <div class="admin-metric-val" id="admin-support-stat-resolved" style="color: #10b981;">0</div>
+            <div class="admin-metric-val" id="admin-support-stat-resolved" style="color: var(--primary-rose);">0</div>
             <div class="admin-metric-sub">Successfully addressed</div>
           </div>
         </div>
@@ -736,12 +732,12 @@
           </div>
           <div class="admin-metric-card">
             <div class="admin-metric-label">Completed-Job Gross Value</div>
-            <div class="admin-metric-val" id="admin-fin-panel-completed-gbv" style="color: #10b981;">$0.00</div>
+            <div class="admin-metric-val" id="admin-fin-panel-completed-gbv" style="color: var(--primary-rose);">$0.00</div>
             <div class="admin-metric-sub">Realized customer billings</div>
           </div>
           <div class="admin-metric-card">
             <div class="admin-metric-label">Platform Booking Fees</div>
-            <div class="admin-metric-val" id="admin-fin-panel-fees" style="color: var(--primary-teal);">$0.00</div>
+            <div class="admin-metric-val" id="admin-fin-panel-fees" style="color: var(--primary-rose);">$0.00</div>
             <div class="admin-metric-sub">$10 per booking fee collected</div>
           </div>
           <div class="admin-metric-card">
@@ -751,7 +747,7 @@
           </div>
           <div class="admin-metric-card">
             <div class="admin-metric-label">Realized Gross Margin</div>
-            <div class="admin-metric-val" id="admin-fin-panel-completed-margin" style="color: #10b981;">$0.00</div>
+            <div class="admin-metric-val" id="admin-fin-panel-completed-margin" style="color: var(--primary-rose);">$0.00</div>
             <div class="admin-metric-sub">Completed customer billings minus worker pay</div>
           </div>
           <div class="admin-metric-card">
@@ -761,7 +757,7 @@
           </div>
           <div class="admin-metric-card">
             <div class="admin-metric-label">Total Platform Gross Margin</div>
-            <div class="admin-metric-val" id="admin-fin-panel-total-margin" style="color: var(--primary-teal);">$0.00</div>
+            <div class="admin-metric-val" id="admin-fin-panel-total-margin" style="color: var(--primary-rose);">$0.00</div>
             <div class="admin-metric-sub">Gross revenue before operating expenses</div>
           </div>
           <div class="admin-metric-card">
@@ -865,11 +861,11 @@
         </div>
 
         <!-- Reputation Protection Rules Notice -->
-        <div class="admin-disclaimer-box" style="margin-bottom: 20px; background: #F0FDF4; border: 1px solid #BBF7D0; border-left: 4px solid #16A34A; padding: 14px 18px; border-radius: var(--radius-sm);">
-          <div style="font-weight: 700; color: #166534; margin-bottom: 4px; font-size: 0.88rem;">
+        <div class="admin-disclaimer-box" style="margin-bottom: 20px; background: #FFF5F8; border: 1px solid var(--border-light); border-left: 4px solid var(--primary-rose); padding: 14px 18px; border-radius: var(--radius-sm);">
+          <div style="font-weight: 700; color: var(--dark-rose); margin-bottom: 4px; font-size: 0.88rem;">
             🛡️ Crewly Reputation Protection Standards (Adjustment 2)
           </div>
-          <p style="margin: 0; font-size: 0.83rem; line-height: 1.5; color: #15803d;">
+          <p style="margin: 0; font-size: 0.83rem; line-height: 1.5; color: var(--dark-rose);">
             Disputing a customer review opens an investigation in the unified case management system. 
             <strong>Dispute tracking never automatically deletes a review, modifies original star ratings, deducts worker average ratings, penalizes customers, or suspends workers.</strong> 
             Investigation findings are preserved in the administrative audit log to support evidence-based review appeals.
@@ -1024,7 +1020,7 @@
               <strong id="quote-raw-subtotal">$0.00</strong>
             </div>
 
-            <div class="quote-row" id="quote-discount-row" style="display: none; color: var(--brand-emerald);">
+            <div class="quote-row" id="quote-discount-row" style="display: none; color: var(--primary-rose);">
               <span id="quote-discount-label">Secondary-Item Discount:</span>
               <strong id="quote-discount">-$0.00</strong>
             </div>
@@ -1041,7 +1037,7 @@
 
             <div class="quote-row total">
               <span>Total Customer Price:</span>
-              <span id="quote-customer-total" style="color: var(--brand-emerald);">$0.00</span>
+              <span id="quote-customer-total" style="color: var(--primary-rose);">$0.00</span>
             </div>
 
             <div class="quote-disclaimer">
@@ -1073,7 +1069,7 @@
             <h2 style="margin: 0; font-size: 1.25rem; color: var(--primary-navy);">
               🤖 Moving Booking Concierge
             </h2>
-            <span class="service-badge-pill" id="concierge-proxy-status-pill" style="background: #ECFDF5; color: #059669; font-size: 0.72rem; padding: 3px 8px; border-radius: 12px; font-weight: 700;">
+            <span class="service-badge-pill" id="concierge-proxy-status-pill" style="background: var(--light-blush); color: var(--dark-rose); font-size: 0.72rem; padding: 3px 8px; border-radius: 12px; font-weight: 700;">
               AI Ready
             </span>
           </div>
@@ -1191,7 +1187,7 @@
                 </div>
                 <div class="quote-row total" style="border-top: 1px solid var(--border-dark); padding-top: 6px; margin-top: 2px;">
                   <span style="font-weight: 800;">Total Customer Price:</span>
-                  <span id="concierge-quote-total" style="color: var(--brand-emerald); font-size: 1.15rem; font-weight: 800;">—</span>
+                  <span id="concierge-quote-total" style="color: var(--primary-rose); font-size: 1.15rem; font-weight: 800;">—</span>
                 </div>
                 <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
                   * Deterministic rate. Pros earn $30/mover-hr. No hidden fees.
@@ -1251,12 +1247,12 @@
           </div>
         </div>
 
-        <div style="background: #ECFDF5; border: 1px solid #A7F3D0; padding: 18px; border-radius: var(--radius-md); margin-bottom: 20px;">
-          <div style="font-size: 0.78rem; font-weight: 700; color: #065F46; text-transform: uppercase;">
+        <div style="background: var(--light-blush); border: 1px solid var(--secondary-rose); padding: 18px; border-radius: var(--radius-md); margin-bottom: 20px;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: var(--dark-rose); text-transform: uppercase;">
             Gross Platform Revenue Before Operating Expenses:
           </div>
-          <div style="font-size: 2rem; font-weight: 800; color: var(--brand-emerald);" id="metric-gross-revenue">$0.00</div>
-          <div style="font-size: 0.75rem; color: #047857; margin-top: 4px;">
+          <div style="font-size: 2rem; font-weight: 800; color: var(--dark-rose);" id="metric-gross-revenue">$0.00</div>
+          <div style="font-size: 0.75rem; color: var(--dark-rose); margin-top: 4px;">
             (Customer billings minus worker payouts. Excludes platform server, customer support, and insurance expenses.)
           </div>
         </div>
@@ -1305,7 +1301,7 @@
       <div class="modal-body">
         <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px; text-align: center; margin-bottom: 18px;">
           <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Available for Transfer:</div>
-          <div style="font-size: 2.2rem; font-weight: 900; color: var(--brand-emerald);" id="cashout-modal-amount">$0.00</div>
+          <div style="font-size: 2.2rem; font-weight: 900; color: var(--primary-rose);" id="cashout-modal-amount">$0.00</div>
           <div style="font-size: 0.75rem; color: var(--text-muted);">From eligible completed job payouts</div>
         </div>
 
@@ -1361,7 +1357,7 @@
           </div>
           <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-light); padding-top: 6px; margin-bottom: 6px;">
             <span style="font-weight: 700; color: var(--primary-navy);">Net Transferred:</span>
-            <strong style="color: var(--brand-emerald); font-size: 1rem;" id="cashout-summary-net">$0.00</strong>
+            <strong style="color: var(--primary-rose); font-size: 1rem;" id="cashout-summary-net">$0.00</strong>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); border-top: 1px dashed var(--border-light); padding-top: 4px;">
             <span>Remaining Available Balance:</span>
@@ -1411,7 +1407,7 @@
         <div style="border: 1px dashed var(--border-dark); border-radius: var(--radius-md); padding: 18px; background: #FAFAFA;">
           <div style="text-align: center; border-bottom: 1px solid var(--border-light); padding-bottom: 14px; margin-bottom: 14px;">
             <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Net Simulated Transfer</div>
-            <div style="font-size: 2.2rem; font-weight: 900; color: var(--brand-emerald);" id="receipt-net-amount">$0.00</div>
+            <div style="font-size: 2.2rem; font-weight: 900; color: var(--primary-rose);" id="receipt-net-amount">$0.00</div>
             <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;" id="receipt-status-pill">
               <span class="status-badge confirmed" id="receipt-status-text">✓ Transfer Confirmed</span>
             </div>
@@ -1444,7 +1440,7 @@
             </div>
             <div style="display: flex; justify-content: space-between; font-weight: 800; border-top: 1px solid var(--border-light); padding-top: 8px; color: var(--primary-navy); font-size: 0.95rem;">
               <span>Delivered Net:</span>
-              <span style="color: var(--brand-emerald);" id="receipt-final-net">$98.50</span>
+              <span style="color: var(--primary-rose);" id="receipt-final-net">$98.50</span>
             </div>
           </div>
         </div>
@@ -1588,7 +1584,7 @@
         <button class="btn-open-tab" id="btn-cancel-admin-assign" style="padding: 10px 18px; border-radius: var(--radius-md);">
           Cancel
         </button>
-        <button class="btn-book-service" id="btn-confirm-admin-assign" style="width: auto; padding: 10px 24px; background: #4338CA;" disabled>
+        <button class="btn-book-service" id="btn-confirm-admin-assign" style="width: auto; padding: 10px 24px; background: var(--dark-rose);" disabled>
           Confirm Assignment
         </button>
       </div>
@@ -1758,7 +1754,7 @@
               <option value="resolved">Resolved</option>
             </select>
             <input type="text" id="case-detail-status-reason" class="form-input" placeholder="Administrative reason for status change (Required)..." style="flex: 1; min-width: 200px; font-size: 0.85rem;" />
-            <button id="btn-case-detail-update-status" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.82rem; white-space: nowrap; background: var(--primary-teal); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;">
+            <button id="btn-case-detail-update-status" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.82rem; white-space: nowrap; background: var(--primary-rose); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;">
               Update Status
             </button>
           </div>
@@ -1776,7 +1772,7 @@
           <textarea id="input-case-detail-new-note" class="form-textarea" rows="2" placeholder="Record internal findings, phone call notes, or instructions for next shift..."></textarea>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
             <span style="font-size: 0.75rem; color: var(--text-muted);">🔒 Strictly internal; never shown to customers.</span>
-            <button id="btn-case-detail-add-note" class="btn btn-primary" style="padding: 6px 16px; font-size: 0.82rem; background: var(--primary-navy); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;">
+            <button id="btn-case-detail-add-note" class="btn btn-primary" style="padding: 6px 16px; font-size: 0.82rem; background: var(--dark-rose); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;">
               Add Note
             </button>
           </div>
@@ -1821,7 +1817,7 @@
         </div>
 
         <!-- Reputation Protection Rules Reminder -->
-        <div style="background: #F0FDF4; border: 1px solid #BBF7D0; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.8rem; color: #166534;">
+        <div style="background: var(--bg-card-alt); border: 1px solid var(--border-light); border-left: 4px solid var(--primary-rose); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.8rem; color: var(--dark-rose);">
           ℹ️ <strong>Reputation Protection Notice:</strong> Flagging a review as disputed records an investigation in the unified case management system. The original rating (<span id="trust-modal-original-stars">5</span>★) and worker average rating are protected and remain completely untouched.
         </div>
 
@@ -1890,7 +1886,7 @@
     <div class="modal-dialog" style="max-width: 600px;">
       <div class="modal-header">
         <div>
-          <h2 style="color: #059669; margin: 0; font-size: 1.25rem;">✓ Verify & Complete Assignment</h2>
+          <h2 style="color: var(--primary-rose); margin: 0; font-size: 1.25rem;">✓ Verify & Complete Assignment</h2>
           <p id="admin-verify-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
             Affirmative administrative completion and worker earnings release
           </p>
@@ -1898,7 +1894,7 @@
         <button class="modal-close-btn" id="btn-close-admin-verify">&times;</button>
       </div>
       <div class="modal-body">
-        <div id="admin-verify-summary-box" style="background: #ECFDF5; border-left: 4px solid #059669; padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #065F46;">
+        <div id="admin-verify-summary-box" style="background: var(--light-blush); border-left: 4px solid var(--primary-rose); padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: var(--dark-rose);">
           <!-- Rendered dynamically -->
         </div>
 
@@ -1930,7 +1926,7 @@
         <button class="btn-open-tab" id="btn-cancel-admin-verify-action" style="padding: 10px 18px; border-radius: var(--radius-md);">
           Cancel
         </button>
-        <button class="btn-book-service" id="btn-confirm-admin-verify" style="width: auto; padding: 10px 24px; background: #059669;" disabled>
+        <button class="btn-book-service" id="btn-confirm-admin-verify" style="width: auto; padding: 10px 24px; background: var(--primary-rose);" disabled>
           Verify & Release Payout
         </button>
       </div>
@@ -1942,5 +1938,11 @@
 
   <!-- Core JavaScript Module -->
   <script type="module" src="app.js"></script>
+<script>
+  const launcher = document.getElementById('crewly-chat-launcher');
+  if (launcher && typeof toggleChat === 'function') {
+    launcher.addEventListener('click', toggleChat);
+  }
+</script>
 </body>
 </html>
