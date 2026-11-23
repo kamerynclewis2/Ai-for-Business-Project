@@ -9,38 +9,38 @@
   /* =========================================================================
      Crewly Dusty Rose Pink Theme Palette
      ========================================================================= */
-  --primary-rose: #C97894;
-  --primary-rose-hover: #B56380;
-  --primary-rose-active: #A34E6C;
-  --secondary-rose: #DFA0B3;
-  --secondary-rose-hover: #D28C9F;
-  --light-blush: #F4D9E1;
+  --primary-rose: #45AFA5;
+  --primary-rose-hover: #3A9A90;
+  --primary-rose-active: #327C78;
+  --secondary-rose: #287F78;
+  --secondary-rose-hover: #3A9A90;
+  --light-blush: #DDF3EF;
   --light-blush-soft: #FDF2F5;
-  --bg-rose: #FFF8FA;
-  --dark-rose: #713C50;
-  --dark-rose-hover: #5D3042;
-  --dark-rose-text: #713C50;
-  --dark-rose-heading: #4A2333;
+  --bg-rose: #DDF3EF;
+  --dark-rose: #287F78;
+  --dark-rose-hover: #287F78;
+  --dark-rose-text: #45AFA5;
+  --dark-rose-heading: #287F78;
 
   /* Brand Theme Mapping (Replaces emerald, teal, and navy branding) */
-  --brand-emerald: #C97894;
-  --brand-emerald-hover: #B56380;
-  --brand-mint: #F4D9E1;
-  --primary-teal: #C97894;
-  --primary-navy: #713C50;
-  --secondary-navy: #5D3042;
+  --brand-emerald: #45AFA5;
+  --brand-emerald-hover: #3A9A90;
+  --brand-mint: #DDF3EF;
+  --primary-teal: #45AFA5;
+  --primary-navy: #287F78;
+  --secondary-navy: #287F78;
   
   /* Status & Semantic Accents */
   --accent-amber: #D97706;
   --accent-amber-light: #FEF3C7;
   --accent-red: #DC2626;
   --accent-red-light: #FEE2E2;
-  --accent-blue: #C97894;
+  --accent-blue: #45AFA5;
   --accent-blue-light: #F4D9E1;
   --warning-orange: #D97706;
   
   /* Backgrounds */
-  --bg-main: #FFF8FA;
+  --bg-main: #DDF3EF;
   --bg-card: #FFFFFF;
   --bg-card-alt: #FDF2F5;
   --bg-surface: #FDF2F5;
