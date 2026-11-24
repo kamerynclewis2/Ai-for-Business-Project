@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Crewly — On-Demand Home Services Marketplace (Dallas, TX)</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232563EB%22 stroke-width=%222.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polygon points=%2213 2 3 14 12 14 11 22 21 10 12 10 13 2%22 fill=%22%232563EB%22/></svg>">
 </head>
 <body>
 
@@ -16,10 +16,10 @@
     </div>
     <div class="banner-controls">
       <button id="btn-admin-metrics" class="btn-banner-link">
-        📊 Marketplace Metrics (Gross Revenue)
+        <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Marketplace Metrics (Gross Revenue)
       </button>
       <button id="btn-reset-demo" class="btn-banner-link">
-        🔄 Reset Demo Data
+        <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> Reset Demo Data
       </button>
     </div>
   </div>
@@ -27,24 +27,25 @@
   <!-- Primary Application Header -->
   <header class="main-header">
     <div class="header-container">
-      <a href="javascript:void(0)" class="brand-logo" id="brand-home-link">
-        <div class="logo-badge">⚡</div>
-        <div>
-          <span class="brand-text">Crewly</span>
-          <span class="brand-tagline">Dallas</span>
-        </div>
+      <a href="javascript:void(0)" class="brand-logo" id="brand-home-link" style="text-decoration: none;">
+        <span class="logo-badge" style="background: linear-gradient(135deg, var(--accent-blue), var(--primary-navy)); color: white; font-weight: 800; font-size: 1.1rem; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">C</span>
+        <span class="brand-text" style="font-size: 1.35rem; font-weight: 800; letter-spacing: -0.03em; color: var(--primary-navy);">Crewly</span>
+        <span class="brand-tagline" style="font-size: 0.7rem; font-weight: 700; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 0.08em; background: var(--accent-blue-light); padding: 2px 6px; border-radius: 4px; margin-left: 4px;">Dallas</span>
       </a>
 
       <!-- 1-Click Role Switcher -->
       <div class="role-switcher-container">
         <button id="role-btn-customer" class="role-pill-btn active">
-          👤 Customer View
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Customer View
         </button>
         <button id="role-btn-pro" class="role-pill-btn">
-          👷 Crewly Pro View
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2z"/><path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/><path d="M4 15v-3a8 8 0 0 1 16 0v3"/></svg> Crewly Pro View
+        </button>
+        <button id="role-btn-admin" class="role-pill-btn">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Crewly Admin View
         </button>
         <button id="btn-open-dual-tab" class="btn-open-tab" title="Open complementary role in a new browser tab for dual-screen demo">
-          Open in New Tab ↗
+          Open in New Tab <svg class="lucide-icon" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         </button>
       </div>
     </div>
@@ -60,7 +61,7 @@
       <div class="customer-hero">
         <div class="market-indicator">
           <span class="market-pulse"></span>
-          Live in Dallas, Texas (Neighborhood Pilot)
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Dallas Pilot Demonstration — INSY 3331 Academic Simulation
         </div>
         <h1>On-demand home services.<br>Transparent upfront pricing.</h1>
         <p>
@@ -68,9 +69,9 @@
         </p>
 
         <div class="hero-highlights">
-          <div class="hero-chip">✓ Verified Background-Checked Pros</div>
-          <div class="hero-chip">✓ Multi-Worker Moving Teams</div>
-          <div class="hero-chip">✓ Transparent Hourly & Fixed Pricing</div>
+          <div class="hero-chip"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Pre-Screened Dallas Pro Profiles (Pilot Demo)</div>
+          <div class="hero-chip"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Multi-Worker Moving Teams</div>
+          <div class="hero-chip"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Transparent Demonstration Pricing Assumptions</div>
         </div>
       </div>
 
@@ -83,7 +84,7 @@
           </select>
         </div>
         <div style="font-size: 0.8rem; color: var(--text-muted);">
-          📍 Neighborhood: <strong id="customer-active-neighborhood" style="color: var(--primary-navy);">Uptown Dallas</strong>
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Neighborhood: <strong id="customer-active-neighborhood" style="color: var(--primary-navy);">Uptown Dallas</strong>
         </div>
       </div>
 
@@ -133,14 +134,14 @@
       <div class="pro-profile-summary">
         <div class="pro-profile-header">
           <div class="pro-id-block">
-            <div class="pro-avatar-large" id="pro-avatar-display">👨🏾‍🔧</div>
+            <div class="pro-avatar-large" id="pro-avatar-display"><svg class="lucide-icon" style="width: 32px; height: 32px; color: var(--primary-navy);" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
             <div>
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
                 <h2 class="pro-name-title" id="pro-name-display">Marcus Davis</h2>
                 <span id="pro-tier-display" class="tier-badge gold">Gold Pro</span>
               </div>
               <div style="font-size: 0.85rem; color: var(--text-secondary);">
-                ⭐ <strong id="pro-rating-display">4.94</strong> (<span id="pro-reviews-display">88</span> jobs) • 
+                <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="#F59E0B" fill="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <strong id="pro-rating-display">4.94</strong> (<span id="pro-reviews-display">88</span> jobs) • 
                 <span id="pro-neighborhood-display">Uptown Dallas</span> • 
                 Reliability: <strong id="pro-reliability-display">98%</strong>
               </div>
@@ -175,7 +176,7 @@
         <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <label style="font-size: 0.88rem; font-weight: 700; color: var(--primary-navy); display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="pro-autobook-toggle" style="width: 18px; height: 18px; accent-color: var(--brand-emerald);">
+              <input type="checkbox" id="pro-autobook-toggle" style="width: 18px; height: 18px; accent-color: var(--accent-blue);">
               Enable Auto-Book for Compatible Jobs
             </label>
             <span style="font-size: 0.78rem; color: var(--text-muted);" id="pro-autobook-status">
@@ -188,22 +189,72 @@
           </div>
         </div>
 
-        <!-- Pro Earnings Ledger -->
-        <div class="pro-earnings-grid">
-          <div class="earnings-stat-box">
-            <span class="earnings-stat-label">Available Balance</span>
-            <span class="earnings-stat-value available" id="pro-stat-available">$275.00</span>
-            <button class="btn-cashout" id="btn-cashout-trigger">Simulated Cash-Out</button>
+        <!-- Pro Wallet & Earnings Dashboard (Stage 2) -->
+        <div class="wallet-section-container" style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-lg); padding: 24px; margin-top: 16px; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+            <div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: inline-flex; align-items: center; color: var(--accent-blue);"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
+                <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-navy); margin: 0;">My Crewly Wallet</h2>
+              </div>
+              <p style="font-size: 0.83rem; color: var(--text-muted); margin: 4px 0 0 0;">
+                Transparent simulated earnings ledger, pending payouts, and simulated transfers for <strong id="wallet-pro-name">Dallas Pro</strong>
+              </p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="verified-credential-chip" style="background: var(--brand-mint); color: #065F46; border-color: var(--brand-mint-border); font-size: 0.75rem;">
+                <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Simulated Ledger Active
+              </span>
+              <button class="btn-cashout" id="btn-cashout-trigger" style="margin: 0; padding: 10px 20px; font-size: 0.9rem;">
+                <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Cash Out Funds
+              </button>
+            </div>
           </div>
-          <div class="earnings-stat-box">
-            <span class="earnings-stat-label">Pending Payouts</span>
-            <span class="earnings-stat-value" id="pro-stat-pending">$75.00</span>
-            <span style="font-size: 0.72rem; color: var(--text-muted);">From jobs in-progress</span>
+
+          <!-- 3 Primary Financial Metrics -->
+          <div class="pro-earnings-grid" style="margin-top: 0; margin-bottom: 24px;">
+            <div class="earnings-stat-box">
+              <span class="earnings-stat-label">Available Balance</span>
+              <span class="earnings-stat-value available" id="pro-stat-available">$0.00</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Ready to withdraw (eligible completed jobs)</span>
+            </div>
+            <div class="earnings-stat-box">
+              <span class="earnings-stat-label">Pending Earnings</span>
+              <span class="earnings-stat-value" id="pro-stat-pending">$0.00</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">From accepted / ongoing assignments</span>
+            </div>
+            <div class="earnings-stat-box">
+              <span class="earnings-stat-label">Lifetime Earned</span>
+              <span class="earnings-stat-value" id="pro-stat-lifetime">$0.00</span>
+              <span style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Total historical earnings (never decreases)</span>
+            </div>
           </div>
-          <div class="earnings-stat-box">
-            <span class="earnings-stat-label">Lifetime Earned</span>
-            <span class="earnings-stat-value" id="pro-stat-lifetime">$2,450.00</span>
-            <span style="font-size: 0.72rem; color: var(--text-muted);">Dallas Marketplace</span>
+
+          <!-- Wallet Transaction History -->
+          <div style="border-top: 1px solid var(--border-light); padding-top: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+              <div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--primary-navy); margin: 0;">Transaction History & Receipts</h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Historical job credits, opening snapshots, and simulated withdrawals</p>
+              </div>
+              <!-- Filter Pills -->
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button id="wallet-filter-all" class="wallet-filter-pill active" style="padding: 5px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; cursor: pointer; background: var(--accent-blue); color: white; border: 1px solid var(--accent-blue);">
+                  All Transactions (<span id="wallet-count-all">0</span>)
+                </button>
+                <button id="wallet-filter-earnings" class="wallet-filter-pill" style="padding: 5px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; cursor: pointer; background: white; color: var(--text-secondary); border: 1px solid var(--border-light);">
+                  <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Earnings (<span id="wallet-count-earnings">0</span>)
+                </button>
+                <button id="wallet-filter-cashouts" class="wallet-filter-pill" style="padding: 5px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; cursor: pointer; background: white; color: var(--text-secondary); border: 1px solid var(--border-light);">
+                  <svg class="lucide-icon" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Cash-Outs (<span id="wallet-count-cashouts">0</span>)
+                </button>
+              </div>
+            </div>
+
+            <!-- Transaction List Container -->
+            <div id="wallet-transactions-container">
+              <!-- Rendered dynamically -->
+            </div>
           </div>
         </div>
       </div>
@@ -220,6 +271,18 @@
         <!-- Rendered dynamically -->
       </div>
 
+      <!-- Pro Completed Jobs History Section -->
+      <div class="section-title-row" style="margin-top: 36px;">
+        <div>
+          <h2 class="section-title">My Completed Jobs</h2>
+          <p class="section-subtitle">Your personal verified job record, earned payouts, and customer ratings</p>
+        </div>
+      </div>
+
+      <div id="pro-completed-jobs-container" style="margin-bottom: 36px;">
+        <!-- Rendered dynamically -->
+      </div>
+
       <!-- Pro Job Board Section -->
       <div class="section-title-row">
         <div>
@@ -228,9 +291,646 @@
         </div>
       </div>
 
+      <!-- Job Board Category Filter Pills -->
+      <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
+        <button id="job-filter-available" class="btn-banner-link" style="padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; background: var(--accent-blue); color: white;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Available to Me (<span id="count-filter-available">0</span>)
+        </button>
+        <button id="job-filter-upcoming" class="btn-banner-link" style="padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; background: white; color: var(--text-secondary); border: 1px solid var(--border-light);">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Upcoming Jobs (<span id="count-filter-upcoming">0</span>)
+        </button>
+        <button id="job-filter-ineligible" class="btn-banner-link" style="padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; background: white; color: var(--text-secondary); border: 1px solid var(--border-light);">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Conflicts / Ineligible (<span id="count-filter-ineligible">0</span>)
+        </button>
+      </div>
+
       <div id="pro-job-board-container">
         <!-- Rendered dynamically -->
       </div>
+    </div>
+
+    <!-- ===================================================================
+         CREWLY ADMIN & DISPATCH CENTER VIEW (Stage 3 Phase 1)
+         =================================================================== -->
+    <div id="admin-view-section" style="display: none;">
+      
+      <!-- Academic & Operational Demonstration Header -->
+      <div class="admin-hero">
+        <div class="admin-badge-row">
+          <div class="admin-env-pill">
+            <span class="pulse-dot-admin"></span> Dallas Operations Center (Pilot Dispatch)
+          </div>
+          <div class="admin-role-disclaimer">
+            <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Classroom Demo: Client-side role selection for INSY 3331 evaluation. Not production authentication.
+          </div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-top: 14px;">
+          <div>
+            <h1 class="admin-view-title">Human-Controlled Operations & Dispatch</h1>
+            <p class="admin-view-subtitle">
+              Centralized administrative visibility, multi-worker assignment tracking, rules-based attention alerts, and marketplace financial integrity.
+            </p>
+          </div>
+          <div class="admin-operator-chip">
+            <span style="display: inline-flex; align-items: center; color: var(--primary-navy);"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
+            <div>
+              <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">Active Operator</div>
+              <strong style="color: var(--primary-navy); font-size: 0.88rem;" id="admin-operator-name">Dallas Dispatch Lead (Demo)</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Sub-Navigation Pills -->
+      <div class="admin-subnav-container">
+        <button class="admin-subnav-btn active" data-tab="overview" id="admin-tab-overview">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Overview
+        </button>
+        <button class="admin-subnav-btn" data-tab="alerts" id="admin-tab-alerts">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Needs Attention <span class="admin-tab-badge" id="admin-badge-alerts-count">0</span>
+        </button>
+        <button class="admin-subnav-btn" data-tab="dispatch" id="admin-tab-dispatch">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="13" x="1" y="6" rx="2"/><polygon points="17 8 20 8 23 11 23 16 17 16 17 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Dispatch Center
+        </button>
+        <button class="admin-subnav-btn" data-tab="workers" id="admin-tab-workers">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Worker Directory
+        </button>
+        <button class="admin-subnav-btn" data-tab="support" id="admin-tab-support">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg> Customer Support
+        </button>
+        <button class="admin-subnav-btn" data-tab="finance" id="admin-tab-finance">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Financial Operations
+        </button>
+        <button class="admin-subnav-btn" data-tab="trust" id="admin-tab-trust">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Trust & Safety
+        </button>
+        <button class="admin-subnav-btn" data-tab="audit" id="admin-tab-audit">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg> Audit Trail
+        </button>
+      </div>
+
+      <!-- TAB 1: MARKETPLACE OVERVIEW -->
+      <div class="admin-tab-panel active" id="admin-panel-overview">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Marketplace Operational Metrics</h2>
+            <p class="section-subtitle">Real-time counts aggregated dynamically from local marketplace state</p>
+          </div>
+        </div>
+
+        <div class="admin-metrics-grid">
+          <div class="admin-metric-card">
+            <div class="admin-metric-icon" style="background: #EFF6FF; color: #2563EB;"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></div>
+            <div class="admin-metric-info">
+              <span class="admin-metric-label">Total Booking Requests</span>
+              <strong class="admin-metric-value" id="admin-stat-total-bookings">0</strong>
+              <span class="admin-metric-subtext">All pilot orders</span>
+            </div>
+          </div>
+
+          <div class="admin-metric-card">
+            <div class="admin-metric-icon" style="background: #FEF3C7; color: #D97706;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+            <div class="admin-metric-info">
+              <span class="admin-metric-label">Partially Filled Bookings</span>
+              <strong class="admin-metric-value" id="admin-stat-partially-filled" style="color: #D97706;">0</strong>
+              <span class="admin-metric-subtext">Missing required workers</span>
+            </div>
+          </div>
+
+          <div class="admin-metric-card">
+            <div class="admin-metric-icon" style="background: #EFF6FF; color: #2563EB;"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <div class="admin-metric-info">
+              <span class="admin-metric-label">Open / Seeking Pros</span>
+              <strong class="admin-metric-value" id="admin-stat-open-bookings">0</strong>
+              <span class="admin-metric-subtext">0 workers assigned</span>
+            </div>
+          </div>
+
+          <div class="admin-metric-card">
+            <div class="admin-metric-icon" style="background: var(--brand-mint); color: #059669;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="admin-metric-info">
+              <span class="admin-metric-label">Fully Confirmed / Active</span>
+              <strong class="admin-metric-value" id="admin-stat-confirmed-bookings" style="color: var(--accent-blue);">0</strong>
+              <span class="admin-metric-subtext">Full crew assigned</span>
+            </div>
+          </div>
+
+          <div class="admin-metric-card">
+            <div class="admin-metric-icon" style="background: #F1F5F9; color: #475569;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="admin-metric-info">
+              <span class="admin-metric-label">Completed Bookings</span>
+              <strong class="admin-metric-value" id="admin-stat-completed-bookings">0</strong>
+              <span class="admin-metric-subtext">Finalized & reviewed</span>
+            </div>
+          </div>
+
+          <div class="admin-metric-card">
+            <div class="admin-metric-icon" style="background: #FEE2E2; color: #DC2626;"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            <div class="admin-metric-info">
+              <span class="admin-metric-label">Expired ASAP Searches</span>
+              <strong class="admin-metric-value" id="admin-stat-expired-asap" style="color: #DC2626;">0</strong>
+              <span class="admin-metric-subtext">60-min window lapsed</span>
+            </div>
+          </div>
+
+          <div class="admin-metric-card">
+            <div class="admin-metric-icon" style="background: #EFF6FF; color: #2563EB;"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+            <div class="admin-metric-info">
+              <span class="admin-metric-label">Pros Available Today</span>
+              <strong class="admin-metric-value" id="admin-stat-available-pros-today" style="color: #4338CA;">0</strong>
+              <span class="admin-metric-subtext"><span id="admin-stat-registered-pros">0</span> total registered Pros</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Financial Operations Breakdown (Product Lead Adjustment 5) -->
+        <div class="section-title-row" style="margin-top: 36px; margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Marketplace Financial Distinction & Integrity</h2>
+            <p class="section-subtitle">
+              Strict accounting separation: Gross customer billings vs booking fees vs Pro compensation vs gross margin
+            </p>
+          </div>
+        </div>
+
+        <div class="admin-finance-grid">
+          <div class="admin-finance-card">
+            <div class="admin-finance-label">Projected Gross Booking Value</div>
+            <div class="admin-finance-value" id="admin-fin-projected-gbv">$0.00</div>
+            <div class="admin-finance-hint">Total customer price of open/active bookings</div>
+          </div>
+
+          <div class="admin-finance-card">
+            <div class="admin-finance-label">Completed-Job Gross Value</div>
+            <div class="admin-finance-value" id="admin-fin-completed-gbv" style="color: var(--accent-blue);">$0.00</div>
+            <div class="admin-finance-hint">Customer billings on finalized bookings</div>
+          </div>
+
+          <div class="admin-finance-card">
+            <div class="admin-finance-label">Platform Booking Fees</div>
+            <div class="admin-finance-value" id="admin-fin-booking-fees">$0.00</div>
+            <div class="admin-finance-hint">$10 platform fee per booking request</div>
+          </div>
+
+          <div class="admin-finance-card">
+            <div class="admin-finance-label">Worker Compensation (Total)</div>
+            <div class="admin-finance-value" id="admin-fin-worker-pay">$0.00</div>
+            <div class="admin-finance-hint">Committed (<span id="admin-fin-worker-pending">$0.00</span> pending, <span id="admin-fin-worker-released">$0.00</span> paid)</div>
+          </div>
+
+          <div class="admin-finance-card" style="border-left: 4px solid var(--accent-blue);">
+            <div class="admin-finance-label">Realized Margin (Completed Jobs)</div>
+            <div class="admin-finance-value" id="admin-fin-completed-margin" style="color: var(--accent-blue);">$0.00</div>
+            <div class="admin-finance-hint">Completed customer charges minus completed payouts</div>
+          </div>
+
+          <div class="admin-finance-card" style="border-left: 4px solid #2563EB;">
+            <div class="admin-finance-label">Projected Margin (Active Pipeline)</div>
+            <div class="admin-finance-value" id="admin-fin-projected-margin" style="color: #2563EB;">$0.00</div>
+            <div class="admin-finance-hint">Active/open customer charges minus pending payouts</div>
+          </div>
+
+          <div class="admin-finance-card" style="border-left: 4px solid var(--dark-rose);">
+            <div class="admin-finance-label">Total Platform Gross Margin</div>
+            <div class="admin-finance-value" id="admin-fin-gross-margin" style="color: var(--primary-navy);">$0.00</div>
+            <div class="admin-finance-hint">Total Customer Charges minus Total Worker Payouts</div>
+          </div>
+
+          <div class="admin-finance-card">
+            <div class="admin-finance-label">Simulated Cash-Out Volume</div>
+            <div class="admin-finance-value" id="admin-fin-simulated-cashouts">$0.00</div>
+            <div class="admin-finance-hint"><span id="admin-fin-cashout-count">0</span> withdrawals (<span id="admin-fin-cashout-fees">$0.00</span> instant fees)</div>
+          </div>
+        </div>
+
+        <!-- Academic Net Profit Transparency Callout -->
+        <div class="admin-profit-disclaimer-box">
+          <div style="display: flex; align-items: center; color: #D97706;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
+          <div>
+            <strong>Educational Accounting Distinction:</strong>
+            Platform Gross Margin (<span id="admin-disclaimer-margin-val">$0.00</span>) and Customer Gross Billings are <strong>not</strong> Crewly's Net Profit.
+            In commercial operations, net profit must deduct merchant credit card processing (2.9% + $0.30 per charge), customer dispute loss reserves, Pro background checks ($32/worker), customer support operations, and cloud hosting infrastructure.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: RULES-BASED NEEDS ATTENTION QUEUE -->
+      <div class="admin-tab-panel" id="admin-panel-alerts">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Rules-Based Needs Attention Queue</h2>
+            <p class="section-subtitle">
+              Deterministic operational rules engine (not generative AI) evaluating staffing shortages, expiring windows, and unresolved tickets
+            </p>
+          </div>
+          <div style="font-size: 0.8rem; background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: var(--radius-sm); font-weight: 700;">
+            <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Operational Engine: Active
+          </div>
+        </div>
+
+        <div id="admin-alerts-container">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+
+      <!-- TAB 3: DISPATCH CENTER (Phase 2 Active Management) -->
+      <div class="admin-tab-panel" id="admin-panel-dispatch">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Dispatch Management & Crew Staffing</h2>
+            <p class="section-subtitle">
+              Inspect staffing status, review candidate Pro qualifications, and manually assign or unassign workers
+            </p>
+          </div>
+          <div style="font-size: 0.8rem; background: #EEF2FF; color: #4338CA; padding: 6px 14px; border-radius: var(--radius-sm); font-weight: 700;">
+            <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Human-Controlled Dispatch Active
+          </div>
+        </div>
+
+        <!-- Dispatch Search & Filter Bar -->
+        <div class="dispatch-toolbar" style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; background: white; padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
+          <div style="flex: 1; min-width: 240px;">
+            <input type="text" id="admin-dispatch-search" class="form-input" placeholder="Search by ID (e.g. CRW-1004), customer name, service title, or neighborhood...">
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">Status Filter:</label>
+            <select id="admin-dispatch-filter-status" class="form-select" style="width: auto; padding: 7px 12px; font-size: 0.85rem;">
+              <option value="all">All Bookings</option>
+              <option value="partially_filled" selected>Partially Filled (Missing Pros)</option>
+              <option value="waiting_for_pros">Open / Seeking Pros</option>
+              <option value="fully_confirmed">Fully Confirmed / Active</option>
+              <option value="historical_past">Historical Past Appointments</option>
+              <option value="completed">Completed Bookings</option>
+            </select>
+            <button id="admin-dispatch-refresh-btn" class="btn-banner-link" style="padding: 7px 14px; background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-weight: 700; cursor: pointer; color: var(--primary-navy);">
+              <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> Refresh
+            </button>
+          </div>
+        </div>
+
+        <!-- Local AI Proxy Environment Disclosure Banner -->
+        <div id="admin-ai-connection-status" class="ai-connection-banner"></div>
+
+        <!-- Dispatch Bookings Cards Container -->
+        <div id="admin-dispatch-bookings-list">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+
+      <!-- TAB 4: WORKER DIRECTORY (Phase 3 Active) -->
+      <div class="admin-tab-panel" id="admin-panel-workers">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Crewly Pro Directory & Availability</h2>
+            <p class="section-subtitle">
+              Inspect Dallas pilot worker credentials, verified equipment, reward tiers, and evaluate real-time booking eligibility.
+            </p>
+          </div>
+          <div class="admin-demo-tag" style="align-self: flex-start;">
+            Fictional Demonstration Profiles — INSY 3331
+          </div>
+        </div>
+
+        <!-- Three-Concept Availability KPI Header -->
+        <div class="admin-metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom: 20px;">
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Registered Dallas Pros</div>
+            <div class="admin-metric-val" id="admin-workers-stat-registered">4</div>
+            <div class="admin-metric-sub">Total active onboarded workforce</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Available Pros Today</div>
+            <div class="admin-metric-val" id="admin-workers-stat-available-today" style="color: var(--accent-blue);">--</div>
+            <div class="admin-metric-sub" id="admin-workers-stat-today-name">Weekly schedule enabled today</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Active Dispatched Assignments</div>
+            <div class="admin-metric-val" id="admin-workers-stat-active-assignments" style="color: var(--warning-orange);">--</div>
+            <div class="admin-metric-sub">Ongoing uncompleted tasks</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Dallas Pilot Territory</div>
+            <div class="admin-metric-val" style="font-size: 1.2rem; color: var(--primary-navy); padding-top: 6px;">Dallas, TX</div>
+            <div class="admin-metric-sub">9 Urban Pilot ZIP Codes</div>
+          </div>
+        </div>
+
+        <!-- Booking Eligibility Inspector Toolbar -->
+        <div class="admin-eligibility-inspector-card" style="background: white; border-radius: var(--radius-md); border: 1px solid var(--border-light); padding: 16px 20px; margin-bottom: 20px; box-shadow: var(--shadow-sm);">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <span class="admin-phase-badge" style="background: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; font-size: 0.72rem; padding: 2px 8px; border-radius: 12px; font-weight: 700;">Matching Engine Inspector</span>
+              <h3 style="margin: 6px 0 2px 0; font-size: 1.05rem; color: var(--primary-navy);">Booking-Specific Pro Eligibility Inspector</h3>
+              <p style="margin: 0; font-size: 0.82rem; color: var(--text-secondary);">
+                Select an active customer booking to evaluate matching rules, schedule conflicts, verified equipment, and slot eligibility for every Dallas Pro.
+              </p>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <label for="admin-inspector-booking-select" style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); white-space: nowrap;">Inspect Booking:</label>
+              <select id="admin-inspector-booking-select" class="form-select" style="min-width: 260px; font-size: 0.85rem; padding: 6px 12px;">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+          </div>
+          <div id="admin-inspector-booking-details" style="margin-top: 14px; border-top: 1px solid var(--border-light); padding-top: 12px; display: none;">
+            <!-- Populated dynamically with booking summary and per-pro eligibility breakdown -->
+          </div>
+        </div>
+
+        <!-- Worker Roster Grid -->
+        <div id="admin-workers-roster-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px;">
+          <!-- Populated dynamically by app.js -->
+        </div>
+      </div>
+
+      <!-- TAB 5: CUSTOMER SUPPORT (Phase 3 Active) -->
+      <div class="admin-tab-panel" id="admin-panel-support">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Customer Support Center</h2>
+            <p class="section-subtitle">
+              Manage staffing shortage alerts, customer booking inquiries, and internal dispatch incident notes.
+            </p>
+          </div>
+          <button id="btn-admin-create-case-open" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; background: var(--accent-blue); color: white; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;">
+            + Create Support Case
+          </button>
+        </div>
+
+        <!-- Support KPI Summary -->
+        <div class="admin-metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 20px;">
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Total Support Cases</div>
+            <div class="admin-metric-val" id="admin-support-stat-total">0</div>
+            <div class="admin-metric-sub">Unified support registry</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Open Cases</div>
+            <div class="admin-metric-val" id="admin-support-stat-open" style="color: var(--warning-orange);">0</div>
+            <div class="admin-metric-sub">Requires dispatcher action</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Under Review</div>
+            <div class="admin-metric-val" id="admin-support-stat-review" style="color: var(--accent-blue);">0</div>
+            <div class="admin-metric-sub">Active investigation</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Resolved Cases</div>
+            <div class="admin-metric-val" id="admin-support-stat-resolved" style="color: var(--accent-blue);">0</div>
+            <div class="admin-metric-sub">Successfully addressed</div>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div class="admin-dispatch-filters-card" style="background: white; border-radius: var(--radius-md); border: 1px solid var(--border-light); padding: 14px 16px; margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; box-shadow: var(--shadow-sm);">
+          <div style="flex: 1; min-width: 220px;">
+            <input type="text" id="admin-support-search" class="form-input" placeholder="Search case ID, customer, booking ID, or title..." style="font-size: 0.85rem; width: 100%;" />
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">Status:</label>
+            <select id="admin-support-filter-status" class="form-select" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
+              <option value="all">All Statuses</option>
+              <option value="open">Open</option>
+              <option value="under_review">Under Review</option>
+              <option value="resolved">Resolved</option>
+            </select>
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); margin-left: 8px;">Priority:</label>
+            <select id="admin-support-filter-priority" class="form-select" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
+              <option value="all">All Priorities</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Cases Queue Container -->
+        <div id="admin-support-cases-list">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+
+      <!-- TAB 6: FINANCIAL OPERATIONS (Phase 3 Active) -->
+      <div class="admin-tab-panel" id="admin-panel-finance">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Financial Operations & Pro Wallet Ledger</h2>
+            <p class="section-subtitle">
+              Read-only aggregate financial reporting derived directly from Stage 2 Pro wallet balances, booking charges, and simulated cash-outs.
+            </p>
+          </div>
+          <div class="admin-demo-tag" style="align-self: flex-start;">
+            Read-Only Simulation — Dallas Pilot Assumptions
+          </div>
+        </div>
+
+        <!-- Financial KPI Cards -->
+        <div class="admin-metrics-grid" style="grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-bottom: 20px;">
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Projected Gross Booking Value</div>
+            <div class="admin-metric-val" id="admin-fin-panel-projected-gbv" style="color: var(--primary-navy);">$0.00</div>
+            <div class="admin-metric-sub">Active pipeline customer charges</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Completed-Job Gross Value</div>
+            <div class="admin-metric-val" id="admin-fin-panel-completed-gbv" style="color: var(--accent-blue);">$0.00</div>
+            <div class="admin-metric-sub">Realized customer billings</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Platform Booking Fees</div>
+            <div class="admin-metric-val" id="admin-fin-panel-fees" style="color: var(--accent-blue);">$0.00</div>
+            <div class="admin-metric-sub">$10 per booking fee collected</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Total Worker Compensation</div>
+            <div class="admin-metric-val" id="admin-fin-panel-worker-comp" style="color: var(--text-primary);">$0.00</div>
+            <div class="admin-metric-sub">Pending + completed payouts</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Realized Gross Margin</div>
+            <div class="admin-metric-val" id="admin-fin-panel-completed-margin" style="color: var(--accent-blue);">$0.00</div>
+            <div class="admin-metric-sub">Completed customer billings minus worker pay</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Projected Pipeline Margin</div>
+            <div class="admin-metric-val" id="admin-fin-panel-projected-margin" style="color: var(--primary-navy);">$0.00</div>
+            <div class="admin-metric-sub">Projected GBV minus pending worker payouts</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Total Platform Gross Margin</div>
+            <div class="admin-metric-val" id="admin-fin-panel-total-margin" style="color: var(--accent-blue);">$0.00</div>
+            <div class="admin-metric-sub">Gross revenue before operating expenses</div>
+          </div>
+          <div class="admin-metric-card">
+            <div class="admin-metric-label">Simulated Worker Cash-Outs</div>
+            <div class="admin-metric-val" id="admin-fin-panel-cashouts" style="color: var(--warning-orange);">$0.00</div>
+            <div class="admin-metric-sub" id="admin-fin-panel-cashouts-count">0 withdrawals ($0.00 fees)</div>
+          </div>
+        </div>
+
+        <!-- Net Profit Transparency Disclaimer Card -->
+        <div class="admin-disclaimer-box" style="margin-bottom: 24px; background: #FFFBEB; border: 1px solid #FDE68A; border-left: 4px solid #F59E0B; padding: 14px 18px; border-radius: var(--radius-sm);">
+          <div style="font-weight: 700; color: #92400E; margin-bottom: 4px; font-size: 0.88rem;">
+            <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Statutory & Commercial Financial Transparency Disclosure
+          </div>
+          <p style="margin: 0; font-size: 0.83rem; line-height: 1.5; color: #78350F;">
+            The Platform Gross Margin displayed above represents gross customer billing less direct worker compensation. 
+            <strong>In accordance with marketplace standards and INSY 3331 project rules, Platform Gross Margin must never be identified as net profit.</strong>
+            Commercial net income must deduct payment gateway interchange fees (2.9% + $0.30 per transaction), general liability and occupational accident insurance, customer dispute reserves, background check verification costs, and cloud infrastructure operations. All Pro wallet balances and cash-out operations are simulated client-side demonstration records.
+          </p>
+        </div>
+
+        <!-- Pro Balances Roster Table -->
+        <div class="section-title-row" style="margin-bottom: 12px;">
+          <h3 style="font-size: 1.05rem; color: var(--primary-navy); margin: 0;">Crewly Pro Wallet & Earnings Summary</h3>
+          <span style="font-size: 0.8rem; color: var(--text-muted);">Source of Truth: Stage 2 Pro Wallets</span>
+        </div>
+        <div class="admin-table-container" style="margin-bottom: 28px; background: white; border-radius: var(--radius-md); border: 1px solid var(--border-light); overflow-x: auto; box-shadow: var(--shadow-sm);">
+          <table class="admin-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead>
+              <tr style="background: #F8FAFC; border-bottom: 1px solid var(--border-light); text-align: left;">
+                <th style="padding: 10px 14px;">Pro Name</th>
+                <th style="padding: 10px 14px;">Tier</th>
+                <th style="padding: 10px 14px;">Available Balance</th>
+                <th style="padding: 10px 14px;">Pending Balance</th>
+                <th style="padding: 10px 14px;">Lifetime Earned</th>
+                <th style="padding: 10px 14px;">Simulated Cash-Outs</th>
+                <th style="padding: 10px 14px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="admin-finance-pros-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Unified Master Platform Transaction Ledger -->
+        <div class="section-title-row" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+          <div>
+            <h3 style="font-size: 1.05rem; color: var(--primary-navy); margin: 0;">Master Platform Transaction Ledger</h3>
+            <p style="margin: 2px 0 0 0; font-size: 0.8rem; color: var(--text-secondary);">
+              Aggregated transaction history across all Dallas worker wallets.
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">Type:</label>
+            <select id="admin-finance-ledger-filter-type" class="form-select" style="width: auto; padding: 4px 10px; font-size: 0.82rem;">
+              <option value="all">All Types</option>
+              <option value="earnings_credit">Earnings Credit</option>
+              <option value="cashout_instant">Instant Cash-Out</option>
+              <option value="cashout_standard">Standard ACH Cash-Out</option>
+              <option value="opening_balance_snapshot">Opening Snapshot</option>
+              <option value="historical_job_import">Historical Job Import</option>
+            </select>
+          </div>
+        </div>
+        <div class="admin-table-container" style="background: white; border-radius: var(--radius-md); border: 1px solid var(--border-light); overflow-x: auto; box-shadow: var(--shadow-sm);">
+          <table class="admin-table" style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+            <thead>
+              <tr style="background: #F8FAFC; border-bottom: 1px solid var(--border-light); text-align: left;">
+                <th style="padding: 10px 14px;">Timestamp</th>
+                <th style="padding: 10px 14px;">Pro</th>
+                <th style="padding: 10px 14px;">Transaction ID</th>
+                <th style="padding: 10px 14px;">Type</th>
+                <th style="padding: 10px 14px;">Reference</th>
+                <th style="padding: 10px 14px;">Gross</th>
+                <th style="padding: 10px 14px;">Fee</th>
+                <th style="padding: 10px 14px;">Net Delivered</th>
+                <th style="padding: 10px 14px;">Status</th>
+                <th style="padding: 10px 14px;">Action</th>
+              </tr>
+            </thead>
+            <tbody id="admin-finance-ledger-table-body">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 7: TRUST & SAFETY (Phase 3 Active) -->
+      <div class="admin-tab-panel" id="admin-panel-trust">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Trust & Safety Review & Dispute Center</h2>
+            <p class="section-subtitle">
+              Inspect individual per-worker reviews, record dispatcher investigation notes, and manage review disputes without compromising rating integrity.
+            </p>
+          </div>
+          <div class="admin-demo-tag" style="align-self: flex-start;">
+            Worker Reputation Protection Active
+          </div>
+        </div>
+
+        <!-- Reputation Protection Rules Notice -->
+        <div class="admin-disclaimer-box" style="margin-bottom: 20px; background: #F8FAFC; border: 1px solid var(--border-light); border-left: 4px solid var(--accent-blue); padding: 14px 18px; border-radius: var(--radius-sm);">
+          <div style="font-weight: 700; color: var(--primary-navy); margin-bottom: 4px; font-size: 0.88rem;">
+            <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Crewly Reputation Protection Standards (Adjustment 2)
+          </div>
+          <p style="margin: 0; font-size: 0.83rem; line-height: 1.5; color: var(--primary-navy);">
+            Disputing a customer review opens an investigation in the unified case management system. 
+            <strong>Dispute tracking never automatically deletes a review, modifies original star ratings, deducts worker average ratings, penalizes customers, or suspends workers.</strong> 
+            Investigation findings are preserved in the administrative audit log to support evidence-based review appeals.
+          </p>
+        </div>
+
+        <!-- Reviews & Disputes Table / Cards -->
+        <div class="section-title-row" style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+          <h3 style="font-size: 1.05rem; color: var(--primary-navy); margin: 0;">Customer Worker Reviews & Incident Queue</h3>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">Dispute Status:</label>
+            <select id="admin-trust-filter-status" class="form-select" style="width: auto; padding: 4px 10px; font-size: 0.82rem;">
+              <option value="all">All Reviews</option>
+              <option value="undisputed">Undisputed Only</option>
+              <option value="disputed">Disputed / Under Investigation</option>
+              <option value="resolved">Investigation Resolved</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="admin-trust-reviews-list">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+
+      <!-- TAB 8: AUDIT TRAIL (Phase 2 & Phase 3 Active Audit History) -->
+      <div class="admin-tab-panel" id="admin-panel-audit">
+        <div class="section-title-row" style="margin-bottom: 16px;">
+          <div>
+            <h2 class="section-title" style="font-size: 1.25rem;">Administrative Audit Trail</h2>
+            <p class="section-subtitle">
+              Append-only audit history of administrative assignments, unassignments, support cases, and dispute investigations
+            </p>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">Action Filter:</label>
+            <select id="admin-audit-filter-action" class="form-select" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
+              <option value="all">All Audit Actions</option>
+              <option value="worker_assigned">Worker Assigned</option>
+              <option value="worker_unassigned">Worker Unassigned</option>
+              <option value="assignment_rejected">Assignment Rejected (Diagnostic)</option>
+              <option value="support_case_created">Support Case Created</option>
+              <option value="support_case_status_updated">Support Status Updated</option>
+              <option value="support_case_note_added">Support Note Added</option>
+              <option value="review_dispute_flagged">Review Dispute Flagged</option>
+              <option value="trust_case_updated">Trust & Safety Updated</option>
+              <option value="ai_dispatch_recommended">AI Dispatch Advice Shown</option>
+              <option value="ai_dispatch_fallback_used">AI Rules Fallback Used</option>
+              <option value="ai_dispatch_recommendation_rejected">AI Advice Rejected / Stale</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); padding: 8px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.78rem; color: var(--text-secondary);">
+          ℹ️ <strong>Demonstration Disclaimer:</strong> Client-side audit log for academic evaluation in INSY 3331. In a production enterprise system, administrative audit trails are stored in an immutable write-once server database with cryptographic timestamping.
+        </div>
+
+        <!-- Audit Table Container -->
+        <div id="admin-audit-table-container" style="background: white; border-radius: var(--radius-md); border: 1px solid var(--border-light); overflow-x: auto; box-shadow: var(--shadow-sm);">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </div>
+
     </div>
   </main>
 
@@ -288,17 +988,21 @@
             </div>
           </div>
 
-          <!-- Dallas Location Selector -->
+          <!-- Dallas Pilot Location Inputs (Street & ZIP) -->
           <div class="form-group">
-            <label class="form-label">Dallas Neighborhood:</label>
-            <select id="input-neighborhood" class="form-select">
-              <!-- Rendered dynamically -->
-            </select>
+            <label class="form-label">Service Street Address:</label>
+            <input type="text" id="input-address" class="form-input" placeholder="e.g. 2800 McKinney Ave, Apt 402" required>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Service Street Address:</label>
-            <input type="text" id="input-address" class="form-input" placeholder="e.g. 2800 McKinney Ave, Apt 402">
+            <label class="form-label">Dallas ZIP Code (Pilot Service Area):</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input type="text" id="input-zip" class="form-input" placeholder="75204" maxlength="5" style="max-width: 140px;" required>
+              <div id="zip-area-indicator" style="font-size: 0.82rem; font-weight: 600;"></div>
+            </div>
+            <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 4px;">
+              Supported Dallas pilot ZIP codes: 75201, 75202, 75204, 75206, 75208, 75214, 75219, 75225, 75226
+            </div>
           </div>
 
           <div class="form-group">
@@ -313,6 +1017,16 @@
               <span style="font-size: 0.78rem; font-weight: normal; color: var(--text-muted);">Guaranteed Upfront Rate</span>
             </div>
 
+            <div class="quote-row" id="quote-raw-subtotal-row" style="display: none; color: var(--text-secondary);">
+              <span id="quote-raw-subtotal-label">Original Items Subtotal:</span>
+              <strong id="quote-raw-subtotal">$0.00</strong>
+            </div>
+
+            <div class="quote-row" id="quote-discount-row" style="display: none; color: var(--accent-blue);">
+              <span id="quote-discount-label">Secondary-Item Discount:</span>
+              <strong id="quote-discount">-$0.00</strong>
+            </div>
+
             <div class="quote-row">
               <span id="quote-service-desc">Service Subtotal:</span>
               <strong id="quote-subtotal">$0.00</strong>
@@ -325,7 +1039,7 @@
 
             <div class="quote-row total">
               <span>Total Customer Price:</span>
-              <span id="quote-customer-total" style="color: var(--brand-emerald);">$0.00</span>
+              <span id="quote-customer-total" style="color: var(--accent-blue);">$0.00</span>
             </div>
 
             <div class="quote-disclaimer">
@@ -347,12 +1061,174 @@
   </div>
 
   <!-- ===================================================================
+       MODAL: CUSTOMER AI BOOKING CONCIERGE (MOVING & LIFTING ONLY)
+       =================================================================== -->
+  <div class="modal-overlay" id="ai-concierge-modal">
+    <div class="modal-dialog" style="max-width: 960px; width: 95%;">
+      <div class="modal-header" style="border-bottom: 1px solid var(--border-light); padding-bottom: 14px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <h2 style="margin: 0; font-size: 1.25rem; color: var(--primary-navy);">
+              <svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="12" x="3" y="6" rx="2"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M12 2v4"/><path d="M2 10h1"/><path d="M21 10h1"/></svg> Moving Booking Concierge
+            </h2>
+            <span class="service-badge-pill" id="concierge-proxy-status-pill" style="background: var(--brand-mint); color: #065F46; font-size: 0.72rem; padding: 3px 8px; border-radius: 12px; font-weight: 700;">
+              AI Ready
+            </span>
+          </div>
+          <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">
+            Conversational intake for Dallas Moving & Lifting. Guaranteed $50/mover-hour rate computed upfront.
+          </div>
+        </div>
+        <button class="modal-close-btn" id="btn-close-concierge">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 18px 24px;">
+        <!-- Offline Warning Banner (shown if proxy is offline / disabled) -->
+        <div id="concierge-offline-banner" style="display: none; background: #FEF3C7; border-left: 4px solid #D97706; padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #92400E;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <strong><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Local AI Concierge Offline:</strong> You can book moving right now with guaranteed upfront pricing using our standard guided form.
+            </div>
+            <button class="btn-book-service" id="btn-concierge-switch-standard" style="width: auto; padding: 6px 14px; font-size: 0.8rem; background: #D97706;">
+              Open Standard Form <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2-Column Responsive Layout -->
+        <div style="display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 20px;" class="concierge-layout-grid">
+          
+          <!-- Left Column: Conversational Chat -->
+          <div style="display: flex; flex-direction: column; height: 520px; border: 1px solid var(--border-light); border-radius: var(--radius-md); background: #F8FAFC; overflow: hidden;">
+            
+            <!-- Chat Messages Log -->
+            <div id="concierge-chat-messages" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+              <!-- Initial Greeting from Concierge -->
+              <div class="concierge-msg concierge-msg-assistant" style="display: flex; gap: 10px; max-width: 90%;">
+                <div style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: var(--accent-blue-light); color: var(--accent-blue);"><svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="12" x="3" y="6" rx="2"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M12 2v4"/><path d="M2 10h1"/><path d="M21 10h1"/></svg></div>
+                <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; font-size: 0.88rem; color: var(--primary-navy); box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+                  <div style="font-weight: 700; font-size: 0.75rem; color: var(--accent-blue); margin-bottom: 4px;">CREWLY MOVING CONCIERGE</div>
+                  Hello! I'm Crewly's Moving Concierge for the Dallas pilot area. Tell me about your upcoming move — what are you moving, where in Dallas (ZIP or neighborhood), and what date or preferred time do you have in mind?
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Suggestion Chips -->
+            <div id="concierge-suggestion-chips" style="padding: 8px 12px; background: white; border-top: 1px solid var(--border-light); display: flex; gap: 6px; overflow-x: auto; white-space: nowrap;">
+              <button type="button" class="btn-open-tab concierge-chip" data-text="1-bedroom apartment move in Uptown (2 movers, 3 hours)" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border-dark);">1-Bed Uptown (2 Movers, 3 hrs)</button>
+              <button type="button" class="btn-open-tab concierge-chip" data-text="2-bedroom home move in Lakewood (3 movers, 4 hours)" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border-dark);">2-Bed Lakewood (3 Movers, 4 hrs)</button>
+              <button type="button" class="btn-open-tab concierge-chip" data-text="Heavy furniture moving in Downtown Dallas (2 movers, 2 hours)" style="font-size: 0.75rem; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--border-dark);">Heavy Items (2 Movers, 2 hrs)</button>
+            </div>
+
+            <!-- Chat Input Area -->
+            <form id="concierge-chat-form" style="display: flex; gap: 8px; padding: 12px; background: white; border-top: 1px solid var(--border-light); align-items: center;">
+              <input type="text" id="concierge-user-input" class="form-input" placeholder="Describe your move (e.g. 1-bed apartment in Uptown next Sat 10am)..." style="flex: 1;" autocomplete="off" maxlength="500">
+              <button type="submit" id="btn-concierge-send" class="btn-book-service" style="width: auto; padding: 10px 18px; display: flex; align-items: center; gap: 6px;">
+                <span>Send</span> <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </form>
+          </div>
+
+          <!-- Right Column: Live Structured Draft & Guaranteed Pricing Quote -->
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            
+            <!-- Live Intake Summary -->
+            <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <span style="font-weight: 700; font-size: 0.88rem; color: var(--primary-navy);"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/></svg> Moving Intake Draft</span>
+                <span id="concierge-draft-status" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; background: #EFF6FF; color: var(--accent-blue); font-weight: 700;">In Progress</span>
+              </div>
+
+              <div style="display: flex; flex-direction: column; gap: 6px; font-size: 0.82rem;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-light); padding-bottom: 4px;">
+                  <span style="color: var(--text-muted);">Service:</span>
+                  <strong style="color: var(--primary-navy);">Moving & Lifting Assistance</strong>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-light); padding-bottom: 4px;">
+                  <span style="color: var(--text-muted);">Crew Size:</span>
+                  <span id="concierge-draft-movers" style="font-weight: 700; color: #D97706;">Needs clarification</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-light); padding-bottom: 4px;">
+                  <span style="color: var(--text-muted);">Duration:</span>
+                  <span id="concierge-draft-hours" style="font-weight: 700; color: #D97706;">Needs clarification</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-light); padding-bottom: 4px;">
+                  <span style="color: var(--text-muted);">Date & Time:</span>
+                  <span id="concierge-draft-datetime" style="font-weight: 700; color: #D97706;">Needs clarification</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-light); padding-bottom: 4px;">
+                  <span style="color: var(--text-muted);">Dallas Area / ZIP:</span>
+                  <span id="concierge-draft-zip" style="font-weight: 700; color: #D97706;">Needs clarification</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border-light); padding-bottom: 4px;">
+                  <span style="color: var(--text-muted);">Truck Status:</span>
+                  <span id="concierge-draft-truck" style="font-weight: 700; color: #D97706;">Needs clarification</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; padding-bottom: 2px;">
+                  <span style="color: var(--text-muted);">Access / Stairs:</span>
+                  <span id="concierge-draft-stairs" style="font-weight: 700; color: #D97706;">Needs clarification</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Deterministic Pricing Quote Card -->
+            <div class="quote-breakdown-card" style="margin: 0; background: #F8FAFC; border: 1px solid var(--border-light); padding: 14px;">
+              <div style="font-weight: 700; font-size: 0.88rem; color: var(--primary-navy); margin-bottom: 6px; display: flex; justify-content: space-between;">
+                <span>Guaranteed Upfront Pricing</span>
+                <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted);">$50/mover-hr</span>
+              </div>
+
+              <div id="concierge-pricing-details" style="display: flex; flex-direction: column; gap: 4px;">
+                <div class="quote-row">
+                  <span id="concierge-quote-service-desc">Service Subtotal:</span>
+                  <strong id="concierge-quote-subtotal">—</strong>
+                </div>
+                <div class="quote-row">
+                  <span>Platform Booking Fee (Disclosed):</span>
+                  <strong id="concierge-quote-fee">$10.00</strong>
+                </div>
+                <div class="quote-row total" style="border-top: 1px solid var(--border-dark); padding-top: 6px; margin-top: 2px;">
+                  <span style="font-weight: 800;">Total Customer Price:</span>
+                  <span id="concierge-quote-total" style="color: var(--accent-blue); font-size: 1.15rem; font-weight: 800;">—</span>
+                </div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+                  * Deterministic rate. Pros earn $30/mover-hr. No hidden fees.
+                </div>
+              </div>
+            </div>
+
+            <!-- Local Private Details (Outside AI Prompt) -->
+            <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px;">
+              <div style="font-size: 0.78rem; font-weight: 700; color: var(--primary-navy); margin-bottom: 6px;">
+                <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Private Service Location (Kept strictly local)
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <input type="text" id="concierge-input-address" class="form-input" placeholder="Service street address (e.g. 2800 McKinney Ave, Apt 402)" style="font-size: 0.82rem; padding: 7px 10px;" required>
+                <input type="text" id="concierge-input-notes" class="form-input" placeholder="Gate code / parking notes (optional)" style="font-size: 0.82rem; padding: 7px 10px;">
+              </div>
+            </div>
+
+            <!-- Explicit Confirmation Button -->
+            <div>
+              <button class="btn-book-service" id="btn-concierge-confirm-booking" style="width: 100%; padding: 12px; font-size: 0.95rem;" disabled>
+                Complete Details Above to Book
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
        MODAL: ADMINISTRATIVE / DEMO MARKETPLACE METRICS
        =================================================================== -->
   <div class="modal-overlay" id="admin-modal">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h2>📊 Dallas Marketplace Performance (Admin)</h2>
+        <h2><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Dallas Marketplace Performance (Admin)</h2>
         <button class="modal-close-btn" id="btn-close-admin">&times;</button>
       </div>
 
@@ -373,12 +1249,12 @@
           </div>
         </div>
 
-        <div style="background: #ECFDF5; border: 1px solid #A7F3D0; padding: 18px; border-radius: var(--radius-md); margin-bottom: 20px;">
-          <div style="font-size: 0.78rem; font-weight: 700; color: #065F46; text-transform: uppercase;">
+        <div style="background: #EFF6FF; border: 1px solid var(--secondary-rose); padding: 18px; border-radius: var(--radius-md); margin-bottom: 20px;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: var(--primary-navy); text-transform: uppercase;">
             Gross Platform Revenue Before Operating Expenses:
           </div>
-          <div style="font-size: 2rem; font-weight: 800; color: var(--brand-emerald);" id="metric-gross-revenue">$0.00</div>
-          <div style="font-size: 0.75rem; color: #047857; margin-top: 4px;">
+          <div style="font-size: 2rem; font-weight: 800; color: var(--primary-navy);" id="metric-gross-revenue">$0.00</div>
+          <div style="font-size: 0.75rem; color: var(--primary-navy); margin-top: 4px;">
             (Customer billings minus worker payouts. Excludes platform server, customer support, and insurance expenses.)
           </div>
         </div>
@@ -411,46 +1287,92 @@
   </div>
 
   <!-- ===================================================================
-       MODAL: SIMULATED PRO CASHOUT
+       MODAL: SIMULATED PRO CASHOUT (Stage 2 Section 5 & 6)
        =================================================================== -->
   <div class="modal-overlay" id="cashout-modal">
-    <div class="modal-dialog">
+    <div class="modal-dialog" style="max-width: 520px;">
       <div class="modal-header">
-        <h2>💵 Pro Simulated Cash-Out</h2>
+        <div>
+          <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary-navy); margin: 0;"><svg class="lucide-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Pro Simulated Cash-Out</h2>
+          <p id="cashout-modal-pro-subtitle" style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0 0;">
+            Dallas Pro Wallet Withdrawal Simulation
+          </p>
+        </div>
         <button class="modal-close-btn" id="btn-close-cashout">&times;</button>
       </div>
       <div class="modal-body">
-        <div style="text-align: center; margin-bottom: 20px;">
-          <div style="font-size: 0.85rem; color: var(--text-muted);">Available for Transfer:</div>
-          <div style="font-size: 2.2rem; font-weight: 800; color: var(--brand-emerald);" id="cashout-modal-amount">$0.00</div>
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px; text-align: center; margin-bottom: 18px;">
+          <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Available for Transfer:</div>
+          <div style="font-size: 2.2rem; font-weight: 900; color: var(--accent-blue);" id="cashout-modal-amount">$0.00</div>
+          <div style="font-size: 0.75rem; color: var(--text-muted);">From eligible completed job payouts</div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>Withdrawal Amount:</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Default: Full Balance</span>
+          </label>
+          <div style="display: flex; gap: 8px;">
+            <div style="position: relative; flex: 1;">
+              <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; color: var(--text-secondary);">$</span>
+              <input type="number" id="input-cashout-amount" class="form-input" min="1" step="0.01" placeholder="0.00" style="padding-left: 28px; font-size: 1.1rem; font-weight: 700;" required>
+            </div>
+            <button type="button" id="btn-cashout-max" style="padding: 0 16px; background: #EFF6FF; border: 1px solid var(--accent-blue); color: var(--accent-blue); border-radius: var(--radius-md); font-weight: 700; font-size: 0.85rem; cursor: pointer;">
+              Max
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 16px;">
           <label class="form-label">Transfer Method:</label>
           <div style="display: flex; flex-direction: column; gap: 10px;">
-            <label style="padding: 12px; border: 1px solid var(--border-dark); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+            <label style="padding: 12px; border: 1px solid var(--border-dark); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white;" id="cashout-method-instant-label">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <input type="radio" name="cashoutMethod" value="instant" checked>
                 <div>
-                  <div style="font-weight: 700; font-size: 0.9rem;">Instant Cash-Out (Dallas Debit Card ****4012)</div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">Funds available in minutes ($1.50 simulated fee)</div>
+                  <div style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy);"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Instant Cash-Out (Dallas Debit Card ****4012)</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">Funds available in minutes • Flat $1.50 simulated fee</div>
                 </div>
               </div>
             </label>
-            <label style="padding: 12px; border: 1px solid var(--border-dark); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+            <label style="padding: 12px; border: 1px solid var(--border-dark); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: white;" id="cashout-method-standard-label">
               <div style="display: flex; align-items: center; gap: 10px;">
                 <input type="radio" name="cashoutMethod" value="standard">
                 <div>
-                  <div style="font-weight: 700; font-size: 0.9rem;">Standard ACH Transfer (Bank of Texas ****8921)</div>
-                  <div style="font-size: 0.75rem; color: var(--text-muted);">1-2 business days (Free)</div>
+                  <div style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy);"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="22" x2="22" y2="22"/><line x1="12" y1="2" x2="12" y2="6"/><polyline points="2 6 12 2 22 6"/><line x1="4" y1="10" x2="4" y2="18"/><line x1="8" y1="10" x2="8" y2="18"/><line x1="12" y1="10" x2="12" y2="18"/><line x1="16" y1="10" x2="16" y2="18"/><line x1="20" y1="10" x2="20" y2="18"/></svg> Standard ACH Transfer (Bank of Texas ****8921)</div>
+                  <div style="font-size: 0.75rem; color: var(--text-muted);">1–2 business days (simulated) • Free ($0.00 fee)</div>
                 </div>
               </div>
             </label>
           </div>
         </div>
 
-        <div style="background: #F8FAFC; border: 1px solid var(--border-light); padding: 12px; border-radius: var(--radius-sm); font-size: 0.78rem; color: var(--text-muted);">
-          ⚠️ <strong>Demonstration Notice:</strong> Payout ledger is simulated in-browser. No real bank accounts or debit cards are charged or credited.
+        <!-- Live Calculation Breakdown -->
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 14px; font-size: 0.85rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span style="color: var(--text-muted);">Gross Withdrawal:</span>
+            <strong id="cashout-summary-gross">$0.00</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+            <span style="color: var(--text-muted);">Simulated Fee:</span>
+            <span style="color: var(--accent-red);" id="cashout-summary-fee">-$1.50</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-light); padding-top: 6px; margin-bottom: 6px;">
+            <span style="font-weight: 700; color: var(--primary-navy);">Net Transferred:</span>
+            <strong style="color: var(--accent-blue); font-size: 1rem;" id="cashout-summary-net">$0.00</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); border-top: 1px dashed var(--border-light); padding-top: 4px;">
+            <span>Remaining Available Balance:</span>
+            <span id="cashout-summary-remaining">$0.00</span>
+          </div>
+        </div>
+
+        <!-- Validation Error Message Alert -->
+        <div id="cashout-validation-msg" style="display: none; background: #FEE2E2; border: 1px solid #DC2626; color: #991B1B; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 0.82rem; margin-bottom: 12px;"></div>
+
+        <!-- Disclaimer -->
+        <div style="background: #FFFBEB; border: 1px solid #F59E0B; padding: 10px 12px; border-radius: var(--radius-sm); font-size: 0.75rem; color: #92400E; text-align: center; font-weight: 700;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> SIMULATED TRANSACTION — NO REAL MONEY TRANSFERRED
         </div>
       </div>
       <div class="modal-footer">
@@ -465,23 +1387,98 @@
   </div>
 
   <!-- ===================================================================
+       MODAL: SIMULATED TRANSFER RECEIPT (Stage 2 Section 8)
+       =================================================================== -->
+  <div class="modal-overlay" id="receipt-modal">
+    <div class="modal-dialog" style="max-width: 500px;">
+      <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="display: inline-flex; align-items: center; color: var(--accent-blue);"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></span>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary-navy); margin: 0;">Transfer Receipt</h2>
+          </div>
+          <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Crewly Dallas Pilot — Pro Wallet Simulation</p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-receipt">&times;</button>
+      </div>
+      <div class="modal-body" style="padding-top: 10px;">
+        <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 16px; font-size: 0.75rem; color: #92400E; text-align: center; font-weight: 800; text-transform: uppercase;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> SIMULATED TRANSACTION — NO REAL MONEY TRANSFERRED
+        </div>
+
+        <div style="border: 1px dashed var(--border-dark); border-radius: var(--radius-md); padding: 18px; background: #FAFAFA;">
+          <div style="text-align: center; border-bottom: 1px solid var(--border-light); padding-bottom: 14px; margin-bottom: 14px;">
+            <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Net Simulated Transfer</div>
+            <div style="font-size: 2.2rem; font-weight: 900; color: var(--accent-blue);" id="receipt-net-amount">$0.00</div>
+            <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;" id="receipt-status-pill">
+              <span class="status-badge confirmed" id="receipt-status-text"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Transfer Confirmed</span>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Transaction ID:</span>
+              <strong style="font-family: monospace; font-size: 0.8rem;" id="receipt-tx-id">txn_123</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Recipient Pro:</span>
+              <strong id="receipt-pro-name">Marcus Davis</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Date & Time:</span>
+              <span id="receipt-timestamp">2026-11-10 10:00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Transfer Method:</span>
+              <span id="receipt-method">Instant Cash-Out (Debit Card ****4012)</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-light); padding-top: 8px; margin-top: 4px;">
+              <span style="color: var(--text-muted);">Gross Withdrawal:</span>
+              <span id="receipt-gross-amount">$100.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Processing Fee:</span>
+              <span style="color: var(--accent-red);" id="receipt-fee">-$1.50</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: 800; border-top: 1px solid var(--border-light); padding-top: 8px; color: var(--primary-navy); font-size: 0.95rem;">
+              <span>Delivered Net:</span>
+              <span style="color: var(--accent-blue);" id="receipt-final-net">$98.50</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between;">
+        <button class="btn-open-tab" id="btn-print-receipt" style="padding: 8px 16px; border-radius: var(--radius-md);">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg> Print Receipt
+        </button>
+        <button class="btn-book-service" id="btn-done-receipt" style="width: auto; padding: 8px 22px;">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
        MODAL: CUSTOMER REVIEW
        =================================================================== -->
   <div class="modal-overlay" id="review-modal">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h2>⭐ Review Your Crewly Pro</h2>
+        <div>
+          <h2><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="#F59E0B" fill="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Review Your Crewly Pro</h2>
+          <p id="review-modal-worker-info" style="font-size: 0.88rem; font-weight: 600; color: var(--accent-blue); margin: 2px 0 0 0;"></p>
+        </div>
         <button class="modal-close-btn" id="btn-close-review">&times;</button>
       </div>
       <div class="modal-body">
         <div class="form-group" style="text-align: center; margin-bottom: 20px;">
           <label class="form-label" style="font-size: 1rem;">Select Star Rating:</label>
           <div style="font-size: 2rem; cursor: pointer;" id="star-rating-selector">
-            <span data-star="1">⭐</span>
-            <span data-star="2">⭐</span>
-            <span data-star="3">⭐</span>
-            <span data-star="4">⭐</span>
-            <span data-star="5">⭐</span>
+            <span data-star="1" style="cursor: pointer;"><svg class="lucide-icon" style="pointer-events: none; width: 24px; height: 24px; color: #CBD5E1; fill: #CBD5E1;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+            <span data-star="2" style="cursor: pointer;"><svg class="lucide-icon" style="pointer-events: none; width: 24px; height: 24px; color: #CBD5E1; fill: #CBD5E1;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+            <span data-star="3" style="cursor: pointer;"><svg class="lucide-icon" style="pointer-events: none; width: 24px; height: 24px; color: #CBD5E1; fill: #CBD5E1;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+            <span data-star="4" style="cursor: pointer;"><svg class="lucide-icon" style="pointer-events: none; width: 24px; height: 24px; color: #CBD5E1; fill: #CBD5E1;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+            <span data-star="5" style="cursor: pointer;"><svg class="lucide-icon" style="pointer-events: none; width: 24px; height: 24px; color: #CBD5E1; fill: #CBD5E1;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
           </div>
           <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary-navy);" id="star-rating-text">
             5 Stars (Excellent Service)
@@ -504,10 +1501,445 @@
     </div>
   </div>
 
+  <!-- ===================================================================
+       MODAL: CUSTOMER RESCHEDULE (Stage 1.2 Adjustment 3)
+       =================================================================== -->
+  <div class="modal-overlay" id="reschedule-modal">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div>
+          <h2><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Reschedule Appointment</h2>
+          <p id="reschedule-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
+            Select a new future date and time for your booking
+          </p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-reschedule">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: #EFF6FF; border-left: 4px solid var(--accent-blue); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #1E40AF;">
+          <strong>Rescheduling Notice:</strong> Existing worker assignments will be rechecked. Any worker with a schedule conflict or unavailability will be automatically unassigned so a replacement Pro can be matched.
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Appointment Date:</label>
+          <input type="date" id="input-reschedule-date" class="form-input" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Time Slot:</label>
+          <input type="time" id="input-reschedule-time" class="form-input" value="10:00" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-reschedule" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Cancel
+        </button>
+        <button class="btn-book-service" id="btn-confirm-reschedule" style="width: auto; padding: 10px 24px;">
+          Confirm Reschedule
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: ADMIN MANUAL PRO ASSIGNMENT (Stage 3 Phase 2)
+       =================================================================== -->
+  <div class="modal-overlay" id="admin-assign-modal">
+    <div class="modal-dialog" style="max-width: 640px;">
+      <div class="modal-header">
+        <div>
+          <h2><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Manual Pro Assignment</h2>
+          <p id="admin-assign-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
+            Review qualified Dallas Pros and assign to open position
+          </p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-admin-assign">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="admin-assign-booking-summary" style="background: #EFF6FF; border-left: 4px solid var(--accent-blue); padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 18px; font-size: 0.85rem; color: #1E40AF;">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div id="admin-assign-ai-banner" class="ai-modal-advisory-banner" style="display: none;"></div>
+
+        <div style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 700;">Select Candidate Pro:</label>
+          <div id="admin-assign-candidates-list" style="display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto; padding-right: 4px;">
+            <!-- Rendered dynamically -->
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 16px;">
+          <label class="form-label">Administrative Reason / Justification (Required):</label>
+          <textarea id="input-admin-assign-reason" class="form-textarea" rows="2" placeholder="e.g. Assigned Jamar Washington to complete 2-person crew for Sarah Jenkins upcoming weekend move."></textarea>
+        </div>
+
+        <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.8rem; color: #92400E; display: flex; align-items: flex-start; gap: 8px;">
+          <span style="display: inline-flex; align-items: center;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <span><strong>Privacy & Compliance:</strong> This administrative reason is preserved strictly in the internal audit log. It is not disclosed to the customer.</span>
+        </div>
+
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: var(--text-primary); font-weight: 600;">
+          <input type="checkbox" id="check-admin-assign-confirm">
+          <span>I verify this manual assignment satisfies Crewly marketplace qualification standards.</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-admin-assign" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Cancel
+        </button>
+        <button class="btn-book-service" id="btn-confirm-admin-assign" style="width: auto; padding: 10px 24px; background: var(--primary-navy);" disabled>
+          Confirm Assignment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: ADMIN WORKER UNASSIGNMENT (Stage 3 Phase 2)
+       =================================================================== -->
+  <div class="modal-overlay" id="admin-unassign-modal">
+    <div class="modal-dialog" style="max-width: 560px;">
+      <div class="modal-header">
+        <div>
+          <h2 style="color: #DC2626;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Worker Unassignment</h2>
+          <p id="admin-unassign-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
+            Pre-work reassignment and pending balance reversal
+          </p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-admin-unassign">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="admin-unassign-warning-box" style="background: #FEF2F2; border-left: 4px solid #DC2626; padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #991B1B;">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Administrative Reason for Unassignment (Required):</label>
+          <textarea id="input-admin-unassign-reason" class="form-textarea" rows="2" placeholder="e.g. Worker requested cancellation due to personal scheduling conflict; customer approved replacement."></textarea>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: flex-start; gap: 8px;">
+          <span>ℹ️</span>
+          <span><strong>Financial Integrity:</strong> Reverses exact pending earnings in integer cents without affecting historical cashouts, completed earnings, or lifetime balances.</span>
+        </div>
+
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: var(--text-primary); font-weight: 600;">
+          <input type="checkbox" id="check-admin-unassign-confirm">
+          <span>I verify that service work has not commenced and unassignment is authorized.</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-admin-unassign" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Cancel
+        </button>
+        <button class="btn-book-service" id="btn-confirm-admin-unassign" style="width: auto; padding: 10px 24px; background: #DC2626;" disabled>
+          Confirm Unassignment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Create Support Case -->
+  <div class="modal-overlay" id="modal-admin-create-case">
+    <div class="modal-dialog" style="max-width: 600px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" style="margin: 0; color: var(--primary-navy);">Create Support Case</h3>
+          <p style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
+            Record an operational incident, staffing shortage, or customer inquiry
+          </p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-modal-create-case">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Case Title (Required):</label>
+          <input type="text" id="input-case-title" class="form-input" placeholder="e.g. Unfilled Second Mover on Scheduled Job" />
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Category:</label>
+            <select id="select-case-category" class="form-select">
+              <option value="support">Customer / Operational Support</option>
+              <option value="trust_safety">Trust & Safety Investigation</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Issue Type:</label>
+            <select id="select-case-issuetype" class="form-select">
+              <option value="missing_second_mover">Staffing Shortage / Missing Worker</option>
+              <option value="asap_expired">Expired ASAP Window</option>
+              <option value="reschedule_request">Rescheduling Incompatibility</option>
+              <option value="booking_problem">Booking / Address Problem</option>
+              <option value="customer_complaint">Customer Service Complaint</option>
+              <option value="worker_complaint">Worker Dispatch Complaint</option>
+              <option value="general">General Operational Inquiry</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Associated Booking:</label>
+            <select id="select-case-booking" class="form-select">
+              <option value="">None / General Marketplace</option>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Priority Level:</label>
+            <select id="select-case-priority" class="form-select">
+              <option value="medium">Medium Priority</option>
+              <option value="high">High Priority</option>
+              <option value="critical">Critical Priority</option>
+              <option value="low">Low Priority</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Initial Internal Dispatcher Note (Required):</label>
+          <textarea id="input-case-initial-note" class="form-textarea" rows="3" placeholder="Describe the incident, operational context, and recommended resolution steps..."></textarea>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: flex-start; gap: 8px;">
+          <span style="display: inline-flex; align-items: center;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <span><strong>Customer Privacy Guarantee:</strong> Internal notes remain strictly confidential within the Admin Center. They are never written to customer activity logs (<code>booking.messages</code>).</span>
+        </div>
+
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.82rem; cursor: pointer; color: var(--text-primary); font-weight: 600;">
+          <input type="checkbox" id="check-create-case-confirm">
+          <span>I verify that this case is documented for administrative review and contains no customer-visible content.</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-create-case" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Cancel
+        </button>
+        <button class="btn-book-service" id="btn-submit-create-case" style="width: auto; padding: 10px 24px;" disabled>
+          Create Case
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Support Case Details & Note Addition -->
+  <div class="modal-overlay" id="modal-admin-case-detail">
+    <div class="modal-dialog" style="max-width: 680px;">
+      <div class="modal-header">
+        <div>
+          <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 4px;">
+            <span id="case-detail-badge-id" class="admin-phase-badge" style="background: #E0E7FF; color: #3730A3;">CASE-101</span>
+            <span id="case-detail-badge-status" class="admin-badge-status">OPEN</span>
+            <span id="case-detail-badge-priority" class="admin-alert-badge high">HIGH</span>
+          </div>
+          <h3 class="modal-title" id="case-detail-title" style="margin: 0; color: var(--primary-navy);">Case Title</h3>
+        </div>
+        <button class="modal-close-btn" id="btn-close-case-detail">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Metadata summary -->
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 16px; font-size: 0.82rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+          <div><strong style="color: var(--text-secondary);">Associated Booking:</strong> <span id="case-detail-booking-id">--</span></div>
+          <div><strong style="color: var(--text-secondary);">Customer:</strong> <span id="case-detail-customer-name">--</span></div>
+          <div><strong style="color: var(--text-secondary);">Issue Category:</strong> <span id="case-detail-issue-type">--</span></div>
+          <div><strong style="color: var(--text-secondary);">Created:</strong> <span id="case-detail-created-at">--</span></div>
+        </div>
+
+        <!-- Status update control -->
+        <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px 16px; margin-bottom: 16px;">
+          <h4 style="margin: 0 0 8px 0; font-size: 0.88rem; color: var(--primary-navy);">Update Case Status</h4>
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <select id="case-detail-select-status" class="form-select" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
+              <option value="open">Open</option>
+              <option value="under_review">Under Review</option>
+              <option value="resolved">Resolved</option>
+            </select>
+            <input type="text" id="case-detail-status-reason" class="form-input" placeholder="Administrative reason for status change (Required)..." style="flex: 1; min-width: 200px; font-size: 0.85rem;" />
+            <button id="btn-case-detail-update-status" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.82rem; white-space: nowrap; background: var(--accent-blue); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;">
+              Update Status
+            </button>
+          </div>
+        </div>
+
+        <!-- Internal Notes Timeline -->
+        <h4 style="margin: 0 0 8px 0; font-size: 0.88rem; color: var(--primary-navy);">Internal Dispatcher Notes Timeline</h4>
+        <div id="case-detail-notes-timeline" style="max-height: 220px; overflow-y: auto; background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: 14px;">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Add Note Section -->
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">Add Internal Dispatcher Note:</label>
+          <textarea id="input-case-detail-new-note" class="form-textarea" rows="2" placeholder="Record internal findings, phone call notes, or instructions for next shift..."></textarea>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+            <span style="font-size: 0.75rem; color: var(--text-muted);"><svg class="lucide-icon" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Strictly internal; never shown to customers.</span>
+            <button id="btn-case-detail-add-note" class="btn btn-primary" style="padding: 6px 16px; font-size: 0.82rem; background: var(--primary-navy); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;">
+              Add Note
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-close-case-detail-footer" style="padding: 8px 20px; border-radius: var(--radius-md);">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Trust & Safety Review Investigation -->
+  <div class="modal-overlay" id="modal-admin-trust-detail">
+    <div class="modal-dialog" style="max-width: 640px;">
+      <div class="modal-header">
+        <div>
+          <span class="admin-phase-badge" style="background: #FEF3C7; color: #92400E; margin-bottom: 4px; display: inline-block;">Trust & Safety Review Reviewer</span>
+          <h3 class="modal-title" style="margin: 0; color: var(--primary-navy);">Review Dispute & Investigation</h3>
+        </div>
+        <button class="modal-close-btn" id="btn-close-trust-detail">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Original Review Details Card (Read-Only) -->
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-sm); padding: 14px 16px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div>
+              <strong id="trust-modal-pro-name" style="color: var(--primary-navy); font-size: 0.95rem;">Worker Name</strong>
+              <div id="trust-modal-role-title" style="font-size: 0.8rem; color: var(--text-secondary);">Role Title</div>
+            </div>
+            <div id="trust-modal-stars" style="font-size: 1.15rem; color: #F59E0B; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;"></div>
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-primary); font-style: italic; margin-bottom: 8px;" id="trust-modal-comment">
+            "Customer comment text"
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); flex-wrap: wrap; gap: 8px;">
+            <span>Review Date: <span id="trust-modal-date">--</span></span>
+            <span>Customer: <span id="trust-modal-customer">--</span></span>
+            <span>Booking: <span id="trust-modal-booking">--</span></span>
+          </div>
+        </div>
+
+        <!-- Reputation Protection Rules Reminder -->
+        <div style="background: var(--bg-card-alt); border: 1px solid var(--border-light); border-left: 4px solid var(--accent-blue); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.8rem; color: var(--primary-navy);">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> <strong>Reputation Protection Notice:</strong> Flagging a review as disputed records an investigation in the unified case management system. The original rating (<span id="trust-modal-original-stars">5</span> stars) and worker average rating are protected and remain completely untouched.
+        </div>
+
+        <!-- Dispute Action Section -->
+        <div id="trust-dispute-action-container">
+          <!-- Rendered dynamically depending on whether already disputed or not -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-close-trust-footer" style="padding: 8px 20px; border-radius: var(--radius-md);">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: ADMIN BOOKING CANCELLATION (Stage 3.5)
+       =================================================================== -->
+  <div class="modal-overlay" id="modal-admin-cancel-booking">
+    <div class="modal-dialog" style="max-width: 580px;">
+      <div class="modal-header">
+        <div>
+          <h2 style="color: #DC2626; margin: 0; font-size: 1.25rem;"><svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Cancel Booking</h2>
+          <p id="admin-cancel-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
+            Administrative all-or-nothing cancellation and pending payout reversal
+          </p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-admin-cancel">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="admin-cancel-summary-box" style="background: #FEF2F2; border-left: 4px solid #DC2626; padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #991B1B;">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 700;">Administrative Reason for Cancellation (Required):</label>
+          <textarea id="input-admin-cancel-reason" class="form-textarea" rows="2" placeholder="e.g. Customer requested cancellation prior to worker dispatch due to building access issue."></textarea>
+        </div>
+
+        <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.8rem; color: #92400E; display: flex; align-items: flex-start; gap: 8px;">
+          <span style="display: inline-flex; align-items: center;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <span><strong>All-or-Nothing Financial Policy:</strong> Pre-work cancellation safely reverses attributable pending earnings in integer cents. It does not alter completed earnings, and customer resolution is marked <em>Pending Manual Review — No Refund Processed</em>.</span>
+        </div>
+
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: var(--text-primary); font-weight: 600;">
+          <input type="checkbox" id="check-admin-cancel-confirm">
+          <span>I confirm no worker has begun traveling or work, and this cancellation is authorized.</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-admin-cancel-action" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Keep Booking
+        </button>
+        <button class="btn-book-service" id="btn-confirm-admin-cancel" style="width: auto; padding: 10px 24px; background: #DC2626;" disabled>
+          Confirm Cancellation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       MODAL: ADMIN-VERIFIED JOB COMPLETION (Stage 3.5)
+       =================================================================== -->
+  <div class="modal-overlay" id="modal-admin-verify-complete">
+    <div class="modal-dialog" style="max-width: 600px;">
+      <div class="modal-header">
+        <div>
+          <h2 style="color: var(--brand-emerald); margin: 0; font-size: 1.25rem;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Verify & Complete Assignment</h2>
+          <p id="admin-verify-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
+            Affirmative administrative completion and worker earnings release
+          </p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-admin-verify">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="admin-verify-summary-box" style="background: #EFF6FF; border-left: 4px solid var(--accent-blue); padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: var(--primary-navy);">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 700;">Affirmative Verification Source (Demo Simulation):</label>
+          <select id="select-admin-verify-source" class="form-select">
+            <option value="Customer Direct Phone Confirmation (Demo Simulation)">Customer Direct Phone Confirmation (Demo Simulation)</option>
+            <option value="On-Site Dispatcher Field Check (Demo Simulation)">On-Site Dispatcher Field Check (Demo Simulation)</option>
+            <option value="Customer Support Ticket Verification (Demo Simulation)">Customer Support Ticket Verification (Demo Simulation)</option>
+          </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-weight: 700;">Documented Verification Notes & Explanation (Required):</label>
+          <textarea id="input-admin-verify-explanation" class="form-textarea" rows="2" placeholder="e.g. Spoke directly with customer Sarah Jenkins who confirmed all loading/unloading tasks were finished satisfactorily."></textarea>
+        </div>
+
+        <div style="background: #F8FAFC; border: 1px solid var(--border-light); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: flex-start; gap: 8px;">
+          <span style="display: inline-flex; align-items: center;"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
+          <span><strong>Single Source of Truth:</strong> Releases pending payout to available balance and records an earnings credit in the worker's ledger using the shared Pro completion engine.</span>
+        </div>
+
+        <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; cursor: pointer; color: var(--text-primary); font-weight: 600;">
+          <input type="checkbox" id="check-admin-verify-confirm">
+          <span>I affirmatively verify that this worker completed all required job tasks.</span>
+        </label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-open-tab" id="btn-cancel-admin-verify-action" style="padding: 10px 18px; border-radius: var(--radius-md);">
+          Cancel
+        </button>
+        <button class="btn-book-service" id="btn-confirm-admin-verify" style="width: auto; padding: 10px 24px; background: var(--accent-blue);" disabled>
+          Verify & Release Payout
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Toast Alerts Container -->
   <div class="toast-container" id="toast-container"></div>
 
   <!-- Core JavaScript Module -->
   <script type="module" src="app.js"></script>
+
 </body>
 </html>
