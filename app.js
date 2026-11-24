@@ -142,16 +142,77 @@ export function formatBookingTiming(booking) {
   return `Scheduled: ${booking.scheduledDate} at ${booking.scheduledTime}`;
 }
 
+
+// ---------------------------------------------------------------------------
+// Standardized Inline Lucide SVG Icons (Option C Bold Professional)
+// ---------------------------------------------------------------------------
+const LUCIDE_ICONS = {
+  check: '<svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+  alertTriangle: '<svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  alertCircle: '<svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  clock: '<svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  calendar: '<svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  dollarSign: '<svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+  mapPin: '<svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  user: '<svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  users: '<svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  hardHat: '<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2z"/><path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/><path d="M4 15v-3a8 8 0 0 1 16 0v3"/></svg>',
+  truck: '<svg class="lucide-icon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="13" x="1" y="6" rx="2"/><polygon points="17 8 20 8 23 11 23 16 17 16 17 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>',
+  tv: '<svg class="lucide-icon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="15" x="2" y="7" rx="2"/><polyline points="17 2 12 7 7 2"/></svg>',
+  hammer: '<svg class="lucide-icon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m15 12-8.5 8.5a2.12 2.12 0 1 1-3-3L12 9"/><path d="M17.64 15 22 10.64"/><path d="m20.91 3.26-6.36 6.36"/><path d="m21.67 7.5-6.36-6.36"/></svg>',
+  box: '<svg class="lucide-icon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>',
+  wrench: '<svg class="lucide-icon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+  sprout: '<svg class="lucide-icon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20h10"/><path d="M10 20c5.5-2.5.8-6.4 3-10"/><path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"/><path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"/></svg>',
+  bot: '<svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="12" x="3" y="6" rx="2"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M12 2v4"/><path d="M2 10h1"/><path d="M21 10h1"/></svg>',
+  zap: '<svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  arrowRight: '<svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>',
+  send: '<svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>',
+  shield: '<svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  star: '<svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="#F59E0B" fill="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+  starEmpty: '<svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="#CBD5E1" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+  car: '<svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></svg>',
+  fileText: '<svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>',
+  lock: '<svg class="lucide-icon" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  search: '<svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+  ban: '<svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>',
+  sparkles: '<svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>'
+};
+
+function renderStarRatingHtml(stars) {
+  const full = Math.round(Number(stars) || 0);
+  let html = '<span class="star-rating-icons" style="display:inline-flex;align-items:center;gap:2px;">';
+  for (let i = 1; i <= 5; i++) {
+    html += i <= full ? LUCIDE_ICONS.star : LUCIDE_ICONS.starEmpty;
+  }
+  html += '</span>';
+  return html;
+}
+
 // ---------------------------------------------------------------------------
 // Toast Notification Utility
 // ---------------------------------------------------------------------------
-function showToast(message, icon = '✓') {
+function showToast(message, icon = 'success') {
   const container = document.getElementById('toast-container');
   if (!container) return;
 
+  let iconHtml = icon;
+  if (!icon || icon === 'success' || icon === '\u2713') {
+    iconHtml = LUCIDE_ICONS.check;
+  } else if (icon === 'warning' || icon === 'error' || icon === '\u26A0' || icon === '\u26A0\uFE0F') {
+    iconHtml = LUCIDE_ICONS.alertTriangle;
+  } else if (icon === 'clock' || icon === '\u23F3' || icon === '\u231B') {
+    iconHtml = LUCIDE_ICONS.clock;
+  } else if (icon === 'calendar' || icon === '\uD83D\uDCC5') {
+    iconHtml = LUCIDE_ICONS.calendar;
+  } else if (icon === 'dollar' || icon === '\uD83D\uDCB5') {
+    iconHtml = LUCIDE_ICONS.dollarSign;
+  } else if (icon === 'star' || icon === '\u2B50') {
+    iconHtml = LUCIDE_ICONS.star;
+  }
+
   const toast = document.createElement('div');
   toast.className = 'toast';
-  toast.innerHTML = `<span style="font-size: 1.1rem;">${icon}</span> <span>${message}</span>`;
+  toast.innerHTML = `<span style="display:inline-flex;align-items:center;flex-shrink:0;">${iconHtml}</span> <span>${message}</span>`;
   container.appendChild(toast);
 
   setTimeout(() => {
@@ -244,12 +305,12 @@ function renderServiceCards() {
   if (!container) return;
 
   const services = [
-    { key: 'moving', icon: '🚚', badge: 'Popular • Multi-Worker Teams' },
-    { key: 'tv_mounting', icon: '📺', badge: 'Guaranteed Flat Rate' },
-    { key: 'wall_mounting', icon: '🖼️', badge: 'Precision Anchoring' },
-    { key: 'furniture_assembly', icon: '📦', badge: 'IKEA & Wayfair Ready' },
-    { key: 'furniture_disassembly', icon: '🔧', badge: 'Moving Preparation' },
-    { key: 'lawn_mowing', icon: '🌱', badge: 'Verified Mower Required' }
+    { key: 'moving', icon: LUCIDE_ICONS.truck, badge: 'Popular • Multi-Worker Teams' },
+    { key: 'tv_mounting', icon: LUCIDE_ICONS.tv, badge: 'Guaranteed Flat Rate' },
+    { key: 'wall_mounting', icon: LUCIDE_ICONS.hammer, badge: 'Precision Anchoring' },
+    { key: 'furniture_assembly', icon: LUCIDE_ICONS.box, badge: 'IKEA & Wayfair Ready' },
+    { key: 'furniture_disassembly', icon: LUCIDE_ICONS.wrench, badge: 'Moving Preparation' },
+    { key: 'lawn_mowing', icon: LUCIDE_ICONS.sprout, badge: 'Verified Mower Required' }
   ];
 
   container.innerHTML = services.map(s => {
@@ -279,15 +340,15 @@ function renderServiceCards() {
           ${s.key === 'moving' ? `
             <div style="display: flex; gap: 8px;">
               <button class="btn-book-service btn-open-booking" data-service="${s.key}" style="flex: 1;">
-                <span>Book Service</span> ➔
+                <span>Book Service</span> ${LUCIDE_ICONS.arrowRight}
               </button>
               <button class="btn-book-service btn-open-moving-concierge" style="background: linear-gradient(135deg, #1E40AF, #2563EB); border: none; padding: 0 12px; font-size: 0.82rem;" title="AI-Assisted Moving Intake">
-                🤖 Concierge
+                ${LUCIDE_ICONS.bot} <span>AI Concierge</span>
               </button>
             </div>
           ` : `
             <button class="btn-book-service btn-open-booking" data-service="${s.key}">
-              <span>Book Service</span> ➔
+              <span>Book Service</span> ${LUCIDE_ICONS.arrowRight}
             </button>
           `}
         </div>
@@ -327,9 +388,9 @@ function openIntakeModal(serviceKey) {
   if (serviceKey === 'moving') {
     questionsContainer.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; background: #F0FDF4; border: 1px solid #BBF7D0; padding: 8px 12px; border-radius: var(--radius-sm); margin-bottom: 12px; font-size: 0.82rem; color: #166534;">
-        <span>✨ Prefer conversational booking?</span>
+        <span>Prefer conversational booking?</span>
         <button type="button" id="link-switch-to-moving-concierge" style="background: none; border: none; color: var(--accent-blue); font-weight: 700; cursor: pointer; text-decoration: underline; font-size: 0.82rem;">
-          Try AI Moving Concierge ➔
+          Try AI Moving Concierge ${LUCIDE_ICONS.arrowRight}
         </button>
       </div>
       <div style="background: #EFF6FF; border-left: 4px solid var(--accent-blue); padding: 12px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #1E40AF;">
@@ -455,10 +516,10 @@ function openIntakeModal(serviceKey) {
             <option value="bed_frame_with_storage">Platform Bed with Under-Bed Storage Drawers ($160)</option>
           </optgroup>
           <optgroup label="Unsupported Items (Requires Specialized Contractor)">
-            <option value="murphy_bed">⚠️ Murphy Bed (Wall-Mounted Pull-Down Bed) [Decline]</option>
-            <option value="builtin_cabinetry">⚠️ Custom Built-in Cabinetry / Kitchen Cabinets [Decline]</option>
-            <option value="gas_appliance">⚠️ Gas Grill or Gas Appliance [Decline]</option>
-            <option value="commercial_gym_multi_stack">⚠️ Commercial Multi-Station Gym Rig [Decline]</option>
+            <option value="murphy_bed">[Decline] Murphy Bed (Wall-Mounted Pull-Down Bed) [Decline]</option>
+            <option value="builtin_cabinetry">[Decline] Custom Built-in Cabinetry / Kitchen Cabinets [Decline]</option>
+            <option value="gas_appliance">[Decline] Gas Grill or Gas Appliance [Decline]</option>
+            <option value="commercial_gym_multi_stack">[Decline] Commercial Multi-Station Gym Rig [Decline]</option>
           </optgroup>
         </select>
       </div>
@@ -543,9 +604,9 @@ function openIntakeModal(serviceKey) {
             <option value="home_gym_exercise_complex">Complex Motorized Gym / Elliptical Breakdown ($120)</option>
           </optgroup>
           <optgroup label="Unsupported Items (Requires Specialized Contractor)">
-            <option value="antique_heirloom_glue">⚠️ Antique Heirloom (Hide-Glued Joinery) [Decline]</option>
-            <option value="slate_pool_table">⚠️ Slate Pool Table [Decline]</option>
-            <option value="piano">⚠️ Upright or Grand Piano [Decline]</option>
+            <option value="antique_heirloom_glue">[Decline] Antique Heirloom (Hide-Glued Joinery) [Decline]</option>
+            <option value="slate_pool_table">[Decline] Slate Pool Table [Decline]</option>
+            <option value="piano">[Decline] Upright or Grand Piano [Decline]</option>
           </optgroup>
         </select>
       </div>
@@ -655,9 +716,9 @@ function updateZipIndicator(zip) {
   if (!indicator) return;
   const res = lookupDallasZip(zip);
   if (res.valid) {
-    indicator.innerHTML = `<span style="color: var(--brand-emerald);">✓ ${res.areaName}</span>`;
+    indicator.innerHTML = `<span style="color: var(--brand-emerald); display:inline-flex; align-items:center; gap:4px;">${LUCIDE_ICONS.check} ${res.areaName}</span>`;
   } else if (zip && zip.length >= 5) {
-    indicator.innerHTML = `<span style="color: var(--accent-red);">⚠️ Unsupported ZIP</span>`;
+    indicator.innerHTML = `<span style="color: var(--accent-red); display:inline-flex; align-items:center; gap:4px;">${LUCIDE_ICONS.alertTriangle} Unsupported ZIP</span>`;
   } else {
     indicator.innerHTML = `<span style="color: var(--text-muted); font-size: 0.75rem;">Enter 5-digit Dallas ZIP</span>`;
   }
@@ -723,7 +784,7 @@ function recalculateIntakePrice() {
     if (UNSUPPORTED_FURNITURE_ITEMS[primaryType]) {
       const u = UNSUPPORTED_FURNITURE_ITEMS[primaryType];
       if (declineBanner) {
-        declineBanner.innerHTML = `<strong>⚠️ Unsupported Item:</strong> ${u.name}. ${u.reason}`;
+        declineBanner.innerHTML = `<strong>${LUCIDE_ICONS.alertTriangle} Unsupported Item:</strong> ${u.name}. ${u.reason}`;
         declineBanner.style.display = 'block';
       }
       if (submitBtn) submitBtn.disabled = true;
@@ -796,7 +857,7 @@ function recalculateIntakePrice() {
     if (UNSUPPORTED_FURNITURE_ITEMS[primaryType]) {
       const u = UNSUPPORTED_FURNITURE_ITEMS[primaryType];
       if (declineBanner) {
-        declineBanner.innerHTML = `<strong>⚠️ Unsupported Item:</strong> ${u.name}. ${u.reason}`;
+        declineBanner.innerHTML = `<strong>${LUCIDE_ICONS.alertTriangle} Unsupported Item:</strong> ${u.name}. ${u.reason}`;
         declineBanner.style.display = 'block';
       }
       if (submitBtn) submitBtn.disabled = true;
@@ -888,14 +949,14 @@ function handleBookingSubmit(e) {
   const notes = document.getElementById('input-notes')?.value || '';
 
   if (!address) {
-    showToast('Please enter a service street address.', '⚠️');
+    showToast('Please enter a service street address.', 'warning');
     return;
   }
 
   // Validate ZIP (Priority 4)
   const zipCheck = lookupDallasZip(zipCode);
   if (!zipCheck.valid) {
-    showToast(zipCheck.message, '⚠️');
+    showToast(zipCheck.message, 'warning');
     return;
   }
 
@@ -911,11 +972,11 @@ function handleBookingSubmit(e) {
 
     // Validate past dates and times (Priority 2)
     if (!scheduledDate || scheduledDate < dallasNow.dateStr) {
-      showToast(`Scheduled date (${scheduledDate || 'empty'}) cannot be in the past.`, '⚠️');
+      showToast(`Scheduled date (${scheduledDate || 'empty'}) cannot be in the past.`, 'warning');
       return;
     }
     if (scheduledDate === dallasNow.dateStr && scheduledTime && scheduledTime < dallasNow.timeStr) {
-      showToast(`Scheduled time (${scheduledTime}) has already passed today. Please choose an upcoming time slot.`, '⚠️');
+      showToast(`Scheduled time (${scheduledTime}) has already passed today. Please choose an upcoming time slot.`, 'warning');
       return;
     }
   }
@@ -974,7 +1035,7 @@ function handleBookingSubmit(e) {
     showToast(`Booking ${booking.id} created! Dispatched to Dallas Job Board for ${zipCheck.areaName}.`);
     renderAll();
   } catch (err) {
-    showToast(err.message || 'Error creating booking.', '⚠️');
+    showToast(err.message || 'Error creating booking.', 'warning');
   }
 }
 
@@ -1014,7 +1075,7 @@ function openMovingConciergeModal() {
   if (chatContainer) {
     chatContainer.innerHTML = `
       <div class="concierge-msg concierge-msg-assistant" style="display: flex; gap: 10px; max-width: 90%;">
-        <div style="font-size: 1.4rem;">🤖</div>
+        <div style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--accent-blue-light);color:var(--accent-blue);flex-shrink:0;">${LUCIDE_ICONS.bot}</div>
         <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; font-size: 0.88rem; color: var(--primary-navy); box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
           <div style="font-weight: 700; font-size: 0.75rem; color: var(--accent-blue); margin-bottom: 4px;">CREWLY MOVING CONCIERGE</div>
           Hello! I'm Crewly's Moving Concierge for the Dallas pilot area. Tell me about your upcoming move — what are you moving, where in Dallas (ZIP or neighborhood), and what date or preferred time do you have in mind?
@@ -1115,7 +1176,7 @@ function appendConciergeChatMessage(role, text) {
     msgDiv.style.alignSelf = 'flex-end';
     msgDiv.style.flexDirection = 'row-reverse';
     msgDiv.innerHTML = `
-      <div style="font-size: 1.4rem;">👤</div>
+      <div style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--bg-card-alt);color:var(--primary-navy);flex-shrink:0;">${LUCIDE_ICONS.user}</div>
       <div style="background: var(--primary-navy); color: white; border-radius: var(--radius-md); padding: 10px 14px; font-size: 0.88rem; box-shadow: 0 1px 2px rgba(0,0,0,0.06);">
         ${escapeHtml(text)}
       </div>
@@ -1123,7 +1184,7 @@ function appendConciergeChatMessage(role, text) {
   } else {
     msgDiv.style.alignSelf = 'flex-start';
     msgDiv.innerHTML = `
-      <div style="font-size: 1.4rem;">🤖</div>
+      <div style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--accent-blue-light);color:var(--accent-blue);flex-shrink:0;">${LUCIDE_ICONS.bot}</div>
       <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; font-size: 0.88rem; color: var(--primary-navy); box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
         <div style="font-weight: 700; font-size: 0.75rem; color: var(--accent-blue); margin-bottom: 4px;">CREWLY MOVING CONCIERGE</div>
         ${escapeHtml(text)}
@@ -1145,7 +1206,7 @@ function appendConciergeTypingIndicator(id) {
   typingDiv.style.gap = '10px';
   typingDiv.style.maxWidth = '90%';
   typingDiv.innerHTML = `
-    <div style="font-size: 1.4rem;">🤖</div>
+    <div style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:8px;background:var(--accent-blue-light);color:var(--accent-blue);flex-shrink:0;">${LUCIDE_ICONS.bot}</div>
     <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 10px 14px; font-size: 0.85rem; color: var(--text-muted); font-style: italic;">
       Concierge is reviewing your moving details...
     </div>
@@ -1325,7 +1386,7 @@ async function handleConciergeSendMessage(e) {
     isConciergeSubmitting = false;
     if (sendBtn) {
       sendBtn.disabled = false;
-      sendBtn.innerHTML = '<span>Send</span> ➔';
+      sendBtn.innerHTML = '<span>Send</span> ' + LUCIDE_ICONS.send;
     }
     inputEl.focus();
   }
@@ -1339,14 +1400,14 @@ async function handleConciergeConfirmBooking() {
   const notes = (notesInput ? notesInput.value : '').trim();
 
   if (!address) {
-    showToast('Please enter your service street address to confirm.', '⚠️');
+    showToast('Please enter your service street address to confirm.', 'warning');
     if (addressInput) addressInput.focus();
     return;
   }
 
   const validation = validateConciergeMovingDraft(conciergeCurrentDraft);
   if (!validation.isComplete) {
-    showToast('Please provide all moving details (movers, hours, date, ZIP) before confirming.', '⚠️');
+    showToast('Please provide all moving details (movers, hours, date, ZIP) before confirming.', 'warning');
     return;
   }
 
@@ -1372,7 +1433,7 @@ async function handleConciergeConfirmBooking() {
     showToast(`Booking ${booking.id} confirmed! Dispatched to Dallas Job Board for ${booking.neighborhoodName}.`);
     renderAll();
   } catch (err) {
-    showToast(err.message || 'Error creating booking.', '⚠️');
+    showToast(err.message || 'Error creating booking.', 'warning');
     if (confirmBtn) {
       confirmBtn.disabled = false;
       const pricing = calculateConciergeDeterministicPricing(conciergeCurrentDraft);
@@ -1401,7 +1462,7 @@ function renderCustomerActiveBookings() {
   if (activeBookings.length === 0) {
     container.innerHTML = `
       <div style="background: white; border: 1px dashed var(--border-dark); border-radius: var(--radius-lg); padding: 32px; text-align: center; color: var(--text-muted);">
-        <div style="font-size: 2rem; margin-bottom: 8px;">📋</div>
+        <div style="display:flex;justify-content:center;color:var(--text-muted);margin-bottom:8px;">${LUCIDE_ICONS.fileText}</div>
         <strong>No active bookings right now.</strong>
         <p style="font-size: 0.85rem; margin-top: 4px;">Select a service above to book your Dallas home project.</p>
       </div>
@@ -1429,15 +1490,15 @@ function renderCustomerActiveBookings() {
     // Status Badge
     let statusBadgeHtml = '';
     if (isExpired && hasUnassigned) {
-      statusBadgeHtml = `<span class="status-badge waiting" style="background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B;">⏱️ Window Expired</span>`;
+      statusBadgeHtml = `<span class="status-badge waiting" style="background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B;">${LUCIDE_ICONS.clock} Window Expired</span>`;
     } else if (b.overallStatus === 'partially_filled') {
-      statusBadgeHtml = `<span class="status-badge partially_filled">⚠️ Partially Filled (${b.workerAssignments.filter(s => s.status !== 'unassigned').length}/${b.workerAssignments.length} Assigned)</span>`;
+      statusBadgeHtml = `<span class="status-badge partially_filled">${LUCIDE_ICONS.alertTriangle} Partially Filled (${b.workerAssignments.filter(s => s.status !== 'unassigned').length}/${b.workerAssignments.length} Assigned)</span>`;
     } else if (b.overallStatus === 'waiting_for_pros') {
-      statusBadgeHtml = `<span class="status-badge waiting">⏳ Waiting for Pros</span>`;
+      statusBadgeHtml = `<span class="status-badge waiting">${LUCIDE_ICONS.clock} Waiting for Pros</span>`;
     } else if (b.overallStatus === 'fully_confirmed') {
-      statusBadgeHtml = `<span class="status-badge confirmed">✓ Fully Confirmed</span>`;
+      statusBadgeHtml = `<span class="status-badge confirmed">${LUCIDE_ICONS.check} Fully Confirmed</span>`;
     } else if (b.overallStatus === 'in_progress' || b.overallStatus === 'arrived' || b.overallStatus === 'traveling') {
-      statusBadgeHtml = `<span class="status-badge in_progress">⚡ Active (${b.overallStatus})</span>`;
+      statusBadgeHtml = `<span class="status-badge in_progress">${LUCIDE_ICONS.zap} Active (${b.overallStatus})</span>`;
     }
 
     // Partial fulfillment alert banner (Mandatory for multi-worker jobs) & ASAP Expired recovery banner
@@ -1448,7 +1509,7 @@ function renderCustomerActiveBookings() {
           <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
             <div style="flex: 1; min-width: 240px;">
               <strong style="color: #92400E; display: flex; align-items: center; gap: 6px;">
-                <span>⏱️</span> ASAP Matching Window Expired
+                <span>${LUCIDE_ICONS.clock}</span> ASAP Matching Window Expired
               </strong>
               <div style="font-size: 0.83rem; color: #78350F; margin-top: 4px;">
                 Pros are currently busy in your area. You can extend our search for another 30 minutes, or reschedule for a convenient future time.
@@ -1459,7 +1520,7 @@ function renderCustomerActiveBookings() {
                 + Extend Search (+30 min)
               </button>
               <button class="btn-open-reschedule" data-booking-id="${b.id}" style="padding: 8px 14px; background: white; border: 1px solid #D97706; color: #92400E; border-radius: var(--radius-sm); font-weight: 700; font-size: 0.82rem; cursor: pointer;">
-                📅 Reschedule
+                ${LUCIDE_ICONS.calendar} Reschedule
               </button>
             </div>
           </div>
@@ -1468,14 +1529,14 @@ function renderCustomerActiveBookings() {
     } else if (b.overallStatus === 'partially_filled' || b.overallStatus === 'waiting_for_pros') {
       alertBannerHtml = `
         <div class="partial-fulfillment-alert">
-          <span style="font-size: 1.2rem;">⚠️</span>
+          <span style="display:inline-flex;align-items:center;">${LUCIDE_ICONS.alertTriangle}</span>
           <div style="flex: 1;">
             <strong>Booking Not Fully Confirmed Yet:</strong>
             ${b.partialFulfillmentNotice}
           </div>
           <div>
             <button class="btn-open-reschedule" data-booking-id="${b.id}" style="padding: 4px 10px; background: white; border: 1px solid var(--border-dark); border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 600; cursor: pointer; color: var(--text-secondary);">
-              📅 Reschedule
+              ${LUCIDE_ICONS.calendar} Reschedule
             </button>
           </div>
         </div>
@@ -1492,7 +1553,7 @@ function renderCustomerActiveBookings() {
             <span class="slot-status-pill ${slot.status}">${slot.status.toUpperCase()}</span>
           </div>
           <div class="worker-details">
-            <span class="worker-avatar">${isAssigned ? '👷' : '⏳'}</span>
+            <span class="worker-avatar" style="display:flex;align-items:center;justify-content:center;color:var(--primary-navy);">${isAssigned ? LUCIDE_ICONS.hardHat : LUCIDE_ICONS.clock}</span>
             <div>
               <strong>${isAssigned ? slot.assignedProName : 'Searching Dallas Pros...'}</strong>
               <div style="font-size: 0.75rem; color: var(--text-muted);">
@@ -1521,7 +1582,7 @@ function renderCustomerActiveBookings() {
               <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--primary-navy);">${b.serviceTitle}</h3>
             </div>
             <div style="font-size: 0.84rem; color: var(--text-secondary);">
-              📍 ${b.neighborhoodName} • <strong>${formatBookingTiming(b)}</strong>
+              ${LUCIDE_ICONS.mapPin} ${b.neighborhoodName} • <strong>${formatBookingTiming(b)}</strong>
             </div>
           </div>
           <div>
@@ -1534,23 +1595,23 @@ function renderCustomerActiveBookings() {
         <!-- 6-Stage Stepper -->
         <div class="tracking-stepper">
           <div class="step-node ${currentStep >= 1 ? (currentStep === 1 ? 'active' : 'completed') : ''}">
-            <div class="step-circle">${currentStep > 1 ? '✓' : '1'}</div>
+            <div class="step-circle">${currentStep > 1 ? LUCIDE_ICONS.check : '1'}</div>
             <div class="step-label">Requested</div>
           </div>
           <div class="step-node ${currentStep >= 2 ? (currentStep === 2 ? 'active' : 'completed') : ''}">
-            <div class="step-circle">${currentStep > 2 ? '✓' : '2'}</div>
+            <div class="step-circle">${currentStep > 2 ? LUCIDE_ICONS.check : '2'}</div>
             <div class="step-label">Matching</div>
           </div>
           <div class="step-node ${currentStep >= 3 ? (currentStep === 3 ? 'active' : 'completed') : ''}">
-            <div class="step-circle">${currentStep > 3 ? '✓' : '3'}</div>
+            <div class="step-circle">${currentStep > 3 ? LUCIDE_ICONS.check : '3'}</div>
             <div class="step-label">Confirmed</div>
           </div>
           <div class="step-node ${currentStep >= 4 ? (currentStep === 4 ? 'active' : 'completed') : ''}">
-            <div class="step-circle">${currentStep > 4 ? '✓' : '4'}</div>
+            <div class="step-circle">${currentStep > 4 ? LUCIDE_ICONS.check : '4'}</div>
             <div class="step-label">En Route</div>
           </div>
           <div class="step-node ${currentStep >= 5 ? (currentStep === 5 ? 'active' : 'completed') : ''}">
-            <div class="step-circle">${currentStep > 5 ? '✓' : '5'}</div>
+            <div class="step-circle">${currentStep > 5 ? LUCIDE_ICONS.check : '5'}</div>
             <div class="step-label">In Progress</div>
           </div>
           <div class="step-node ${currentStep >= 6 ? 'completed' : ''}">
@@ -1633,10 +1694,10 @@ function renderCustomerActiveBookings() {
       const bookingId = e.currentTarget.getAttribute('data-booking-id');
       const res = extendAsapBooking(bookingId, 30);
       if (res.success) {
-        showToast(`Extended search for ${bookingId} by 30 minutes! Looking for pros.`, '⏳');
+        showToast(`Extended search for ${bookingId} by 30 minutes! Looking for pros.`, 'clock');
         renderAll();
       } else {
-        showToast(res.error || 'Failed to extend search.', '⚠️');
+        showToast(res.error || 'Failed to extend search.', 'warning');
       }
     });
   });
@@ -1713,19 +1774,19 @@ function renderCustomerPastBookings() {
               <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px; margin-bottom: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
                   <span style="font-weight: 700; font-size: 0.88rem; color: var(--primary-navy);">
-                    👷 ${existingReview.proName}
+                    ${LUCIDE_ICONS.hardHat} ${existingReview.proName}
                     <span style="font-weight: 400; color: var(--text-muted);">— ${existingReview.roleTitle}</span>
                   </span>
                   <span style="font-size: 0.72rem; color: var(--text-muted);">${existingReview.date}</span>
                 </div>
                 <div style="font-size: 0.88rem; color: var(--brand-emerald); font-weight: 700; margin-bottom: 4px;">
-                  ${'⭐'.repeat(existingReview.stars)} ${existingReview.stars} Star${existingReview.stars !== 1 ? 's' : ''}
+                  ${renderStarRatingHtml(existingReview.stars)} ${existingReview.stars} Star${existingReview.stars !== 1 ? 's' : ''}
                 </div>
                 ${existingReview.comment
                   ? `<p style="font-size: 0.82rem; color: var(--text-secondary); font-style: italic; margin: 0;">"${existingReview.comment}"</p>`
                   : ''}
                 ${existingReview.disputed
-                  ? '<div style="font-size: 0.72rem; color: var(--accent-red); font-weight: 600; margin-top: 4px;">⚠️ Disputed by Pro (Investigation Pending)</div>'
+                  ? '<div style="font-size: 0.72rem; color: var(--accent-red); font-weight: 600; margin-top: 4px;">Disputed by Pro (Investigation Pending)</div>'
                   : ''}
               </div>
             `;
@@ -1733,7 +1794,7 @@ function renderCustomerPastBookings() {
             return `
               <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: #F8FAFC; border: 1px dashed var(--border-dark); border-radius: var(--radius-md); margin-bottom: 10px;">
                 <span style="font-size: 0.85rem; color: var(--text-secondary);">
-                  👷 <strong>${slot.assignedProName}</strong>
+                  ${LUCIDE_ICONS.hardHat} <strong>${slot.assignedProName}</strong>
                   <span style="color: var(--text-muted);">— ${slot.roleTitle}</span>
                 </span>
                 <button class="btn-open-review"
@@ -1742,7 +1803,7 @@ function renderCustomerPastBookings() {
                   data-pro-name="${slot.assignedProName}"
                   data-role-title="${slot.roleTitle}"
                   style="padding: 6px 14px; font-size: 0.82rem; font-weight: 600; background: var(--primary-navy); color: white; border: none; border-radius: var(--radius-md); cursor: pointer; white-space: nowrap;">
-                  ⭐ Review
+                  ${LUCIDE_ICONS.star} Review
                 </button>
               </div>
             `;
@@ -1761,7 +1822,7 @@ function renderCustomerPastBookings() {
               Completed in ${b.neighborhoodName} • Customer Paid: $${b.pricing.customerTotal.toFixed(2)}
             </div>
           </div>
-          <span class="status-badge completed">✓ Completed</span>
+          <span class="status-badge completed">${LUCIDE_ICONS.check} Completed</span>
         </div>
         ${workerReviewSectionHtml}
       </div>
@@ -1806,7 +1867,7 @@ function renderProDashboard() {
 
   // Pro Header stats
   document.getElementById('pro-name-display').textContent = activePro.name;
-  document.getElementById('pro-avatar-display').textContent = activePro.avatar;
+  document.getElementById('pro-avatar-display').innerHTML = LUCIDE_ICONS.hardHat;
   document.getElementById('pro-rating-display').textContent = activePro.rating.toFixed(2);
   document.getElementById('pro-reviews-display').textContent = activePro.reviewCount;
   document.getElementById('pro-neighborhood-display').textContent = activePro.homeNeighborhood;
@@ -1925,7 +1986,7 @@ function renderProWalletTransactions(activePro) {
 
     let cardClass = isEarnings ? 'earnings' : (isCashout ? 'cashout' : 'snapshot');
     let iconClass = cardClass;
-    let iconSymbol = isEarnings ? '💰' : (isCashout ? (tx.type === 'cashout_instant' ? '⚡' : '🏦') : '📋');
+    let iconSymbol = isEarnings ? LUCIDE_ICONS.dollarSign : (isCashout ? (tx.type === 'cashout_instant' ? LUCIDE_ICONS.zap : LUCIDE_ICONS.dollarSign) : LUCIDE_ICONS.fileText);
 
     let amountFormatted = '';
     let amountColor = 'var(--text-primary)';
@@ -1942,11 +2003,11 @@ function renderProWalletTransactions(activePro) {
 
     let statusBadge = '';
     if (tx.status === 'completed') {
-      statusBadge = `<span class="slot-status-pill completed">✓ CREDITED</span>`;
+      statusBadge = `<span class="slot-status-pill completed">${LUCIDE_ICONS.check} CREDITED</span>`;
     } else if (tx.status === 'simulated_instant_confirmed') {
-      statusBadge = `<span class="slot-status-pill in_progress" style="background:#ECFDF5; color:var(--brand-emerald); border-color:#A7F3D0;">✓ CONFIRMED (SIMULATED)</span>`;
+      statusBadge = `<span class="slot-status-pill in_progress" style="background:#ECFDF5; color:var(--brand-emerald); border-color:#A7F3D0;">${LUCIDE_ICONS.check} CONFIRMED (SIMULATED)</span>`;
     } else if (tx.status === 'simulated_processing') {
-      statusBadge = `<span class="slot-status-pill assigned" style="background:#EFF6FF; color:#1E40AF;">⏳ PROCESSING (1-2 DAYS)</span>`;
+      statusBadge = `<span class="slot-status-pill assigned" style="background:#EFF6FF; color:#1E40AF;">${LUCIDE_ICONS.clock} PROCESSING (1-2 DAYS)</span>`;
     } else if (tx.status === 'historical_snapshot') {
       statusBadge = `<span class="slot-status-pill unassigned" style="background:#FEF3C7; color:#92400E;">SNAPSHOT</span>`;
     } else if (tx.status === 'historical_import') {
@@ -1965,7 +2026,7 @@ function renderProWalletTransactions(activePro) {
               ${statusBadge}
             </div>
             <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-              <span>📅 ${tx.displayDate || (tx.isoTimestamp ? tx.isoTimestamp.split('T')[0] : '')}</span>
+              <span>${LUCIDE_ICONS.calendar} ${tx.displayDate || (tx.isoTimestamp ? tx.isoTimestamp.split('T')[0] : '')}</span>
               <span style="font-family: monospace; font-size: 0.75rem;">ID: ${tx.txId}</span>
               ${tx.bookingId ? `<span>Booking: <strong>${tx.bookingId}</strong></span>` : ''}
               ${tx.feeCents > 0 ? `<span>Fee: -$${(tx.feeCents / 100).toFixed(2)}</span>` : ''}
@@ -1986,7 +2047,7 @@ function renderProWalletTransactions(activePro) {
           ${
             isCashout
               ? `<button class="btn-open-tab btn-view-receipt" data-tx-id="${tx.txId}" style="padding: 6px 12px; font-size: 0.76rem; border-radius: var(--radius-sm); white-space: nowrap; cursor: pointer;">
-                  🧾 Receipt
+                  ${LUCIDE_ICONS.fileText} Receipt
                 </button>`
               : ''
           }
@@ -2059,7 +2120,7 @@ function renderProActiveAssignments(activePro) {
           isCrewIncomplete
             ? `
               <div style="background: #FEF3C7; border: 1px solid #F59E0B; color: #92400E; padding: 10px 14px; border-radius: var(--radius-sm); margin: 12px 0; font-size: 0.82rem; display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.2rem;">⏳</span>
+                <span style="display:inline-flex;align-items:center;">${LUCIDE_ICONS.clock}</span>
                 <div>
                   <strong>Crew In Formation (${assignedSlots} of ${totalSlots} assigned):</strong>
                   Work can only begin once all required worker positions are filled. You will be able to start once your co-worker accepts.
@@ -2072,16 +2133,16 @@ function renderProActiveAssignments(activePro) {
         <!-- Pro Action Lifecycle Stepper Buttons -->
         <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; border-top: 1px solid var(--border-light); padding-top: 14px;">
           <button class="btn-open-tab btn-pro-action" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-status="traveling" ${isCrewIncomplete || slot.status === 'traveling' ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
-            🚗 Mark En Route
+            ${LUCIDE_ICONS.car} Mark En Route
           </button>
           <button class="btn-open-tab btn-pro-action" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-status="arrived" ${isCrewIncomplete || slot.status === 'arrived' ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
-            📍 Mark Arrived
+            ${LUCIDE_ICONS.mapPin} Mark Arrived
           </button>
           <button class="btn-open-tab btn-pro-action" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-status="in_progress" ${isCrewIncomplete || slot.status === 'in_progress' ? 'disabled style="opacity:0.5; cursor:not-allowed;"' : ''}>
-            🔨 Start Work
+            ${LUCIDE_ICONS.hammer} Start Work
           </button>
           <button class="btn-book-service btn-pro-action" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-status="completed" ${isCrewIncomplete ? 'disabled style="opacity:0.5; cursor:not-allowed; width: auto; padding: 6px 16px; background: var(--text-muted);"' : 'style="width: auto; padding: 6px 16px; background: var(--brand-emerald);"'}>
-            ✓ Complete & Finalize Payout
+            ${LUCIDE_ICONS.check} Complete & Finalize Payout
           </button>
         </div>
       </div>
@@ -2104,7 +2165,7 @@ function renderProActiveAssignments(activePro) {
         showToast(`Job status updated: ${newStatus.toUpperCase()}`);
         renderAll();
       } else {
-        showToast(result.error || 'Status update could not be completed.', '⚠️');
+        showToast(result.error || 'Status update could not be completed.', 'warning');
         button.disabled = false;
       }
     });
@@ -2149,7 +2210,7 @@ function renderProCompletedJobs(activePro) {
 
   container.innerHTML = completedRecords.map(item => {
     const ratingDisplay = item.review && item.review.stars
-      ? `<span style="color: var(--brand-emerald); font-weight: 700;">${'⭐'.repeat(item.review.stars)} ${item.review.stars} Star Rating</span>`
+      ? `<span style="color: var(--brand-emerald); font-weight: 700; display:inline-flex; align-items:center; gap:4px;">${renderStarRatingHtml(item.review.stars)} ${item.review.stars} Star Rating</span>`
       : `<span style="color: var(--text-muted); font-style: italic;">Not rated</span>`;
 
     return `
@@ -2305,10 +2366,10 @@ function renderProJobBoard(activePro) {
         </div>
 
         <div class="job-meta-row">
-          <div class="job-meta-item">📍 Area: <strong>${b.neighborhoodName}</strong></div>
-          <div class="job-meta-item">📅 Date: <strong>${b.scheduledDate}</strong></div>
-          <div class="job-meta-item">⏰ Schedule: <strong>${b.timingType === 'asap' ? (isAsapExpired(b) ? 'ASAP (Window Expired)' : `ASAP — Seeking Pros (${b.scheduledTime})`) : b.scheduledTime}</strong></div>
-          <div class="job-meta-item">⏱️ Duration: <strong>${b.estimatedDurationHours} hrs</strong></div>
+          <div class="job-meta-item">${LUCIDE_ICONS.mapPin} Area: <strong>${b.neighborhoodName}</strong></div>
+          <div class="job-meta-item">${LUCIDE_ICONS.calendar} Date: <strong>${b.scheduledDate}</strong></div>
+          <div class="job-meta-item">${LUCIDE_ICONS.clock} Schedule: <strong>${b.timingType === 'asap' ? (isAsapExpired(b) ? 'ASAP (Window Expired)' : `ASAP — Seeking Pros (${b.scheduledTime})`) : b.scheduledTime}</strong></div>
+          <div class="job-meta-item">${LUCIDE_ICONS.clock} Duration: <strong>${b.estimatedDurationHours} hrs</strong></div>
         </div>
 
         <!-- Eligibility Evaluation Output -->
@@ -2317,7 +2378,7 @@ function renderProJobBoard(activePro) {
             ? `
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; border-top: 1px solid var(--border-light); padding-top: 12px;">
                 <span style="font-size: 0.82rem; color: var(--brand-emerald); font-weight: 700;">
-                  ✓ You are eligible & verified for this task
+                  ${LUCIDE_ICONS.check} You are eligible & verified for this task
                 </span>
                 <button class="btn-book-service btn-accept-job" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" style="width: auto; padding: 8px 20px;">
                   Accept Job ($${slot.payout.toFixed(2)})
@@ -2327,7 +2388,7 @@ function renderProJobBoard(activePro) {
             : `
               <div style="margin-top: 12px; border-top: 1px solid var(--border-light); padding-top: 10px;">
                 <div class="ineligible-reason-badge">
-                  <span>⚠️</span>
+                  <span style="display:inline-flex;align-items:center;">${LUCIDE_ICONS.alertTriangle}</span>
                   <span>${eligibility.reason}</span>
                 </div>
               </div>
@@ -2348,7 +2409,7 @@ function renderProJobBoard(activePro) {
         showToast(`Accepted ${slotId} on ${bookingId}! Added to your active assignments.`);
         renderAll();
       } else {
-        showToast(res.error || 'Could not accept job.', '⚠️');
+        showToast(res.error || 'Could not accept job.', 'warning');
       }
     });
   });
@@ -2473,7 +2534,7 @@ function renderAdminDashboard() {
     if (metrics.alerts.length === 0) {
       alertsContainer.innerHTML = `
         <div style="background: white; border-radius: var(--radius-md); padding: 36px 20px; text-align: center; border: 1px solid var(--border-light); color: var(--text-secondary);">
-          <div style="font-size: 2rem; margin-bottom: 8px;">✓</div>
+          <div style="display:flex;justify-content:center;color:var(--brand-emerald);margin-bottom:8px;">${LUCIDE_ICONS.check}</div>
           <strong style="color: var(--primary-navy);">All Systems Operating Normally</strong>
           <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
             No staffing shortages, expired matching windows, or unresolved customer support cases.
@@ -2528,7 +2589,7 @@ function renderAdminAiConnectionBanner() {
     banner.className = 'ai-connection-banner local-ready';
     banner.innerHTML = `
       <span>
-        <strong>🤖 Local AI Proxy Ready (<code>127.0.0.1:8787</code>):</strong>
+        <strong>${LUCIDE_ICONS.bot} Local AI Proxy Ready (<code>127.0.0.1:8787</code>):</strong>
         Advisory dispatch assistant available from <code>${escapeHtml(cfg.origin)}</code>. Human Admin confirmation remains strictly required.
       </span>
       <span style="font-weight: 700; font-size: 0.74rem;">Auto-fallback enabled if proxy offline</span>
@@ -2537,7 +2598,7 @@ function renderAdminAiConnectionBanner() {
     banner.className = 'ai-connection-banner';
     banner.innerHTML = `
       <span>
-        <strong>⚙️ Offline Rules-Based AI Fallback Mode:</strong>
+        <strong>${LUCIDE_ICONS.shield} Offline Rules-Based Fallback Mode:</strong>
         Running on <code>${escapeHtml(cfg.origin || 'file://')}</code> (local proxy disabled outside local dev origin). Zero credentials or external AI calls made.
       </span>
       <span style="font-weight: 700; font-size: 0.74rem;">Crewly Deterministic Rules Active</span>
@@ -2581,7 +2642,7 @@ function renderAiCandidateRowHtml(booking, slotRec, cand, idx, isPrimary, state)
     return `
       <div class="ai-candidate-card">
         <div style="font-size: 0.8rem; color: #DC2626; font-weight: 700;">
-          ⚠️ Suggestion rejected by live Crewly rules: ${escapeHtml(sanitizeAiText(cand.displayName || cand.proId, 64))} (${escapeHtml(liveEligibility.reason || 'Not eligible')})
+          ${LUCIDE_ICONS.alertTriangle} Suggestion rejected by live Crewly rules: ${escapeHtml(sanitizeAiText(cand.displayName || cand.proId, 64))} (${escapeHtml(liveEligibility.reason || 'Not eligible')})
         </div>
       </div>
     `;
@@ -2611,13 +2672,13 @@ function renderAiCandidateRowHtml(booking, slotRec, cand, idx, isPrimary, state)
           <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
             <strong style="color: var(--primary-navy); font-size: 0.88rem;">#${idx + 1} ${safeName}</strong>
             <span class="tier-badge ${String(pro.tier || 'bronze').toLowerCase()}">${safeTier}</span>
-            ${isPrimary ? '<span style="font-size: 0.7rem; background: #059669; color: white; padding: 2px 7px; border-radius: 999px; font-weight: 800;">★ Primary Suggestion</span>' : ''}
-            <span style="font-size: 0.7rem; background: #ECFDF5; color: #047857; padding: 2px 7px; border-radius: 999px; font-weight: 700;">✓ Verified by Crewly Rules</span>
+            ${isPrimary ? `<span style="font-size: 0.7rem; background: #059669; color: white; padding: 2px 7px; border-radius: 999px; font-weight: 800; display:inline-flex; align-items:center; gap:3px;">${LUCIDE_ICONS.star} Primary Suggestion</span>` : ''}
+            <span style="font-size: 0.7rem; background: #ECFDF5; color: #047857; padding: 2px 7px; border-radius: 999px; font-weight: 700; display:inline-flex; align-items:center; gap:3px;">${LUCIDE_ICONS.check} Verified by Crewly Rules</span>
           </div>
           <div style="font-size: 0.76rem; color: var(--text-secondary); margin-top: 4px;">
-            ⭐ ${Number(pro.rating || 0)} (${Number(pro.reviewCount || 0)} reviews) •
+            ${LUCIDE_ICONS.star} ${Number(pro.rating || 0)} (${Number(pro.reviewCount || 0)} reviews) •
             Reliability: <strong>${Number(pro.reliabilityScore || 0)}%</strong> •
-            📍 ${safeZone} (Pilot Zone) •
+            ${LUCIDE_ICONS.mapPin} ${safeZone} (Pilot Zone) •
             Skills: ${safeSkills}
           </div>
         </div>
@@ -2631,7 +2692,7 @@ function renderAiCandidateRowHtml(booking, slotRec, cand, idx, isPrimary, state)
       </div>
       ${safeSummary ? `<div style="font-size: 0.8rem; color: var(--text-primary); margin-top: 6px; font-weight: 600;">${safeSummary}</div>` : ''}
       ${bulletsHtml ? `<ul class="ai-candidate-bullets">${bulletsHtml}</ul>` : ''}
-      ${safeCaution ? `<div style="font-size: 0.75rem; color: #B45309; background: #FFFBEB; padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid #FDE68A;">⚠️ ${safeCaution}</div>` : ''}
+      ${safeCaution ? `<div style="font-size: 0.75rem; color: #B45309; background: #FFFBEB; padding: 4px 8px; border-radius: var(--radius-sm); border: 1px solid #FDE68A; display:inline-flex; align-items:center; gap:4px;">${LUCIDE_ICONS.alertTriangle} ${safeCaution}</div>` : ''}
     </div>
   `;
 }
@@ -2669,7 +2730,7 @@ function renderAiSlotSectionHtml(booking, slotRec, state) {
           class="btn-ai-secondary btn-ai-manual-assign"
           data-booking-id="${escapeHtml(booking.id)}"
           data-slot-id="${escapeHtml(slotRec.slotId)}">
-          🔍 Manual Assign Alternative
+          ${LUCIDE_ICONS.search} Manual Assign Alternative
         </button>
       </div>
       ${bodyHtml}
@@ -2684,7 +2745,7 @@ function renderAiDispatchPanelHtml(booking, aiEntry, state) {
     return `
       <div class="ai-recommendation-panel" id="ai-panel-${escapeHtml(booking.id)}" data-ai-status="loading">
         <div class="ai-panel-header">
-          <span class="ai-provenance-badge fallback">⏳ Generating Dispatch Advice...</span>
+          <span class="ai-provenance-badge fallback">${LUCIDE_ICONS.clock} Generating Dispatch Advice...</span>
         </div>
         <div style="font-size: 0.82rem; color: var(--text-secondary);">
           Evaluating live Crewly eligibility rules, checking schedule overlaps, and querying local assistant (no autonomous worker assignment will occur).
@@ -2697,7 +2758,7 @@ function renderAiDispatchPanelHtml(booking, aiEntry, state) {
     return `
       <div class="ai-recommendation-panel stale" id="ai-panel-${escapeHtml(booking.id)}" data-ai-status="stale_discarded">
         <div class="ai-panel-header">
-          <span class="ai-provenance-badge zero">⚠️ Stale Advice Discarded</span>
+          <span class="ai-provenance-badge zero">${LUCIDE_ICONS.alertTriangle} Stale Advice Discarded</span>
           <div style="display: flex; gap: 6px;">
             <button type="button" class="btn-ai-secondary btn-ai-refresh" data-booking-id="${escapeHtml(booking.id)}">↻ Get Fresh Advice</button>
             <button type="button" class="btn-ai-secondary btn-ai-dismiss" data-booking-id="${escapeHtml(booking.id)}">Dismiss</button>
@@ -2743,19 +2804,19 @@ function renderAiDispatchPanelHtml(booking, aiEntry, state) {
   const provenanceAttr = isLiveAi ? 'live_ai' : (isMockAi ? 'mock_test_mode' : 'rules_fallback');
   const isOpenAiLive = isLiveAi && (rec.provenance.source === 'live_openai_ai' || rec.provenance.provider === 'openai');
   const liveBadgeText = isOpenAiLive
-    ? `🤖 Live OpenAI AI — ${escapeHtml(sanitizeAiText(rec.provenance.model || 'gpt-6-luna', 48))}`
-    : `🤖 Live Gemini AI (${escapeHtml(sanitizeAiText(rec.provenance.model || 'gemini', 48))})`;
+    ? `${LUCIDE_ICONS.bot} Live OpenAI AI — ${escapeHtml(sanitizeAiText(rec.provenance.model || 'gpt-6-luna', 48))}`
+    : `${LUCIDE_ICONS.bot} Live Gemini AI (${escapeHtml(sanitizeAiText(rec.provenance.model || 'gemini', 48))})`;
   const badgeHtml = isLiveAi
     ? `<span class="ai-provenance-badge live">${liveBadgeText}</span>`
     : (isMockAi
-      ? `<span class="ai-provenance-badge mock">🧪 Mock AI Response — Test Mode (${escapeHtml(sanitizeAiText(rec.provenance.model || 'mock', 48))})</span>`
+      ? `<span class="ai-provenance-badge mock">${LUCIDE_ICONS.sparkles} Mock AI Response — Test Mode (${escapeHtml(sanitizeAiText(rec.provenance.model || 'mock', 48))})</span>`
       : (isZero
-        ? `<span class="ai-provenance-badge zero">⚠️ Rules Engine: 0 Eligible Pros (No External AI Call)</span>`
-        : `<span class="ai-provenance-badge fallback">⚙️ Rules-Based Fallback (Offline — No External AI Call)</span>`));
+        ? `<span class="ai-provenance-badge zero">${LUCIDE_ICONS.alertTriangle} Rules Engine: 0 Eligible Pros (No External AI Call)</span>`
+        : `<span class="ai-provenance-badge fallback">${LUCIDE_ICONS.shield} Rules-Based Fallback (Offline — No External AI Call)</span>`));
 
   const noticeText = aiEntry.notice || (rec.provenance ? rec.provenance.disclaimer : '');
   const shortageWarningHtml = (rec.staffingFeasibility && !rec.staffingFeasibility.fullCrewFeasible)
-    ? `<div class="ai-notice-banner shortage"><strong>⚠️ Multi-Worker Supply Alert:</strong> ${escapeHtml(sanitizeAiText(rec.staffingFeasibility.cannotCompletelyStaffReason || 'Insufficient unique workers to fill all open slots simultaneously.', 220))}</div>`
+    ? `<div class="ai-notice-banner shortage"><strong>${LUCIDE_ICONS.alertTriangle} Multi-Worker Supply Alert:</strong> ${escapeHtml(sanitizeAiText(rec.staffingFeasibility.cannotCompletelyStaffReason || 'Insufficient unique workers to fill all open slots simultaneously.', 220))}</div>`
     : '';
 
   const slotsSectionHtml = (rec.slotRecommendations || []).map(slotRec =>
@@ -2795,7 +2856,7 @@ function renderAiDispatchPanelHtml(booking, aiEntry, state) {
       ${risksHtml}
       <div class="ai-panel-footer">
         <span><strong>Suggested Next Step:</strong> ${escapeHtml(formatAiNextActionLabel(rec.recommendedNextAction))}</span>
-        <span>📍 ${escapeHtml(AI_DISPATCH_CONFIG.NEIGHBORHOOD_LIMITATION_NOTE)}</span>
+        <span>${LUCIDE_ICONS.mapPin} ${escapeHtml(AI_DISPATCH_CONFIG.NEIGHBORHOOD_LIMITATION_NOTE)}</span>
       </div>
     </div>
   `;
@@ -2893,7 +2954,7 @@ function handleApplyAiSuggestionToModal(bookingId, slotId, proId) {
   const entry = aiDispatchUiMap[bookingId];
   if (!entry || entry.status !== 'ready' || !entry.recommendation) {
     renderAdminDispatchList();
-    showToast('AI dispatch advice expired or unavailable. Refresh advice or assign manually.', '⚠️');
+    showToast('AI dispatch advice expired or unavailable. Refresh advice or assign manually.', 'warning');
     return false;
   }
 
@@ -2907,7 +2968,7 @@ function handleApplyAiSuggestionToModal(bookingId, slotId, proId) {
       notice: fresh.reason || 'Marketplace state changed; previous recommendation was discarded.'
     };
     renderAdminDispatchList();
-    showToast(fresh.reason || 'Recommendation became stale because booking or worker state changed.', '⚠️');
+    showToast(fresh.reason || 'Recommendation became stale because booking or worker state changed.', 'warning');
     return false;
   }
 
@@ -2991,7 +3052,7 @@ function renderAdminDispatchList() {
   if (bookings.length === 0) {
     container.innerHTML = `
       <div style="background: white; border-radius: var(--radius-md); padding: 40px 20px; text-align: center; border: 1px solid var(--border-light); color: var(--text-secondary);">
-        <div style="font-size: 1.8rem; margin-bottom: 8px;">🔍</div>
+        <div style="display:flex;justify-content:center;color:var(--text-muted);margin-bottom:8px;">${LUCIDE_ICONS.search}</div>
         <strong>No bookings match your dispatch filter criteria.</strong>
         <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
           Try searching for a different Booking ID or clearing status filters.
@@ -3008,44 +3069,44 @@ function renderAdminDispatchList() {
 
     let statusBadgeHtml = '';
     if (b.overallStatus === 'cancelled') {
-      statusBadgeHtml = `<span class="badge" style="background: #FEE2E2; color: #DC2626; font-weight: 800;">🚫 Cancelled Record</span>`;
+      statusBadgeHtml = `<span class="badge" style="background: #FEE2E2; color: #DC2626; font-weight: 800;">${LUCIDE_ICONS.ban} Cancelled Record</span>`;
     } else if (isPast) {
-      statusBadgeHtml = `<span class="badge" style="background: #FEE2E2; color: #DC2626; font-weight: 800;">📅 Historical Date Passed (${b.scheduledDate})</span>`;
+      statusBadgeHtml = `<span class="badge" style="background: #FEE2E2; color: #DC2626; font-weight: 800;">${LUCIDE_ICONS.calendar} Historical Date Passed (${b.scheduledDate})</span>`;
     } else if (b.overallStatus === 'partially_filled') {
-      statusBadgeHtml = `<span class="badge badge-pending" style="background: #FEF3C7; color: #92400E; font-weight: 800;">⚠️ Partially Filled (${assignedSlots}/${totalSlots})</span>`;
+      statusBadgeHtml = `<span class="badge badge-pending" style="background: #FEF3C7; color: #92400E; font-weight: 800;">${LUCIDE_ICONS.alertTriangle} Partially Filled (${assignedSlots}/${totalSlots})</span>`;
     } else if (b.overallStatus === 'waiting_for_pros') {
-      statusBadgeHtml = `<span class="badge badge-open">⏳ Open / Seeking Pros</span>`;
+      statusBadgeHtml = `<span class="badge badge-open">${LUCIDE_ICONS.clock} Open / Seeking Pros</span>`;
     } else if (b.overallStatus === 'fully_confirmed') {
-      statusBadgeHtml = `<span class="badge badge-confirmed">✓ Fully Confirmed</span>`;
+      statusBadgeHtml = `<span class="badge badge-confirmed">${LUCIDE_ICONS.check} Fully Confirmed</span>`;
     } else if (b.overallStatus === 'in_progress') {
-      statusBadgeHtml = `<span class="badge" style="background: #DBEAFE; color: #1D4ED8; font-weight: 800; border: 1px solid #93C5FD;">⚡ In Progress</span>`;
+      statusBadgeHtml = `<span class="badge" style="background: #DBEAFE; color: #1D4ED8; font-weight: 800; border: 1px solid #93C5FD;">${LUCIDE_ICONS.zap} In Progress</span>`;
     } else if (b.overallStatus === 'arrived') {
-      statusBadgeHtml = `<span class="badge" style="background: #FEF3C7; color: #92400E; font-weight: 800; border: 1px solid #FCD34D;">📍 Arrived On Site</span>`;
+      statusBadgeHtml = `<span class="badge" style="background: #FEF3C7; color: #92400E; font-weight: 800; border: 1px solid #FCD34D;">${LUCIDE_ICONS.mapPin} Arrived On Site</span>`;
     } else if (b.overallStatus === 'traveling') {
-      statusBadgeHtml = `<span class="badge" style="background: #E0E7FF; color: #3730A3; font-weight: 800; border: 1px solid #C7D2FE;">🚗 En Route / Traveling</span>`;
+      statusBadgeHtml = `<span class="badge" style="background: #E0E7FF; color: #3730A3; font-weight: 800; border: 1px solid #C7D2FE;">${LUCIDE_ICONS.car} En Route / Traveling</span>`;
     } else if (b.overallStatus === 'completed') {
-      statusBadgeHtml = `<span class="badge" style="background: #E2E8F0; color: #475569;">🏁 Completed</span>`;
+      statusBadgeHtml = `<span class="badge" style="background: #E2E8F0; color: #475569;">${LUCIDE_ICONS.check} Completed</span>`;
     } else {
       statusBadgeHtml = `<span class="badge">${b.overallStatus}</span>`;
     }
 
     const timingLabel = b.timingType === 'asap'
-      ? `<span style="color: #2563EB; font-weight: 700;">⚡ ASAP On-Demand</span>`
-      : `📅 ${b.scheduledDate} at ${b.scheduledTime || 'TBD'}`;
+      ? `<span style="color: #2563EB; font-weight: 700; display:inline-flex; align-items:center; gap:4px;">${LUCIDE_ICONS.zap} ASAP On-Demand</span>`
+      : `${LUCIDE_ICONS.calendar} ${b.scheduledDate} at ${b.scheduledTime || 'TBD'}`;
 
     // Stage 3.5 Cancellation Evaluation
     const cancelCheck = canBookingBeCancelled(b);
     let cancelActionHtml = '';
     if (b.overallStatus === 'cancelled') {
       const byWhom = (b.cancellationSnapshot && b.cancellationSnapshot.cancelledBy) ? b.cancellationSnapshot.cancelledBy : (b.cancelledBy || 'Dispatch');
-      cancelActionHtml = `<span style="font-size: 0.75rem; color: #DC2626; background: #FEF2F2; padding: 3px 8px; border-radius: var(--radius-sm); font-weight: 700;">🚫 Cancelled (${escapeHtml(byWhom)})</span>`;
+      cancelActionHtml = `<span style="font-size: 0.75rem; color: #DC2626; background: #FEF2F2; padding: 3px 8px; border-radius: var(--radius-sm); font-weight: 700;">${LUCIDE_ICONS.ban} Cancelled (${escapeHtml(byWhom)})</span>`;
     } else if (cancelCheck.allowed) {
-      cancelActionHtml = `<button class="btn-cancel-booking" data-booking-id="${b.id}" title="Cancel booking and safely reverse pending worker earnings">🚫 Cancel Booking</button>`;
+      cancelActionHtml = `<button class="btn-cancel-booking" data-booking-id="${b.id}" title="Cancel booking and safely reverse pending worker earnings">${LUCIDE_ICONS.ban} Cancel Booking</button>`;
     } else if (cancelCheck.escalationToSupport) {
       cancelActionHtml = `
         <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
-          <span style="font-size: 0.72rem; color: #991B1B; background: #FEF2F2; padding: 3px 8px; border-radius: var(--radius-sm); font-weight: 700;">🔒 Cancel Restricted</span>
-          <button class="btn-support-escalate" data-booking-id="${b.id}" data-customer-id="${b.customerId}" title="${escapeHtml(cancelCheck.reason)}">🎫 Support Escalation</button>
+          <span style="font-size: 0.72rem; color: #991B1B; background: #FEF2F2; padding: 3px 8px; border-radius: var(--radius-sm); font-weight: 700; display:inline-flex; align-items:center; gap:4px;">${LUCIDE_ICONS.lock} Cancel Restricted</span>
+          <button class="btn-support-escalate" data-booking-id="${b.id}" data-customer-id="${b.customerId}" title="${escapeHtml(cancelCheck.reason)}">${LUCIDE_ICONS.headphones} Support Escalation</button>
         </div>
       `;
     }
@@ -3058,26 +3119,26 @@ function renderAdminDispatchList() {
       let actionHtml = '';
       if (!isAssigned) {
         if (isPast) {
-          actionHtml = `<button class="btn-assign-slot" style="background: #94A3B8; cursor: not-allowed;" title="Appointment date in past; customer must reschedule" disabled>✕ Historical (Reschedule Req.)</button>`;
+          actionHtml = `<button class="btn-assign-slot" style="background: #94A3B8; cursor: not-allowed;" title="Appointment date in past; customer must reschedule" disabled>Historical (Reschedule Req.)</button>`;
         } else if (b.overallStatus === 'cancelled') {
           actionHtml = `<span style="font-size: 0.75rem; color: var(--text-muted); font-style: italic;">Booking Cancelled</span>`;
         } else {
-          actionHtml = `<button class="btn-assign-slot" data-booking-id="${b.id}" data-slot-id="${slot.slotId}">🔍 Assign / Replace Pro</button>`;
+          actionHtml = `<button class="btn-assign-slot" data-booking-id="${b.id}" data-slot-id="${slot.slotId}">${LUCIDE_ICONS.user} Assign / Replace Pro</button>`;
         }
       } else if (slot.status === 'in_progress') {
         actionHtml = `
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-            <span style="font-size: 0.75rem; color: #2563EB; font-weight: 700; background: #DBEAFE; padding: 4px 10px; border-radius: var(--radius-sm);">🔒 In Progress</span>
-            <button class="btn-verify-complete" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-pro-id="${slot.assignedProId}" data-pro-name="${escapeHtml(slot.assignedProName)}">✓ Verify & Complete</button>
+            <span style="font-size: 0.75rem; color: #2563EB; font-weight: 700; background: #DBEAFE; padding: 4px 10px; border-radius: var(--radius-sm); display:inline-flex; align-items:center; gap:4px;">${LUCIDE_ICONS.lock} In Progress</span>
+            <button class="btn-verify-complete" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-pro-id="${slot.assignedProId}" data-pro-name="${escapeHtml(slot.assignedProName)}">${LUCIDE_ICONS.check} Verify & Complete</button>
           </div>
         `;
       } else if (isCompleted) {
-        actionHtml = `<span style="font-size: 0.75rem; color: #059669; font-weight: 700; background: #ECFDF5; padding: 4px 10px; border-radius: var(--radius-sm);">✓ Payout Released (Protected)</span>`;
+        actionHtml = `<span style="font-size: 0.75rem; color: #059669; font-weight: 700; background: #ECFDF5; padding: 4px 10px; border-radius: var(--radius-sm);">${LUCIDE_ICONS.check} Payout Released (Protected)</span>`;
       } else if (slot.status === 'traveling' || slot.status === 'arrived') {
-        actionHtml = `<span style="font-size: 0.75rem; color: #2563EB; font-weight: 700; background: #DBEAFE; padding: 4px 10px; border-radius: var(--radius-sm);">${slot.status === 'traveling' ? '🚗 En Route' : '📍 Arrived On Site'}</span>`;
+        actionHtml = `<span style="font-size: 0.75rem; color: #2563EB; font-weight: 700; background: #DBEAFE; padding: 4px 10px; border-radius: var(--radius-sm);">${slot.status === 'traveling' ? (LUCIDE_ICONS.car + ' En Route') : (LUCIDE_ICONS.mapPin + ' Arrived On Site')}</span>`;
       } else {
         // Assigned pre-work: eligible for administrative unassignment
-        actionHtml = `<button class="btn-unassign-slot" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-pro-id="${slot.assignedProId}" data-pro-name="${slot.assignedProName}">✕ Unassign Worker</button>`;
+        actionHtml = `<button class="btn-unassign-slot" data-booking-id="${b.id}" data-slot-id="${slot.slotId}" data-pro-id="${slot.assignedProId}" data-pro-name="${slot.assignedProName}">${LUCIDE_ICONS.ban} Unassign Worker</button>`;
       }
 
       return `
@@ -3085,7 +3146,7 @@ function renderAdminDispatchList() {
           <div>
             <div class="dispatch-slot-role">${slot.roleTitle || 'Worker Slot'}</div>
             <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 2px;">
-              ${isAssigned ? `Assigned to: <strong style="color: var(--primary-navy);">${slot.assignedProName}</strong>` : `<span style="color: #D97706; font-weight: 700;">⭕ Position Open — Seeking Pro</span>`}
+              ${isAssigned ? `Assigned to: <strong style="color: var(--primary-navy);">${slot.assignedProName}</strong>` : `<span style="color: #D97706; font-weight: 700; display:inline-flex; align-items:center; gap:4px;">${LUCIDE_ICONS.clock} Position Open — Seeking Pro</span>`}
             </div>
           </div>
           <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
@@ -3102,9 +3163,9 @@ function renderAdminDispatchList() {
     const isAiLoading = !!(aiEntry && aiEntry.status === 'loading');
     let aiActionBtnHtml = '';
     if (aiElig.dispatchable) {
-      aiActionBtnHtml = `<button type="button" class="btn-ai-dispatch" data-booking-id="${escapeHtml(b.id)}" ${isAiLoading ? 'disabled' : ''}>${isAiLoading ? '⏳ Analyzing Crew...' : '✨ Get AI Dispatch Advice'}</button>`;
+      aiActionBtnHtml = `<button type="button" class="btn-ai-dispatch" data-booking-id="${escapeHtml(b.id)}" ${isAiLoading ? 'disabled' : ''}>${isAiLoading ? (LUCIDE_ICONS.clock + ' Analyzing Crew...') : (LUCIDE_ICONS.bot + ' Get AI Dispatch Advice')}</button>`;
     } else if (hasUnassignedSlot && b.overallStatus !== 'cancelled' && b.overallStatus !== 'completed') {
-      aiActionBtnHtml = `<button type="button" class="btn-ai-dispatch" data-booking-id="${escapeHtml(b.id)}" title="${escapeHtml(aiElig.reason || '')}">✨ AI Advice Status</button>`;
+      aiActionBtnHtml = `<button type="button" class="btn-ai-dispatch" data-booking-id="${escapeHtml(b.id)}" title="${escapeHtml(aiElig.reason || '')}">${LUCIDE_ICONS.bot} AI Advice Status</button>`;
     }
     const aiPanelHtml = renderAiDispatchPanelHtml(b, aiEntry, state);
 
@@ -3117,9 +3178,9 @@ function renderAdminDispatchList() {
               ${statusBadgeHtml}
             </div>
             <div class="dispatch-card-meta" style="margin-top: 6px;">
-              <span>🆔 <strong>${b.id}</strong></span>
-              <span>👤 Customer: <strong>${b.customerName}</strong></span>
-              <span>📍 ${b.neighborhoodName} (${b.address || ''})</span>
+              <span><strong>${b.id}</strong></span>
+              <span>${LUCIDE_ICONS.user} Customer: <strong>${b.customerName}</strong></span>
+              <span>${LUCIDE_ICONS.mapPin} ${b.neighborhoodName} (${b.address || ''})</span>
               <span>${timingLabel}</span>
             </div>
           </div>
@@ -3289,7 +3350,7 @@ function renderAdminAuditTable() {
               <td style="white-space: nowrap; font-family: monospace; font-size: 0.78rem;">${dateStr}</td>
               <td>
                 <span class="audit-badge ${badgeClass}" style="${isFailed ? 'background: #FEE2E2; color: #DC2626;' : ''}">
-                  ${isFailed ? '⚠️ REJECTED' : log.actionType.replace(/_/g, ' ')}
+                  ${isFailed ? 'REJECTED' : log.actionType.replace(/_/g, ' ')}
                 </span>
               </td>
               <td><strong>${escapeHtml(log.adminName || 'Demo Dispatch')}</strong></td>
@@ -3345,20 +3406,20 @@ function openAdminAssignModal(bookingId, slotId, aiPrefill = null) {
       return `
         <label class="candidate-pro-card ${isEligible ? 'eligible' : 'ineligible'}" style="display: flex; gap: 12px; align-items: center;">
           <input type="radio" name="adminCandidatePro" value="${escapeHtml(pro.id)}" ${isEligible ? (isPreselected ? 'checked' : '') : 'disabled'}>
-          <div style="font-size: 1.4rem;">${pro.avatar || '👷'}</div>
+          <div style="display:flex;align-items:center;justify-content:center;color:var(--primary-navy);">${LUCIDE_ICONS.hardHat}</div>
           <div style="flex: 1;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <strong style="color: var(--primary-navy);">${escapeHtml(pro.name)}</strong>
               <span class="tier-badge ${String(pro.tier || 'bronze').toLowerCase()}">${escapeHtml(pro.tier)}</span>
-              <span style="font-size: 0.78rem; color: var(--text-muted);">⭐ ${Number(pro.rating || 0)} (${Number(pro.reviewCount || 0)} reviews)</span>
+              <span style="font-size: 0.78rem; color: var(--text-muted);">${LUCIDE_ICONS.star} ${Number(pro.rating || 0)} (${Number(pro.reviewCount || 0)} reviews)</span>
             </div>
             <div style="font-size: 0.78rem; color: var(--text-secondary); margin-top: 2px;">
-              📍 ${escapeHtml(pro.homeNeighborhood)} • Reliability: ${Number(pro.reliabilityScore || 0)}%
+              ${LUCIDE_ICONS.mapPin} ${escapeHtml(pro.homeNeighborhood)} • Reliability: ${Number(pro.reliabilityScore || 0)}%
             </div>
             <div style="font-size: 0.75rem; margin-top: 4px;">
               ${isEligible
-                ? `<span style="color: #059669; font-weight: 700;">✓ Eligible and verified for this slot</span>`
-                : `<span style="color: #DC2626; font-weight: 600;">✕ Disqualified: ${escapeHtml(c.reason)}</span>`
+                ? `<span style="color: #059669; font-weight: 700;">${LUCIDE_ICONS.check} Eligible and verified for this slot</span>`
+                : `<span style="color: #DC2626; font-weight: 600;">Disqualified: ${escapeHtml(c.reason)}</span>`
               }
             </div>
           </div>
@@ -3397,10 +3458,10 @@ function openAdminAssignModal(bookingId, slotId, aiPrefill = null) {
       const isMock = !!(prov.isMockTestMode === true || prov.source === 'mock_ai_test_mode');
       aiBanner.style.display = 'block';
       aiBanner.innerHTML = isLive
-        ? `<strong>🤖 Live ${isOpenAi ? 'OpenAI' : 'Gemini'} Suggestion Loaded (Advisory Only):</strong> Eligible Pro preselected and reason drafted below. Edit reason if needed and check the confirmation box before approving.`
+        ? `<strong>${LUCIDE_ICONS.bot} Live ${isOpenAi ? 'OpenAI' : 'Gemini'} Suggestion Loaded (Advisory Only):</strong> Eligible Pro preselected and reason drafted below. Edit reason if needed and check the confirmation box before approving.`
         : (isMock
-          ? '<strong>🧪 Mock AI Response — Test Mode Loaded (Advisory Only):</strong> Simulated suggestion preselected (no live AI API call). Edit reason if needed and check the confirmation box before approving.'
-          : '<strong>⚙️ Rules Fallback Suggestion Loaded (Advisory Only):</strong> Eligible Pro preselected from deterministic ranking. Review details and check the confirmation box before approving.');
+          ? `<strong>${LUCIDE_ICONS.sparkles} Mock AI Response — Test Mode Loaded (Advisory Only):</strong> Simulated suggestion preselected (no live AI API call). Edit reason if needed and check the confirmation box before approving.`
+          : `<strong>${LUCIDE_ICONS.shield} Rules Fallback Suggestion Loaded (Advisory Only):</strong> Eligible Pro preselected from deterministic ranking. Review details and check the confirmation box before approving.`);
     } else {
       aiBanner.style.display = 'none';
       aiBanner.innerHTML = '';
@@ -3441,15 +3502,15 @@ function handleConfirmAdminAssign() {
   const confirmCheck = document.getElementById('check-admin-assign-confirm');
 
   if (!selectedAdminCandidateProId) {
-    showToast('Please select an eligible Pro to assign.', '⚠️');
+    showToast('Please select an eligible Pro to assign.', 'warning');
     return;
   }
   if (!confirmCheck || !confirmCheck.checked) {
-    showToast('Administrative confirmation checkbox is required before assigning a worker.', '⚠️');
+    showToast('Administrative confirmation checkbox is required before assigning a worker.', 'warning');
     return;
   }
   if (!reason) {
-    showToast('Administrative reason is required for dispatch record.', '⚠️');
+    showToast('Administrative reason is required for dispatch record.', 'warning');
     return;
   }
 
@@ -3469,7 +3530,7 @@ function handleConfirmAdminAssign() {
         proId: selectedAdminCandidateProId,
         reason: 'Blocked stale AI-prefilled assignment; booking or worker state changed before confirmation.'
       });
-      showToast(freshCheck.reason || 'Booking or worker state changed while modal was open. Candidates refreshed.', '⚠️');
+      showToast(freshCheck.reason || 'Booking or worker state changed while modal was open. Candidates refreshed.', 'warning');
       openAdminAssignModal(pendingAdminAssignBookingId, pendingAdminAssignSlotId, null);
       renderAll();
       return;
@@ -3482,7 +3543,7 @@ function handleConfirmAdminAssign() {
     pendingAdminAssignSlotId
   );
   if (!liveEligibility.allowed) {
-    showToast(liveEligibility.reason || 'Selected worker is no longer eligible for this position.', '⚠️');
+    showToast(liveEligibility.reason || 'Selected worker is no longer eligible for this position.', 'warning');
     openAdminAssignModal(pendingAdminAssignBookingId, pendingAdminAssignSlotId, null);
     return;
   }
@@ -3498,7 +3559,7 @@ function handleConfirmAdminAssign() {
     if (modal) modal.classList.remove('open');
     renderAll();
   } else {
-    showToast(res.error || 'Failed to assign Pro.', '⚠️');
+    showToast(res.error || 'Failed to assign Pro.', 'warning');
   }
 }
 
@@ -3540,7 +3601,7 @@ function handleConfirmAdminUnassign() {
   const reason = (reasonInput ? reasonInput.value : '').trim();
 
   if (!reason) {
-    showToast('Administrative reason is required for worker unassignment.', '⚠️');
+    showToast('Administrative reason is required for worker unassignment.', 'warning');
     return;
   }
 
@@ -3551,7 +3612,7 @@ function handleConfirmAdminUnassign() {
     if (modal) modal.classList.remove('open');
     renderAll();
   } else {
-    showToast(res.error || 'Failed to unassign worker.', '⚠️');
+    showToast(res.error || 'Failed to unassign worker.', 'warning');
   }
 }
 
@@ -3565,7 +3626,7 @@ function openAdminCancelModal(bookingId) {
 
   const check = canBookingBeCancelled(booking);
   if (!check.allowed) {
-    showToast(check.reason, '⚠️');
+    showToast(check.reason, 'warning');
     return;
   }
 
@@ -3621,13 +3682,13 @@ function handleConfirmAdminCancel() {
   const reason = (reasonInput ? reasonInput.value : '').trim();
 
   if (!reason) {
-    showToast('Administrative reason is required for booking cancellation.', '⚠️');
+    showToast('Administrative reason is required for booking cancellation.', 'warning');
     return;
   }
 
   const confirmCheck = document.getElementById('check-admin-cancel-confirm');
   if (!confirmCheck || !confirmCheck.checked) {
-    showToast('Please confirm the cancellation authorization checkbox.', '⚠️');
+    showToast('Please confirm the cancellation authorization checkbox.', 'warning');
     return;
   }
 
@@ -3641,7 +3702,7 @@ function handleConfirmAdminCancel() {
     closeAdminCancelModal();
     renderAll();
   } else {
-    showToast(res.error || 'Failed to cancel booking.', '⚠️');
+    showToast(res.error || 'Failed to cancel booking.', 'warning');
   }
 }
 
@@ -3653,7 +3714,7 @@ function openAdminVerifyCompleteModal(bookingId, slotId, proId, proName) {
 
   const check = canSlotBeAdminCompleted(booking, slot);
   if (!check.allowed) {
-    showToast(check.reason, '⚠️');
+    showToast(check.reason, 'warning');
     return;
   }
 
@@ -3711,14 +3772,14 @@ function handleConfirmAdminVerify() {
   const explanation = (explanationInput ? explanationInput.value : '').trim();
 
   if (!explanation) {
-    showToast('Documented verification notes and explanation are required.', '⚠️');
+    showToast('Documented verification notes and explanation are required.', 'warning');
     return;
   }
 
   const confirmCheck = document.getElementById('check-admin-verify-confirm');
   const isConfirmed = !!(confirmCheck && confirmCheck.checked);
   if (!isConfirmed) {
-    showToast('Affirmative confirmation checkbox is required to verify completion.', '⚠️');
+    showToast('Affirmative confirmation checkbox is required to verify completion.', 'warning');
     return;
   }
 
@@ -3743,7 +3804,7 @@ function handleConfirmAdminVerify() {
     closeAdminVerifyCompleteModal();
     renderAll();
   } else {
-    showToast(res.error || 'Failed to verify assignment completion.', '⚠️');
+    showToast(res.error || 'Failed to verify assignment completion.', 'warning');
   }
 }
 
@@ -3845,7 +3906,7 @@ function renderAdminWorkers() {
               </div>
             </div>
             <div style="color: var(--text-secondary); font-size: 0.78rem; margin-bottom: 6px;">
-              📍 ${escapeHtml(booking.address || 'Dallas, TX')} | 🗓️ ${booking.timingType === 'asap' ? 'ASAP Request' : (booking.scheduledDate + ' at ' + booking.scheduledTime)}
+              ${LUCIDE_ICONS.mapPin} ${escapeHtml(booking.address || 'Dallas, TX')} | ${LUCIDE_ICONS.calendar} ${booking.timingType === 'asap' ? 'ASAP Request' : (booking.scheduledDate + ' at ' + booking.scheduledTime)}
             </div>
             <div>${slotsHtml}</div>
           </div>
@@ -3858,16 +3919,16 @@ function renderAdminWorkers() {
               const isAssigned = evalRes.slotEvaluations.some(e => e.status === 'assigned' && e.reason.includes('Currently assigned'));
               let badgeColor = '#EF4444';
               let badgeBg = '#FEE2E2';
-              let statusText = '✗ Ineligible';
+              let statusText = 'Ineligible';
 
               if (isAssigned) {
                 badgeColor = '#4338CA';
                 badgeBg = '#EEF2FF';
-                statusText = '✓ Assigned to Job';
+                statusText = 'Assigned to Job';
               } else if (evalRes.eligible) {
                 badgeColor = '#059669';
                 badgeBg = '#ECFDF5';
-                statusText = '✓ Eligible for Slot';
+                statusText = 'Eligible for Slot';
               }
 
               return `
@@ -3901,10 +3962,10 @@ function renderAdminWorkers() {
     rosterGrid.innerHTML = summary.pros.map(pro => {
       const tierClass = (pro.tier || 'bronze').toLowerCase();
       const servicesPills = (pro.verifiedServices || []).map(s =>
-        `<span class="worker-badge-pill verified">✓ ${escapeHtml(s)}</span>`
+        `<span class="worker-badge-pill verified">${LUCIDE_ICONS.check} ${escapeHtml(s)}</span>`
       ).join('');
       const equipPills = (pro.verifiedEquipment || []).map(eq =>
-        `<span class="worker-badge-pill equipment">🛠️ ${escapeHtml(eq)}</span>`
+        `<span class="worker-badge-pill equipment">${LUCIDE_ICONS.wrench} ${escapeHtml(eq)}</span>`
       ).join('');
       const zipPills = (pro.serviceAreaPreferences || []).map(z =>
         `<span style="display: inline-block; padding: 1px 5px; font-size: 0.68rem; background: #F1F5F9; border-radius: 3px; color: var(--text-secondary); margin-right: 3px;">${z}</span>`
@@ -3925,7 +3986,7 @@ function renderAdminWorkers() {
         <div class="worker-card">
           <div class="worker-card-header">
             <div class="worker-identity">
-              <div class="worker-avatar">${pro.avatar || '👷'}</div>
+              <div class="worker-avatar" style="display:flex;align-items:center;justify-content:center;color:var(--primary-navy);">${LUCIDE_ICONS.hardHat}</div>
               <div>
                 <h3 style="margin: 0 0 2px 0; font-size: 1.05rem; color: var(--primary-navy);">${escapeHtml(pro.name)}</h3>
                 <span class="worker-tier-badge ${tierClass}">${escapeHtml(pro.tier)} Tier</span>
@@ -3933,7 +3994,7 @@ function renderAdminWorkers() {
             </div>
             <div style="text-align: right;">
               <div style="font-weight: 700; color: #F59E0B; font-size: 0.95rem;">
-                ★ ${pro.rating ? pro.rating.toFixed(1) : '5.0'}
+                ${LUCIDE_ICONS.star} ${pro.rating ? pro.rating.toFixed(1) : '5.0'}
               </div>
               <div style="font-size: 0.72rem; color: var(--text-muted);">${pro.reviewCount} verified reviews</div>
             </div>
@@ -3964,7 +4025,7 @@ function renderAdminWorkers() {
             </div>
             <div style="display: flex; flex-wrap: wrap; gap: 4px;">
               ${equipPills}
-              <span class="worker-badge-pill" style="background: #F0FDF4; color: #166534; border-color: #86EFAC;">🛡️ TX DPS Check Passed</span>
+              <span class="worker-badge-pill" style="background: #F0FDF4; color: #166534; border-color: #86EFAC; display:inline-flex; align-items:center; gap:4px;">${LUCIDE_ICONS.shield} TX DPS Check Passed</span>
             </div>
           </div>
 
@@ -3988,7 +4049,7 @@ function renderAdminWorkers() {
           </div>
 
           <div style="font-size: 0.68rem; color: var(--text-muted); font-style: italic; border-top: 1px solid var(--border-light); padding-top: 8px;">
-            ⚠️ Demonstration Profile — Credentials & equipment simulated for INSY 3331.
+            ${LUCIDE_ICONS.alertTriangle} Demonstration Profile — Credentials & equipment simulated for INSY 3331.
           </div>
         </div>
       `;
@@ -4085,7 +4146,7 @@ function renderAdminSupport() {
           ${latestNote ? `
             <div style="background: #F8FAFC; border-left: 3px solid var(--primary-teal); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; color: var(--text-primary);">
               <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px;">
-                <span>🔒 <strong>${escapeHtml(latestNote.author)}</strong></span>
+                <span style="display:inline-flex;align-items:center;gap:4px;">${LUCIDE_ICONS.lock} <strong>${escapeHtml(latestNote.author)}</strong></span>
                 <span>${latestNote.timestamp ? new Date(latestNote.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
               </div>
               <div style="line-height: 1.3;">${escapeHtml(latestNote.text)}</div>
@@ -4173,7 +4234,7 @@ function renderCaseDetailNotesTimeline(targetCase) {
     return `
       <div class="case-note-item">
         <div class="case-note-meta">
-          <strong>🔒 ${escapeHtml(n.author)}</strong>
+          <strong style="display:inline-flex;align-items:center;gap:4px;">${LUCIDE_ICONS.lock} ${escapeHtml(n.author)}</strong>
           <span>${timeStr}</span>
         </div>
         <div style="line-height: 1.35; color: var(--text-primary);">${escapeHtml(n.text)}</div>
@@ -4403,7 +4464,7 @@ function renderAdminTrustSafety() {
   }
 
   container.innerHTML = allReviews.map(r => {
-    const starsStr = '★'.repeat(r.stars) + '☆'.repeat(5 - r.stars);
+    const starsStr = renderStarRatingHtml(r.stars);
     let disputeBadge = `<span class="dispute-badge undisputed">Undisputed / Valid</span>`;
     if (r.disputed) {
       if (r.disputeStatus === 'dispute_resolved' || r.disputeStatus === 'verified_valid') {
@@ -4473,7 +4534,7 @@ function openTrustDetailModal(bookingId, slotId) {
 
   setEl('trust-modal-pro-name', review.proName);
   setEl('trust-modal-role-title', review.roleTitle);
-  setEl('trust-modal-stars', '★'.repeat(review.stars) + '☆'.repeat(5 - review.stars));
+  const elStars = document.getElementById('trust-modal-stars'); if (elStars) elStars.innerHTML = renderStarRatingHtml(review.stars);
   setEl('trust-modal-original-stars', review.stars);
   setEl('trust-modal-comment', `"${review.comment}"`);
   setEl('trust-modal-date', review.date || '—');
@@ -4504,7 +4565,7 @@ function openTrustDetailModal(bookingId, slotId) {
       const reasonInput = document.getElementById('input-trust-dispute-reason');
       const reason = (reasonInput ? reasonInput.value : '').trim();
       if (!reason) {
-        showToast('Dispute reason is required.', '⚠️');
+        showToast('Dispute reason is required.', 'warning');
         return;
       }
       const res = flagReviewDispute(bookingId, slotId, reason);
@@ -4515,7 +4576,7 @@ function openTrustDetailModal(bookingId, slotId) {
         renderAdminSupport();
         renderAdminAuditTable();
       } else {
-        showToast(res.error || 'Failed to flag dispute.', '⚠️');
+        showToast(res.error || 'Failed to flag dispute.', 'warning');
       }
     });
   } else {
@@ -4570,7 +4631,7 @@ function openTrustDetailModal(bookingId, slotId) {
       const notesVal = (notesInput ? notesInput.value : '').trim();
 
       if (!notesVal) {
-        showToast('Investigation findings or resolution notes are required.', '⚠️');
+        showToast('Investigation findings or resolution notes are required.', 'warning');
         return;
       }
 
@@ -4583,7 +4644,7 @@ function openTrustDetailModal(bookingId, slotId) {
           renderAdminSupport();
           renderAdminAuditTable();
         } else {
-          showToast(res.error || 'Failed to update investigation.', '⚠️');
+          showToast(res.error || 'Failed to update investigation.', 'warning');
         }
       }
     });
@@ -4717,13 +4778,13 @@ function handleConfirmCashout() {
   document.getElementById('cashout-modal')?.classList.remove('open');
 
   if (res.success) {
-    showToast(`Transferred $${res.netAmountDollars.toFixed(2)} via ${res.method}! (${res.notice})`, '💵');
+    showToast(`Transferred $${res.netAmountDollars.toFixed(2)} via ${res.method}! (${res.notice})`, 'dollar');
     renderAll();
     if (res.transaction) {
       openReceiptModal(res.transaction, activePro.name);
     }
   } else {
-    showToast(res.error || 'Withdrawal failed.', '⚠️');
+    showToast(res.error || 'Withdrawal failed.', 'warning');
   }
 }
 
@@ -4752,7 +4813,7 @@ function openReceiptModal(tx, proName) {
   if (feeEl) feeEl.textContent = tx.feeCents > 0 ? `-$${(tx.feeCents / 100).toFixed(2)}` : '$0.00 (Free)';
   if (netEl) netEl.textContent = `$${(tx.netCents / 100).toFixed(2)}`;
   if (finalNetEl) finalNetEl.textContent = `$${(tx.netCents / 100).toFixed(2)}`;
-  if (statusPill) statusPill.textContent = tx.statusLabel || '✓ Simulated Transfer Confirmed';
+  if (statusPill) statusPill.innerHTML = tx.statusLabel || (LUCIDE_ICONS.check + ' Simulated Transfer Confirmed');
 
   modal.classList.add('open');
 }
@@ -4775,7 +4836,7 @@ function setupReviewModal() {
 
   starsContainer.querySelectorAll('span').forEach(star => {
     star.addEventListener('click', (e) => {
-      currentRatingSelection = parseInt(e.target.getAttribute('data-star'), 10);
+      const targetSpan = e.currentTarget; currentRatingSelection = parseInt(targetSpan.getAttribute('data-star') || e.target.getAttribute('data-star'), 10);
       starText.textContent = starLabels[currentRatingSelection];
       starsContainer.querySelectorAll('span').forEach((s, idx) => {
         s.style.opacity = idx < currentRatingSelection ? '1' : '0.3';
@@ -4801,7 +4862,7 @@ function setupReviewModal() {
       pendingReviewSlotId = null;
       renderAll();
     } else {
-      showToast(result.error || 'Could not submit review. Please try again.', '⚠️');
+      showToast(result.error || 'Could not submit review. Please try again.', 'warning');
     }
   });
 
@@ -5004,7 +5065,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const newTime = timeInput ? timeInput.value : '';
 
       if (!newDate || !newTime) {
-        showToast('Please select both a date and time to reschedule.', '⚠️');
+        showToast('Please select both a date and time to reschedule.', 'warning');
         return;
       }
 
@@ -5014,11 +5075,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (res.unassignedPros && res.unassignedPros.length > 0) {
           msg += ` (${res.unassignedPros.length} Pro assignment(s) unassigned due to schedule conflict)`;
         }
-        showToast(msg, '📅');
+        showToast(msg, 'calendar');
         closeRescheduleModal();
         renderAll();
       } else {
-        showToast(res.error || 'Failed to reschedule booking.', '⚠️');
+        showToast(res.error || 'Failed to reschedule booking.', 'warning');
       }
     });
   }
@@ -5163,7 +5224,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const initialNote = (document.getElementById('input-case-initial-note')?.value || '').trim();
 
     if (!title || !initialNote) {
-      showToast('Title and initial dispatcher note are required.', '⚠️');
+      showToast('Title and initial dispatcher note are required.', 'warning');
       return;
     }
 
@@ -5191,7 +5252,7 @@ document.addEventListener('DOMContentLoaded', () => {
       closeCreateCaseModal();
       renderAll();
     } else {
-      showToast(res.error || 'Failed to create support case.', '⚠️');
+      showToast(res.error || 'Failed to create support case.', 'warning');
     }
   });
 
@@ -5213,7 +5274,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const reason = (reasonInput ? reasonInput.value : '').trim();
 
     if (!reason) {
-      showToast('Administrative reason is required for status change.', '⚠️');
+      showToast('Administrative reason is required for status change.', 'warning');
       return;
     }
 
@@ -5223,7 +5284,7 @@ document.addEventListener('DOMContentLoaded', () => {
       openCaseDetailModal(currentActiveCaseId);
       renderAll();
     } else {
-      showToast(res.error || 'Failed to update case status.', '⚠️');
+      showToast(res.error || 'Failed to update case status.', 'warning');
     }
   });
 
@@ -5233,7 +5294,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const noteText = (noteInput ? noteInput.value : '').trim();
 
     if (!noteText) {
-      showToast('Note text cannot be empty.', '⚠️');
+      showToast('Note text cannot be empty.', 'warning');
       return;
     }
 
@@ -5244,7 +5305,7 @@ document.addEventListener('DOMContentLoaded', () => {
       openCaseDetailModal(currentActiveCaseId);
       renderAll();
     } else {
-      showToast(res.error || 'Failed to add note.', '⚠️');
+      showToast(res.error || 'Failed to add note.', 'warning');
     }
   });
 
@@ -5284,7 +5345,7 @@ document.addEventListener('DOMContentLoaded', () => {
           );
           if (!crossTabFresh.allowedForApproval) {
             delete aiDispatchUiMap[pendingAdminAssignBookingId];
-            showToast('Cross-tab update detected; assignment candidates refreshed.', '⚠️');
+            showToast('Cross-tab update detected; assignment candidates refreshed.', 'warning');
             openAdminAssignModal(pendingAdminAssignBookingId, pendingAdminAssignSlotId, null);
           }
         }

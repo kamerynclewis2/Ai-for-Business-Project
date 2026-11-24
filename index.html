@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Crewly — On-Demand Home Services Marketplace (Dallas, TX)</title>
   <link rel="stylesheet" href="styles.css">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232563EB%22 stroke-width=%222.5%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><polygon points=%2213 2 3 14 12 14 11 22 21 10 12 10 13 2%22 fill=%22%232563EB%22/></svg>">
 </head>
 <body>
 
@@ -16,10 +16,10 @@
     </div>
     <div class="banner-controls">
       <button id="btn-admin-metrics" class="btn-banner-link">
-        📊 Marketplace Metrics (Gross Revenue)
+        <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Marketplace Metrics (Gross Revenue)
       </button>
       <button id="btn-reset-demo" class="btn-banner-link">
-        🔄 Reset Demo Data
+        <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> Reset Demo Data
       </button>
     </div>
   </div>
@@ -27,23 +27,25 @@
   <!-- Primary Application Header -->
   <header class="main-header">
     <div class="header-container">
-      <a href="javascript:void(0)" class="brand-logo" id="brand-home-link">
-  <img src="assets/crewly-logo.png" alt="Crewly" class="logo-image">
-</a>
+      <a href="javascript:void(0)" class="brand-logo" id="brand-home-link" style="text-decoration: none;">
+        <span class="logo-badge" style="background: linear-gradient(135deg, var(--accent-blue), var(--primary-navy)); color: white; font-weight: 800; font-size: 1.1rem; width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px;">C</span>
+        <span class="brand-text" style="font-size: 1.35rem; font-weight: 800; letter-spacing: -0.03em; color: var(--primary-navy);">Crewly</span>
+        <span class="brand-tagline" style="font-size: 0.7rem; font-weight: 700; color: var(--accent-blue); text-transform: uppercase; letter-spacing: 0.08em; background: var(--accent-blue-light); padding: 2px 6px; border-radius: 4px; margin-left: 4px;">Dallas</span>
+      </a>
 
       <!-- 1-Click Role Switcher -->
       <div class="role-switcher-container">
         <button id="role-btn-customer" class="role-pill-btn active">
-          👤 Customer View
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Customer View
         </button>
         <button id="role-btn-pro" class="role-pill-btn">
-          👷 Crewly Pro View
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18a1 1 0 0 0 1 1h18a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H3a1 1 0 0 0-1 1v2z"/><path d="M10 10V5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/><path d="M4 15v-3a8 8 0 0 1 16 0v3"/></svg> Crewly Pro View
         </button>
         <button id="role-btn-admin" class="role-pill-btn">
-          👔 Crewly Admin View
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg> Crewly Admin View
         </button>
         <button id="btn-open-dual-tab" class="btn-open-tab" title="Open complementary role in a new browser tab for dual-screen demo">
-          Open in New Tab ↗
+          Open in New Tab <svg class="lucide-icon" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
         </button>
       </div>
     </div>
@@ -59,7 +61,7 @@
       <div class="customer-hero">
         <div class="market-indicator">
           <span class="market-pulse"></span>
-          ⚡ Dallas Pilot Demonstration — INSY 3331 Academic Simulation
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Dallas Pilot Demonstration — INSY 3331 Academic Simulation
         </div>
         <h1>On-demand home services.<br>Transparent upfront pricing.</h1>
         <p>
@@ -67,9 +69,9 @@
         </p>
 
         <div class="hero-highlights">
-          <div class="hero-chip">✓ Pre-Screened Dallas Pro Profiles (Pilot Demo)</div>
-          <div class="hero-chip">✓ Multi-Worker Moving Teams</div>
-          <div class="hero-chip">✓ Transparent Demonstration Pricing Assumptions</div>
+          <div class="hero-chip"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Pre-Screened Dallas Pro Profiles (Pilot Demo)</div>
+          <div class="hero-chip"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Multi-Worker Moving Teams</div>
+          <div class="hero-chip"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Transparent Demonstration Pricing Assumptions</div>
         </div>
       </div>
 
@@ -82,7 +84,7 @@
           </select>
         </div>
         <div style="font-size: 0.8rem; color: var(--text-muted);">
-          📍 Neighborhood: <strong id="customer-active-neighborhood" style="color: var(--primary-navy);">Uptown Dallas</strong>
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg> Neighborhood: <strong id="customer-active-neighborhood" style="color: var(--primary-navy);">Uptown Dallas</strong>
         </div>
       </div>
 
@@ -132,14 +134,14 @@
       <div class="pro-profile-summary">
         <div class="pro-profile-header">
           <div class="pro-id-block">
-            <div class="pro-avatar-large" id="pro-avatar-display">👨🏾‍🔧</div>
+            <div class="pro-avatar-large" id="pro-avatar-display"><svg class="lucide-icon" style="width: 32px; height: 32px; color: var(--primary-navy);" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
             <div>
               <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
                 <h2 class="pro-name-title" id="pro-name-display">Marcus Davis</h2>
                 <span id="pro-tier-display" class="tier-badge gold">Gold Pro</span>
               </div>
               <div style="font-size: 0.85rem; color: var(--text-secondary);">
-                ⭐ <strong id="pro-rating-display">4.94</strong> (<span id="pro-reviews-display">88</span> jobs) • 
+                <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="#F59E0B" fill="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> <strong id="pro-rating-display">4.94</strong> (<span id="pro-reviews-display">88</span> jobs) • 
                 <span id="pro-neighborhood-display">Uptown Dallas</span> • 
                 Reliability: <strong id="pro-reliability-display">98%</strong>
               </div>
@@ -174,7 +176,7 @@
         <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border-light); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <label style="font-size: 0.88rem; font-weight: 700; color: var(--primary-navy); display: flex; align-items: center; gap: 8px; cursor: pointer;">
-              <input type="checkbox" id="pro-autobook-toggle" style="width: 18px; height: 18px; accent-color: var(--primary-rose);">
+              <input type="checkbox" id="pro-autobook-toggle" style="width: 18px; height: 18px; accent-color: var(--accent-blue);">
               Enable Auto-Book for Compatible Jobs
             </label>
             <span style="font-size: 0.78rem; color: var(--text-muted);" id="pro-autobook-status">
@@ -192,7 +194,7 @@
           <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
             <div>
               <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 1.4rem;">💼</span>
+                <span style="display: inline-flex; align-items: center; color: var(--accent-blue);"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
                 <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-navy); margin: 0;">My Crewly Wallet</h2>
               </div>
               <p style="font-size: 0.83rem; color: var(--text-muted); margin: 4px 0 0 0;">
@@ -200,11 +202,11 @@
               </p>
             </div>
             <div style="display: flex; align-items: center; gap: 10px;">
-              <span class="verified-credential-chip" style="background: var(--light-blush); color: var(--dark-rose); border-color: var(--secondary-rose); font-size: 0.75rem;">
-                ✓ Simulated Ledger Active
+              <span class="verified-credential-chip" style="background: var(--brand-mint); color: #065F46; border-color: var(--brand-mint-border); font-size: 0.75rem;">
+                <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Simulated Ledger Active
               </span>
               <button class="btn-cashout" id="btn-cashout-trigger" style="margin: 0; padding: 10px 20px; font-size: 0.9rem;">
-                💵 Cash Out Funds
+                <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Cash Out Funds
               </button>
             </div>
           </div>
@@ -237,14 +239,14 @@
               </div>
               <!-- Filter Pills -->
               <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <button id="wallet-filter-all" class="wallet-filter-pill active" style="padding: 5px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; cursor: pointer; background: var(--primary-rose); color: white; border: 1px solid var(--primary-rose);">
+                <button id="wallet-filter-all" class="wallet-filter-pill active" style="padding: 5px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; cursor: pointer; background: var(--accent-blue); color: white; border: 1px solid var(--accent-blue);">
                   All Transactions (<span id="wallet-count-all">0</span>)
                 </button>
                 <button id="wallet-filter-earnings" class="wallet-filter-pill" style="padding: 5px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; cursor: pointer; background: white; color: var(--text-secondary); border: 1px solid var(--border-light);">
-                  💰 Earnings (<span id="wallet-count-earnings">0</span>)
+                  <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Earnings (<span id="wallet-count-earnings">0</span>)
                 </button>
                 <button id="wallet-filter-cashouts" class="wallet-filter-pill" style="padding: 5px 12px; border-radius: var(--radius-sm); font-size: 0.78rem; font-weight: 700; cursor: pointer; background: white; color: var(--text-secondary); border: 1px solid var(--border-light);">
-                  💵 Cash-Outs (<span id="wallet-count-cashouts">0</span>)
+                  <svg class="lucide-icon" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Cash-Outs (<span id="wallet-count-cashouts">0</span>)
                 </button>
               </div>
             </div>
@@ -291,14 +293,14 @@
 
       <!-- Job Board Category Filter Pills -->
       <div style="display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;">
-        <button id="job-filter-available" class="btn-banner-link" style="padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; background: var(--primary-rose); color: white;">
-          ⚡ Available to Me (<span id="count-filter-available">0</span>)
+        <button id="job-filter-available" class="btn-banner-link" style="padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; background: var(--accent-blue); color: white;">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Available to Me (<span id="count-filter-available">0</span>)
         </button>
         <button id="job-filter-upcoming" class="btn-banner-link" style="padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; background: white; color: var(--text-secondary); border: 1px solid var(--border-light);">
-          📅 Upcoming Jobs (<span id="count-filter-upcoming">0</span>)
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Upcoming Jobs (<span id="count-filter-upcoming">0</span>)
         </button>
         <button id="job-filter-ineligible" class="btn-banner-link" style="padding: 6px 14px; border-radius: var(--radius-md); font-size: 0.82rem; font-weight: 700; cursor: pointer; background: white; color: var(--text-secondary); border: 1px solid var(--border-light);">
-          ⚠️ Conflicts / Ineligible (<span id="count-filter-ineligible">0</span>)
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Conflicts / Ineligible (<span id="count-filter-ineligible">0</span>)
         </button>
       </div>
 
@@ -319,7 +321,7 @@
             <span class="pulse-dot-admin"></span> Dallas Operations Center (Pilot Dispatch)
           </div>
           <div class="admin-role-disclaimer">
-            🎓 Classroom Demo: Client-side role selection for INSY 3331 evaluation. Not production authentication.
+            <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Classroom Demo: Client-side role selection for INSY 3331 evaluation. Not production authentication.
           </div>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; margin-top: 14px;">
@@ -330,7 +332,7 @@
             </p>
           </div>
           <div class="admin-operator-chip">
-            <span style="font-size: 1.2rem;">👔</span>
+            <span style="display: inline-flex; align-items: center; color: var(--primary-navy);"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
             <div>
               <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700; letter-spacing: 0.5px;">Active Operator</div>
               <strong style="color: var(--primary-navy); font-size: 0.88rem;" id="admin-operator-name">Dallas Dispatch Lead (Demo)</strong>
@@ -342,28 +344,28 @@
       <!-- Admin Sub-Navigation Pills -->
       <div class="admin-subnav-container">
         <button class="admin-subnav-btn active" data-tab="overview" id="admin-tab-overview">
-          📊 Marketplace Overview
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Overview
         </button>
         <button class="admin-subnav-btn" data-tab="alerts" id="admin-tab-alerts">
-          🚨 Needs Attention <span class="admin-tab-badge" id="admin-badge-alerts-count">0</span>
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Needs Attention <span class="admin-tab-badge" id="admin-badge-alerts-count">0</span>
         </button>
         <button class="admin-subnav-btn" data-tab="dispatch" id="admin-tab-dispatch">
-          🚚 Dispatch Center
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="13" x="1" y="6" rx="2"/><polygon points="17 8 20 8 23 11 23 16 17 16 17 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Dispatch Center
         </button>
         <button class="admin-subnav-btn" data-tab="workers" id="admin-tab-workers">
-          👷 Worker Directory
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Worker Directory
         </button>
         <button class="admin-subnav-btn" data-tab="support" id="admin-tab-support">
-          🎧 Customer Support
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg> Customer Support
         </button>
         <button class="admin-subnav-btn" data-tab="finance" id="admin-tab-finance">
-          💰 Financial Operations
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Financial Operations
         </button>
         <button class="admin-subnav-btn" data-tab="trust" id="admin-tab-trust">
-          🛡️ Trust & Safety
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Trust & Safety
         </button>
         <button class="admin-subnav-btn" data-tab="audit" id="admin-tab-audit">
-          📜 Audit Trail
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg> Audit Trail
         </button>
       </div>
 
@@ -378,7 +380,7 @@
 
         <div class="admin-metrics-grid">
           <div class="admin-metric-card">
-            <div class="admin-metric-icon" style="background: #EFF6FF; color: #2563EB;">📋</div>
+            <div class="admin-metric-icon" style="background: #EFF6FF; color: #2563EB;"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></div>
             <div class="admin-metric-info">
               <span class="admin-metric-label">Total Booking Requests</span>
               <strong class="admin-metric-value" id="admin-stat-total-bookings">0</strong>
@@ -387,7 +389,7 @@
           </div>
 
           <div class="admin-metric-card">
-            <div class="admin-metric-icon" style="background: #FEF3C7; color: #D97706;">⚠️</div>
+            <div class="admin-metric-icon" style="background: #FEF3C7; color: #D97706;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
             <div class="admin-metric-info">
               <span class="admin-metric-label">Partially Filled Bookings</span>
               <strong class="admin-metric-value" id="admin-stat-partially-filled" style="color: #D97706;">0</strong>
@@ -396,7 +398,7 @@
           </div>
 
           <div class="admin-metric-card">
-            <div class="admin-metric-icon" style="background: #E0E7FF; color: #4338CA;">⏳</div>
+            <div class="admin-metric-icon" style="background: #EFF6FF; color: #2563EB;"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
             <div class="admin-metric-info">
               <span class="admin-metric-label">Open / Seeking Pros</span>
               <strong class="admin-metric-value" id="admin-stat-open-bookings">0</strong>
@@ -405,16 +407,16 @@
           </div>
 
           <div class="admin-metric-card">
-            <div class="admin-metric-icon" style="background: var(--light-blush); color: var(--dark-rose);">✓</div>
+            <div class="admin-metric-icon" style="background: var(--brand-mint); color: #059669;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
             <div class="admin-metric-info">
               <span class="admin-metric-label">Fully Confirmed / Active</span>
-              <strong class="admin-metric-value" id="admin-stat-confirmed-bookings" style="color: var(--primary-rose);">0</strong>
+              <strong class="admin-metric-value" id="admin-stat-confirmed-bookings" style="color: var(--accent-blue);">0</strong>
               <span class="admin-metric-subtext">Full crew assigned</span>
             </div>
           </div>
 
           <div class="admin-metric-card">
-            <div class="admin-metric-icon" style="background: #F1F5F9; color: #475569;">🏁</div>
+            <div class="admin-metric-icon" style="background: #F1F5F9; color: #475569;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
             <div class="admin-metric-info">
               <span class="admin-metric-label">Completed Bookings</span>
               <strong class="admin-metric-value" id="admin-stat-completed-bookings">0</strong>
@@ -423,7 +425,7 @@
           </div>
 
           <div class="admin-metric-card">
-            <div class="admin-metric-icon" style="background: #FEE2E2; color: #DC2626;">⏰</div>
+            <div class="admin-metric-icon" style="background: #FEE2E2; color: #DC2626;"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
             <div class="admin-metric-info">
               <span class="admin-metric-label">Expired ASAP Searches</span>
               <strong class="admin-metric-value" id="admin-stat-expired-asap" style="color: #DC2626;">0</strong>
@@ -432,7 +434,7 @@
           </div>
 
           <div class="admin-metric-card">
-            <div class="admin-metric-icon" style="background: #EEF2FF; color: #4338CA;">👷</div>
+            <div class="admin-metric-icon" style="background: #EFF6FF; color: #2563EB;"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
             <div class="admin-metric-info">
               <span class="admin-metric-label">Pros Available Today</span>
               <strong class="admin-metric-value" id="admin-stat-available-pros-today" style="color: #4338CA;">0</strong>
@@ -460,7 +462,7 @@
 
           <div class="admin-finance-card">
             <div class="admin-finance-label">Completed-Job Gross Value</div>
-            <div class="admin-finance-value" id="admin-fin-completed-gbv" style="color: var(--primary-rose);">$0.00</div>
+            <div class="admin-finance-value" id="admin-fin-completed-gbv" style="color: var(--accent-blue);">$0.00</div>
             <div class="admin-finance-hint">Customer billings on finalized bookings</div>
           </div>
 
@@ -476,9 +478,9 @@
             <div class="admin-finance-hint">Committed (<span id="admin-fin-worker-pending">$0.00</span> pending, <span id="admin-fin-worker-released">$0.00</span> paid)</div>
           </div>
 
-          <div class="admin-finance-card" style="border-left: 4px solid var(--primary-rose);">
+          <div class="admin-finance-card" style="border-left: 4px solid var(--accent-blue);">
             <div class="admin-finance-label">Realized Margin (Completed Jobs)</div>
-            <div class="admin-finance-value" id="admin-fin-completed-margin" style="color: var(--primary-rose);">$0.00</div>
+            <div class="admin-finance-value" id="admin-fin-completed-margin" style="color: var(--accent-blue);">$0.00</div>
             <div class="admin-finance-hint">Completed customer charges minus completed payouts</div>
           </div>
 
@@ -490,7 +492,7 @@
 
           <div class="admin-finance-card" style="border-left: 4px solid var(--dark-rose);">
             <div class="admin-finance-label">Total Platform Gross Margin</div>
-            <div class="admin-finance-value" id="admin-fin-gross-margin" style="color: var(--dark-rose);">$0.00</div>
+            <div class="admin-finance-value" id="admin-fin-gross-margin" style="color: var(--primary-navy);">$0.00</div>
             <div class="admin-finance-hint">Total Customer Charges minus Total Worker Payouts</div>
           </div>
 
@@ -503,7 +505,7 @@
 
         <!-- Academic Net Profit Transparency Callout -->
         <div class="admin-profit-disclaimer-box">
-          <div style="font-size: 1.1rem; line-height: 1;">💡</div>
+          <div style="display: flex; align-items: center; color: #D97706;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
           <div>
             <strong>Educational Accounting Distinction:</strong>
             Platform Gross Margin (<span id="admin-disclaimer-margin-val">$0.00</span>) and Customer Gross Billings are <strong>not</strong> Crewly's Net Profit.
@@ -522,7 +524,7 @@
             </p>
           </div>
           <div style="font-size: 0.8rem; background: #FEF3C7; color: #92400E; padding: 6px 12px; border-radius: var(--radius-sm); font-weight: 700;">
-            ⚡ Operational Engine: Active
+            <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Operational Engine: Active
           </div>
         </div>
 
@@ -541,14 +543,14 @@
             </p>
           </div>
           <div style="font-size: 0.8rem; background: #EEF2FF; color: #4338CA; padding: 6px 14px; border-radius: var(--radius-sm); font-weight: 700;">
-            👔 Human-Controlled Dispatch Active
+            <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Human-Controlled Dispatch Active
           </div>
         </div>
 
         <!-- Dispatch Search & Filter Bar -->
         <div class="dispatch-toolbar" style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; background: white; padding: 14px 18px; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
           <div style="flex: 1; min-width: 240px;">
-            <input type="text" id="admin-dispatch-search" class="form-input" placeholder="🔍 Search by ID (e.g. CRW-1004), customer name, service title, or neighborhood...">
+            <input type="text" id="admin-dispatch-search" class="form-input" placeholder="Search by ID (e.g. CRW-1004), customer name, service title, or neighborhood...">
           </div>
           <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
             <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary);">Status Filter:</label>
@@ -561,7 +563,7 @@
               <option value="completed">Completed Bookings</option>
             </select>
             <button id="admin-dispatch-refresh-btn" class="btn-banner-link" style="padding: 7px 14px; background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); font-weight: 700; cursor: pointer; color: var(--primary-navy);">
-              🔄 Refresh
+              <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> Refresh
             </button>
           </div>
         </div>
@@ -598,7 +600,7 @@
           </div>
           <div class="admin-metric-card">
             <div class="admin-metric-label">Available Pros Today</div>
-            <div class="admin-metric-val" id="admin-workers-stat-available-today" style="color: var(--primary-rose);">--</div>
+            <div class="admin-metric-val" id="admin-workers-stat-available-today" style="color: var(--accent-blue);">--</div>
             <div class="admin-metric-sub" id="admin-workers-stat-today-name">Weekly schedule enabled today</div>
           </div>
           <div class="admin-metric-card">
@@ -650,7 +652,7 @@
               Manage staffing shortage alerts, customer booking inquiries, and internal dispatch incident notes.
             </p>
           </div>
-          <button id="btn-admin-create-case-open" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; background: var(--primary-rose); color: white; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;">
+          <button id="btn-admin-create-case-open" class="btn btn-primary" style="padding: 8px 16px; font-size: 0.85rem; background: var(--accent-blue); color: white; border: none; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer;">
             + Create Support Case
           </button>
         </div>
@@ -669,12 +671,12 @@
           </div>
           <div class="admin-metric-card">
             <div class="admin-metric-label">Under Review</div>
-            <div class="admin-metric-val" id="admin-support-stat-review" style="color: var(--primary-rose);">0</div>
+            <div class="admin-metric-val" id="admin-support-stat-review" style="color: var(--accent-blue);">0</div>
             <div class="admin-metric-sub">Active investigation</div>
           </div>
           <div class="admin-metric-card">
             <div class="admin-metric-label">Resolved Cases</div>
-            <div class="admin-metric-val" id="admin-support-stat-resolved" style="color: var(--primary-rose);">0</div>
+            <div class="admin-metric-val" id="admin-support-stat-resolved" style="color: var(--accent-blue);">0</div>
             <div class="admin-metric-sub">Successfully addressed</div>
           </div>
         </div>
@@ -732,12 +734,12 @@
           </div>
           <div class="admin-metric-card">
             <div class="admin-metric-label">Completed-Job Gross Value</div>
-            <div class="admin-metric-val" id="admin-fin-panel-completed-gbv" style="color: var(--primary-rose);">$0.00</div>
+            <div class="admin-metric-val" id="admin-fin-panel-completed-gbv" style="color: var(--accent-blue);">$0.00</div>
             <div class="admin-metric-sub">Realized customer billings</div>
           </div>
           <div class="admin-metric-card">
             <div class="admin-metric-label">Platform Booking Fees</div>
-            <div class="admin-metric-val" id="admin-fin-panel-fees" style="color: var(--primary-rose);">$0.00</div>
+            <div class="admin-metric-val" id="admin-fin-panel-fees" style="color: var(--accent-blue);">$0.00</div>
             <div class="admin-metric-sub">$10 per booking fee collected</div>
           </div>
           <div class="admin-metric-card">
@@ -747,7 +749,7 @@
           </div>
           <div class="admin-metric-card">
             <div class="admin-metric-label">Realized Gross Margin</div>
-            <div class="admin-metric-val" id="admin-fin-panel-completed-margin" style="color: var(--primary-rose);">$0.00</div>
+            <div class="admin-metric-val" id="admin-fin-panel-completed-margin" style="color: var(--accent-blue);">$0.00</div>
             <div class="admin-metric-sub">Completed customer billings minus worker pay</div>
           </div>
           <div class="admin-metric-card">
@@ -757,7 +759,7 @@
           </div>
           <div class="admin-metric-card">
             <div class="admin-metric-label">Total Platform Gross Margin</div>
-            <div class="admin-metric-val" id="admin-fin-panel-total-margin" style="color: var(--primary-rose);">$0.00</div>
+            <div class="admin-metric-val" id="admin-fin-panel-total-margin" style="color: var(--accent-blue);">$0.00</div>
             <div class="admin-metric-sub">Gross revenue before operating expenses</div>
           </div>
           <div class="admin-metric-card">
@@ -770,7 +772,7 @@
         <!-- Net Profit Transparency Disclaimer Card -->
         <div class="admin-disclaimer-box" style="margin-bottom: 24px; background: #FFFBEB; border: 1px solid #FDE68A; border-left: 4px solid #F59E0B; padding: 14px 18px; border-radius: var(--radius-sm);">
           <div style="font-weight: 700; color: #92400E; margin-bottom: 4px; font-size: 0.88rem;">
-            ⚠️ Statutory & Commercial Financial Transparency Disclosure
+            <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Statutory & Commercial Financial Transparency Disclosure
           </div>
           <p style="margin: 0; font-size: 0.83rem; line-height: 1.5; color: #78350F;">
             The Platform Gross Margin displayed above represents gross customer billing less direct worker compensation. 
@@ -861,11 +863,11 @@
         </div>
 
         <!-- Reputation Protection Rules Notice -->
-        <div class="admin-disclaimer-box" style="margin-bottom: 20px; background: #FFF5F8; border: 1px solid var(--border-light); border-left: 4px solid var(--primary-rose); padding: 14px 18px; border-radius: var(--radius-sm);">
-          <div style="font-weight: 700; color: var(--dark-rose); margin-bottom: 4px; font-size: 0.88rem;">
-            🛡️ Crewly Reputation Protection Standards (Adjustment 2)
+        <div class="admin-disclaimer-box" style="margin-bottom: 20px; background: #F8FAFC; border: 1px solid var(--border-light); border-left: 4px solid var(--accent-blue); padding: 14px 18px; border-radius: var(--radius-sm);">
+          <div style="font-weight: 700; color: var(--primary-navy); margin-bottom: 4px; font-size: 0.88rem;">
+            <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Crewly Reputation Protection Standards (Adjustment 2)
           </div>
-          <p style="margin: 0; font-size: 0.83rem; line-height: 1.5; color: var(--dark-rose);">
+          <p style="margin: 0; font-size: 0.83rem; line-height: 1.5; color: var(--primary-navy);">
             Disputing a customer review opens an investigation in the unified case management system. 
             <strong>Dispute tracking never automatically deletes a review, modifies original star ratings, deducts worker average ratings, penalizes customers, or suspends workers.</strong> 
             Investigation findings are preserved in the administrative audit log to support evidence-based review appeals.
@@ -1020,7 +1022,7 @@
               <strong id="quote-raw-subtotal">$0.00</strong>
             </div>
 
-            <div class="quote-row" id="quote-discount-row" style="display: none; color: var(--primary-rose);">
+            <div class="quote-row" id="quote-discount-row" style="display: none; color: var(--accent-blue);">
               <span id="quote-discount-label">Secondary-Item Discount:</span>
               <strong id="quote-discount">-$0.00</strong>
             </div>
@@ -1037,7 +1039,7 @@
 
             <div class="quote-row total">
               <span>Total Customer Price:</span>
-              <span id="quote-customer-total" style="color: var(--primary-rose);">$0.00</span>
+              <span id="quote-customer-total" style="color: var(--accent-blue);">$0.00</span>
             </div>
 
             <div class="quote-disclaimer">
@@ -1067,9 +1069,9 @@
         <div>
           <div style="display: flex; align-items: center; gap: 10px;">
             <h2 style="margin: 0; font-size: 1.25rem; color: var(--primary-navy);">
-              🤖 Moving Booking Concierge
+              <svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="12" x="3" y="6" rx="2"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M12 2v4"/><path d="M2 10h1"/><path d="M21 10h1"/></svg> Moving Booking Concierge
             </h2>
-            <span class="service-badge-pill" id="concierge-proxy-status-pill" style="background: var(--light-blush); color: var(--dark-rose); font-size: 0.72rem; padding: 3px 8px; border-radius: 12px; font-weight: 700;">
+            <span class="service-badge-pill" id="concierge-proxy-status-pill" style="background: var(--brand-mint); color: #065F46; font-size: 0.72rem; padding: 3px 8px; border-radius: 12px; font-weight: 700;">
               AI Ready
             </span>
           </div>
@@ -1085,10 +1087,10 @@
         <div id="concierge-offline-banner" style="display: none; background: #FEF3C7; border-left: 4px solid #D97706; padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: #92400E;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <div>
-              <strong>ℹ️ Local AI Concierge Offline:</strong> You can book moving right now with guaranteed upfront pricing using our standard guided form.
+              <strong><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> Local AI Concierge Offline:</strong> You can book moving right now with guaranteed upfront pricing using our standard guided form.
             </div>
             <button class="btn-book-service" id="btn-concierge-switch-standard" style="width: auto; padding: 6px 14px; font-size: 0.8rem; background: #D97706;">
-              Open Standard Form ➔
+              Open Standard Form <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
             </button>
           </div>
         </div>
@@ -1103,7 +1105,7 @@
             <div id="concierge-chat-messages" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
               <!-- Initial Greeting from Concierge -->
               <div class="concierge-msg concierge-msg-assistant" style="display: flex; gap: 10px; max-width: 90%;">
-                <div style="font-size: 1.4rem;">🤖</div>
+                <div style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: var(--accent-blue-light); color: var(--accent-blue);"><svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="12" x="3" y="6" rx="2"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><path d="M12 2v4"/><path d="M2 10h1"/><path d="M21 10h1"/></svg></div>
                 <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px; font-size: 0.88rem; color: var(--primary-navy); box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
                   <div style="font-weight: 700; font-size: 0.75rem; color: var(--accent-blue); margin-bottom: 4px;">CREWLY MOVING CONCIERGE</div>
                   Hello! I'm Crewly's Moving Concierge for the Dallas pilot area. Tell me about your upcoming move — what are you moving, where in Dallas (ZIP or neighborhood), and what date or preferred time do you have in mind?
@@ -1122,7 +1124,7 @@
             <form id="concierge-chat-form" style="display: flex; gap: 8px; padding: 12px; background: white; border-top: 1px solid var(--border-light); align-items: center;">
               <input type="text" id="concierge-user-input" class="form-input" placeholder="Describe your move (e.g. 1-bed apartment in Uptown next Sat 10am)..." style="flex: 1;" autocomplete="off" maxlength="500">
               <button type="submit" id="btn-concierge-send" class="btn-book-service" style="width: auto; padding: 10px 18px; display: flex; align-items: center; gap: 6px;">
-                <span>Send</span> ➔
+                <span>Send</span> <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
               </button>
             </form>
           </div>
@@ -1133,7 +1135,7 @@
             <!-- Live Intake Summary -->
             <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px 16px;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="font-weight: 700; font-size: 0.88rem; color: var(--primary-navy);">📋 Moving Intake Draft</span>
+                <span style="font-weight: 700; font-size: 0.88rem; color: var(--primary-navy);"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/></svg> Moving Intake Draft</span>
                 <span id="concierge-draft-status" style="font-size: 0.72rem; padding: 2px 8px; border-radius: 10px; background: #EFF6FF; color: var(--accent-blue); font-weight: 700;">In Progress</span>
               </div>
 
@@ -1187,7 +1189,7 @@
                 </div>
                 <div class="quote-row total" style="border-top: 1px solid var(--border-dark); padding-top: 6px; margin-top: 2px;">
                   <span style="font-weight: 800;">Total Customer Price:</span>
-                  <span id="concierge-quote-total" style="color: var(--primary-rose); font-size: 1.15rem; font-weight: 800;">—</span>
+                  <span id="concierge-quote-total" style="color: var(--accent-blue); font-size: 1.15rem; font-weight: 800;">—</span>
                 </div>
                 <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
                   * Deterministic rate. Pros earn $30/mover-hr. No hidden fees.
@@ -1198,7 +1200,7 @@
             <!-- Local Private Details (Outside AI Prompt) -->
             <div style="background: white; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 12px 14px;">
               <div style="font-size: 0.78rem; font-weight: 700; color: var(--primary-navy); margin-bottom: 6px;">
-                🔒 Private Service Location (Kept strictly local)
+                <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Private Service Location (Kept strictly local)
               </div>
               <div style="display: flex; flex-direction: column; gap: 6px;">
                 <input type="text" id="concierge-input-address" class="form-input" placeholder="Service street address (e.g. 2800 McKinney Ave, Apt 402)" style="font-size: 0.82rem; padding: 7px 10px;" required>
@@ -1226,7 +1228,7 @@
   <div class="modal-overlay" id="admin-modal">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h2>📊 Dallas Marketplace Performance (Admin)</h2>
+        <h2><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> Dallas Marketplace Performance (Admin)</h2>
         <button class="modal-close-btn" id="btn-close-admin">&times;</button>
       </div>
 
@@ -1247,12 +1249,12 @@
           </div>
         </div>
 
-        <div style="background: var(--light-blush); border: 1px solid var(--secondary-rose); padding: 18px; border-radius: var(--radius-md); margin-bottom: 20px;">
-          <div style="font-size: 0.78rem; font-weight: 700; color: var(--dark-rose); text-transform: uppercase;">
+        <div style="background: #EFF6FF; border: 1px solid var(--secondary-rose); padding: 18px; border-radius: var(--radius-md); margin-bottom: 20px;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: var(--primary-navy); text-transform: uppercase;">
             Gross Platform Revenue Before Operating Expenses:
           </div>
-          <div style="font-size: 2rem; font-weight: 800; color: var(--dark-rose);" id="metric-gross-revenue">$0.00</div>
-          <div style="font-size: 0.75rem; color: var(--dark-rose); margin-top: 4px;">
+          <div style="font-size: 2rem; font-weight: 800; color: var(--primary-navy);" id="metric-gross-revenue">$0.00</div>
+          <div style="font-size: 0.75rem; color: var(--primary-navy); margin-top: 4px;">
             (Customer billings minus worker payouts. Excludes platform server, customer support, and insurance expenses.)
           </div>
         </div>
@@ -1291,7 +1293,7 @@
     <div class="modal-dialog" style="max-width: 520px;">
       <div class="modal-header">
         <div>
-          <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary-navy); margin: 0;">💵 Pro Simulated Cash-Out</h2>
+          <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary-navy); margin: 0;"><svg class="lucide-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Pro Simulated Cash-Out</h2>
           <p id="cashout-modal-pro-subtitle" style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0 0;">
             Dallas Pro Wallet Withdrawal Simulation
           </p>
@@ -1301,7 +1303,7 @@
       <div class="modal-body">
         <div style="background: #F8FAFC; border: 1px solid var(--border-light); border-radius: var(--radius-md); padding: 14px; text-align: center; margin-bottom: 18px;">
           <div style="font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Available for Transfer:</div>
-          <div style="font-size: 2.2rem; font-weight: 900; color: var(--primary-rose);" id="cashout-modal-amount">$0.00</div>
+          <div style="font-size: 2.2rem; font-weight: 900; color: var(--accent-blue);" id="cashout-modal-amount">$0.00</div>
           <div style="font-size: 0.75rem; color: var(--text-muted);">From eligible completed job payouts</div>
         </div>
 
@@ -1328,7 +1330,7 @@
               <div style="display: flex; align-items: center; gap: 10px;">
                 <input type="radio" name="cashoutMethod" value="instant" checked>
                 <div>
-                  <div style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy);">⚡ Instant Cash-Out (Dallas Debit Card ****4012)</div>
+                  <div style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy);"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Instant Cash-Out (Dallas Debit Card ****4012)</div>
                   <div style="font-size: 0.75rem; color: var(--text-muted);">Funds available in minutes • Flat $1.50 simulated fee</div>
                 </div>
               </div>
@@ -1337,7 +1339,7 @@
               <div style="display: flex; align-items: center; gap: 10px;">
                 <input type="radio" name="cashoutMethod" value="standard">
                 <div>
-                  <div style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy);">🏦 Standard ACH Transfer (Bank of Texas ****8921)</div>
+                  <div style="font-weight: 700; font-size: 0.9rem; color: var(--primary-navy);"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="2" y1="22" x2="22" y2="22"/><line x1="12" y1="2" x2="12" y2="6"/><polyline points="2 6 12 2 22 6"/><line x1="4" y1="10" x2="4" y2="18"/><line x1="8" y1="10" x2="8" y2="18"/><line x1="12" y1="10" x2="12" y2="18"/><line x1="16" y1="10" x2="16" y2="18"/><line x1="20" y1="10" x2="20" y2="18"/></svg> Standard ACH Transfer (Bank of Texas ****8921)</div>
                   <div style="font-size: 0.75rem; color: var(--text-muted);">1–2 business days (simulated) • Free ($0.00 fee)</div>
                 </div>
               </div>
@@ -1357,7 +1359,7 @@
           </div>
           <div style="display: flex; justify-content: space-between; border-top: 1px solid var(--border-light); padding-top: 6px; margin-bottom: 6px;">
             <span style="font-weight: 700; color: var(--primary-navy);">Net Transferred:</span>
-            <strong style="color: var(--primary-rose); font-size: 1rem;" id="cashout-summary-net">$0.00</strong>
+            <strong style="color: var(--accent-blue); font-size: 1rem;" id="cashout-summary-net">$0.00</strong>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--text-muted); border-top: 1px dashed var(--border-light); padding-top: 4px;">
             <span>Remaining Available Balance:</span>
@@ -1370,7 +1372,7 @@
 
         <!-- Disclaimer -->
         <div style="background: #FFFBEB; border: 1px solid #F59E0B; padding: 10px 12px; border-radius: var(--radius-sm); font-size: 0.75rem; color: #92400E; text-align: center; font-weight: 700;">
-          ⚠️ SIMULATED TRANSACTION — NO REAL MONEY TRANSFERRED
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> SIMULATED TRANSACTION — NO REAL MONEY TRANSFERRED
         </div>
       </div>
       <div class="modal-footer">
@@ -1392,7 +1394,7 @@
       <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 1.4rem;">🧾</span>
+            <span style="display: inline-flex; align-items: center; color: var(--accent-blue);"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></span>
             <h2 style="font-size: 1.25rem; font-weight: 800; color: var(--primary-navy); margin: 0;">Transfer Receipt</h2>
           </div>
           <p style="font-size: 0.78rem; color: var(--text-muted); margin: 2px 0 0 0;">Crewly Dallas Pilot — Pro Wallet Simulation</p>
@@ -1401,15 +1403,15 @@
       </div>
       <div class="modal-body" style="padding-top: 10px;">
         <div style="background: #FEF3C7; border: 1px solid #F59E0B; border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 16px; font-size: 0.75rem; color: #92400E; text-align: center; font-weight: 800; text-transform: uppercase;">
-          ⚠️ SIMULATED TRANSACTION — NO REAL MONEY TRANSFERRED
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> SIMULATED TRANSACTION — NO REAL MONEY TRANSFERRED
         </div>
 
         <div style="border: 1px dashed var(--border-dark); border-radius: var(--radius-md); padding: 18px; background: #FAFAFA;">
           <div style="text-align: center; border-bottom: 1px solid var(--border-light); padding-bottom: 14px; margin-bottom: 14px;">
             <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">Net Simulated Transfer</div>
-            <div style="font-size: 2.2rem; font-weight: 900; color: var(--primary-rose);" id="receipt-net-amount">$0.00</div>
+            <div style="font-size: 2.2rem; font-weight: 900; color: var(--accent-blue);" id="receipt-net-amount">$0.00</div>
             <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;" id="receipt-status-pill">
-              <span class="status-badge confirmed" id="receipt-status-text">✓ Transfer Confirmed</span>
+              <span class="status-badge confirmed" id="receipt-status-text"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Transfer Confirmed</span>
             </div>
           </div>
 
@@ -1440,14 +1442,14 @@
             </div>
             <div style="display: flex; justify-content: space-between; font-weight: 800; border-top: 1px solid var(--border-light); padding-top: 8px; color: var(--primary-navy); font-size: 0.95rem;">
               <span>Delivered Net:</span>
-              <span style="color: var(--primary-rose);" id="receipt-final-net">$98.50</span>
+              <span style="color: var(--accent-blue);" id="receipt-final-net">$98.50</span>
             </div>
           </div>
         </div>
       </div>
       <div class="modal-footer" style="display: flex; justify-content: space-between;">
         <button class="btn-open-tab" id="btn-print-receipt" style="padding: 8px 16px; border-radius: var(--radius-md);">
-          🖨️ Print Receipt
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg> Print Receipt
         </button>
         <button class="btn-book-service" id="btn-done-receipt" style="width: auto; padding: 8px 22px;">
           Done
@@ -1463,7 +1465,7 @@
     <div class="modal-dialog">
       <div class="modal-header">
         <div>
-          <h2>⭐ Review Your Crewly Pro</h2>
+          <h2><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="#F59E0B" fill="#F59E0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg> Review Your Crewly Pro</h2>
           <p id="review-modal-worker-info" style="font-size: 0.88rem; font-weight: 600; color: var(--accent-blue); margin: 2px 0 0 0;"></p>
         </div>
         <button class="modal-close-btn" id="btn-close-review">&times;</button>
@@ -1472,11 +1474,11 @@
         <div class="form-group" style="text-align: center; margin-bottom: 20px;">
           <label class="form-label" style="font-size: 1rem;">Select Star Rating:</label>
           <div style="font-size: 2rem; cursor: pointer;" id="star-rating-selector">
-            <span data-star="1">⭐</span>
-            <span data-star="2">⭐</span>
-            <span data-star="3">⭐</span>
-            <span data-star="4">⭐</span>
-            <span data-star="5">⭐</span>
+            <span data-star="1" style="cursor: pointer;"><svg class="lucide-icon" style="pointer-events: none; width: 24px; height: 24px; color: #CBD5E1; fill: #CBD5E1;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+            <span data-star="2" style="cursor: pointer;"><svg class="lucide-icon" style="pointer-events: none; width: 24px; height: 24px; color: #CBD5E1; fill: #CBD5E1;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+            <span data-star="3" style="cursor: pointer;"><svg class="lucide-icon" style="pointer-events: none; width: 24px; height: 24px; color: #CBD5E1; fill: #CBD5E1;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+            <span data-star="4" style="cursor: pointer;"><svg class="lucide-icon" style="pointer-events: none; width: 24px; height: 24px; color: #CBD5E1; fill: #CBD5E1;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
+            <span data-star="5" style="cursor: pointer;"><svg class="lucide-icon" style="pointer-events: none; width: 24px; height: 24px; color: #CBD5E1; fill: #CBD5E1;" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
           </div>
           <div style="font-size: 0.85rem; font-weight: 700; color: var(--primary-navy);" id="star-rating-text">
             5 Stars (Excellent Service)
@@ -1506,7 +1508,7 @@
     <div class="modal-dialog">
       <div class="modal-header">
         <div>
-          <h2>📅 Reschedule Appointment</h2>
+          <h2><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Reschedule Appointment</h2>
           <p id="reschedule-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
             Select a new future date and time for your booking
           </p>
@@ -1544,7 +1546,7 @@
     <div class="modal-dialog" style="max-width: 640px;">
       <div class="modal-header">
         <div>
-          <h2>👔 Manual Pro Assignment</h2>
+          <h2><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Manual Pro Assignment</h2>
           <p id="admin-assign-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
             Review qualified Dallas Pros and assign to open position
           </p>
@@ -1571,7 +1573,7 @@
         </div>
 
         <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.8rem; color: #92400E; display: flex; align-items: flex-start; gap: 8px;">
-          <span>🔒</span>
+          <span style="display: inline-flex; align-items: center;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
           <span><strong>Privacy & Compliance:</strong> This administrative reason is preserved strictly in the internal audit log. It is not disclosed to the customer.</span>
         </div>
 
@@ -1584,7 +1586,7 @@
         <button class="btn-open-tab" id="btn-cancel-admin-assign" style="padding: 10px 18px; border-radius: var(--radius-md);">
           Cancel
         </button>
-        <button class="btn-book-service" id="btn-confirm-admin-assign" style="width: auto; padding: 10px 24px; background: var(--dark-rose);" disabled>
+        <button class="btn-book-service" id="btn-confirm-admin-assign" style="width: auto; padding: 10px 24px; background: var(--primary-navy);" disabled>
           Confirm Assignment
         </button>
       </div>
@@ -1598,7 +1600,7 @@
     <div class="modal-dialog" style="max-width: 560px;">
       <div class="modal-header">
         <div>
-          <h2 style="color: #DC2626;">⚠️ Worker Unassignment</h2>
+          <h2 style="color: #DC2626;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Worker Unassignment</h2>
           <p id="admin-unassign-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
             Pre-work reassignment and pending balance reversal
           </p>
@@ -1701,7 +1703,7 @@
         </div>
 
         <div style="background: #F8FAFC; border: 1px solid var(--border-light); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: flex-start; gap: 8px;">
-          <span>🔒</span>
+          <span style="display: inline-flex; align-items: center;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
           <span><strong>Customer Privacy Guarantee:</strong> Internal notes remain strictly confidential within the Admin Center. They are never written to customer activity logs (<code>booking.messages</code>).</span>
         </div>
 
@@ -1754,7 +1756,7 @@
               <option value="resolved">Resolved</option>
             </select>
             <input type="text" id="case-detail-status-reason" class="form-input" placeholder="Administrative reason for status change (Required)..." style="flex: 1; min-width: 200px; font-size: 0.85rem;" />
-            <button id="btn-case-detail-update-status" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.82rem; white-space: nowrap; background: var(--primary-rose); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;">
+            <button id="btn-case-detail-update-status" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.82rem; white-space: nowrap; background: var(--accent-blue); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;">
               Update Status
             </button>
           </div>
@@ -1771,8 +1773,8 @@
           <label class="form-label">Add Internal Dispatcher Note:</label>
           <textarea id="input-case-detail-new-note" class="form-textarea" rows="2" placeholder="Record internal findings, phone call notes, or instructions for next shift..."></textarea>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-            <span style="font-size: 0.75rem; color: var(--text-muted);">🔒 Strictly internal; never shown to customers.</span>
-            <button id="btn-case-detail-add-note" class="btn btn-primary" style="padding: 6px 16px; font-size: 0.82rem; background: var(--dark-rose); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;">
+            <span style="font-size: 0.75rem; color: var(--text-muted);"><svg class="lucide-icon" viewBox="0 0 24 24" width="13" height="13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg> Strictly internal; never shown to customers.</span>
+            <button id="btn-case-detail-add-note" class="btn btn-primary" style="padding: 6px 16px; font-size: 0.82rem; background: var(--primary-navy); color: white; border: none; border-radius: var(--radius-sm); cursor: pointer;">
               Add Note
             </button>
           </div>
@@ -1804,7 +1806,7 @@
               <strong id="trust-modal-pro-name" style="color: var(--primary-navy); font-size: 0.95rem;">Worker Name</strong>
               <div id="trust-modal-role-title" style="font-size: 0.8rem; color: var(--text-secondary);">Role Title</div>
             </div>
-            <div id="trust-modal-stars" style="font-size: 1.15rem; color: #F59E0B; font-weight: 700;">★★★★★</div>
+            <div id="trust-modal-stars" style="font-size: 1.15rem; color: #F59E0B; font-weight: 700; display: inline-flex; align-items: center; gap: 2px;"></div>
           </div>
           <div style="font-size: 0.85rem; color: var(--text-primary); font-style: italic; margin-bottom: 8px;" id="trust-modal-comment">
             "Customer comment text"
@@ -1817,8 +1819,8 @@
         </div>
 
         <!-- Reputation Protection Rules Reminder -->
-        <div style="background: var(--bg-card-alt); border: 1px solid var(--border-light); border-left: 4px solid var(--primary-rose); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.8rem; color: var(--dark-rose);">
-          ℹ️ <strong>Reputation Protection Notice:</strong> Flagging a review as disputed records an investigation in the unified case management system. The original rating (<span id="trust-modal-original-stars">5</span>★) and worker average rating are protected and remain completely untouched.
+        <div style="background: var(--bg-card-alt); border: 1px solid var(--border-light); border-left: 4px solid var(--accent-blue); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.8rem; color: var(--primary-navy);">
+          <svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> <strong>Reputation Protection Notice:</strong> Flagging a review as disputed records an investigation in the unified case management system. The original rating (<span id="trust-modal-original-stars">5</span> stars) and worker average rating are protected and remain completely untouched.
         </div>
 
         <!-- Dispute Action Section -->
@@ -1841,7 +1843,7 @@
     <div class="modal-dialog" style="max-width: 580px;">
       <div class="modal-header">
         <div>
-          <h2 style="color: #DC2626; margin: 0; font-size: 1.25rem;">🚫 Cancel Booking</h2>
+          <h2 style="color: #DC2626; margin: 0; font-size: 1.25rem;"><svg class="lucide-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg> Cancel Booking</h2>
           <p id="admin-cancel-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
             Administrative all-or-nothing cancellation and pending payout reversal
           </p>
@@ -1859,7 +1861,7 @@
         </div>
 
         <div style="background: #FFFBEB; border: 1px solid #FDE68A; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.8rem; color: #92400E; display: flex; align-items: flex-start; gap: 8px;">
-          <span>🔒</span>
+          <span style="display: inline-flex; align-items: center;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
           <span><strong>All-or-Nothing Financial Policy:</strong> Pre-work cancellation safely reverses attributable pending earnings in integer cents. It does not alter completed earnings, and customer resolution is marked <em>Pending Manual Review — No Refund Processed</em>.</span>
         </div>
 
@@ -1886,7 +1888,7 @@
     <div class="modal-dialog" style="max-width: 600px;">
       <div class="modal-header">
         <div>
-          <h2 style="color: var(--primary-rose); margin: 0; font-size: 1.25rem;">✓ Verify & Complete Assignment</h2>
+          <h2 style="color: var(--brand-emerald); margin: 0; font-size: 1.25rem;"><svg class="lucide-icon" viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Verify & Complete Assignment</h2>
           <p id="admin-verify-modal-subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin: 2px 0 0 0;">
             Affirmative administrative completion and worker earnings release
           </p>
@@ -1894,7 +1896,7 @@
         <button class="modal-close-btn" id="btn-close-admin-verify">&times;</button>
       </div>
       <div class="modal-body">
-        <div id="admin-verify-summary-box" style="background: var(--light-blush); border-left: 4px solid var(--primary-rose); padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: var(--dark-rose);">
+        <div id="admin-verify-summary-box" style="background: #EFF6FF; border-left: 4px solid var(--accent-blue); padding: 14px 16px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 0.85rem; color: var(--primary-navy);">
           <!-- Rendered dynamically -->
         </div>
 
@@ -1913,7 +1915,7 @@
         </div>
 
         <div style="background: #F8FAFC; border: 1px solid var(--border-light); padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 14px; font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: flex-start; gap: 8px;">
-          <span>💼</span>
+          <span style="display: inline-flex; align-items: center;"><svg class="lucide-icon" viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
           <span><strong>Single Source of Truth:</strong> Releases pending payout to available balance and records an earnings credit in the worker's ledger using the shared Pro completion engine.</span>
         </div>
 
@@ -1926,7 +1928,7 @@
         <button class="btn-open-tab" id="btn-cancel-admin-verify-action" style="padding: 10px 18px; border-radius: var(--radius-md);">
           Cancel
         </button>
-        <button class="btn-book-service" id="btn-confirm-admin-verify" style="width: auto; padding: 10px 24px; background: var(--primary-rose);" disabled>
+        <button class="btn-book-service" id="btn-confirm-admin-verify" style="width: auto; padding: 10px 24px; background: var(--accent-blue);" disabled>
           Verify & Release Payout
         </button>
       </div>
@@ -1938,11 +1940,6 @@
 
   <!-- Core JavaScript Module -->
   <script type="module" src="app.js"></script>
-<script>
-  const launcher = document.getElementById('crewly-chat-launcher');
-  if (launcher && typeof toggleChat === 'function') {
-    launcher.addEventListener('click', toggleChat);
-  }
-</script>
+
 </body>
 </html>
